@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
 
 # --- CONFIGURAZIONE PAGINA ---
-st.set_page_config(page_title="Performance Analytics Hub", layout="wide")
+st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
 # --- CONNESSIONE GOOGLE SHEETS ---
 # Questa riga si collega alle credenziali che hai messo nei "Secrets"
@@ -58,13 +58,13 @@ if os.path.exists(logo_path):
     st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{img_base64}" width="80"></div>', unsafe_allow_html=True)
 
 # --- HEADER ---
-st.markdown("## PERFORMANCE ANALYTICS HUB")
+st.markdown("## FOOTBALL DATA ANALYST")
 st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Match Analysis</p>", unsafe_allow_html=True)
 
 # --- INFO PARTITA ---
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
 
-with st.expander("ℹ️ Configurazione Match", expanded=True):
+with st.expander("ℹ️ Informazioni partita", expanded=True):
     c1, c2 = st.columns(2)
     with c1: 
         st.selectbox("Giornata", ["Seleziona giornata"] + list(range(1, 31)), key="g_key")
@@ -215,5 +215,6 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
 
