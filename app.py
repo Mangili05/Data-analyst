@@ -67,7 +67,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- INSERIMENTO LOGO ---
-logo_path = "assets/logo.png"
+logo_path = "logo.png"
 if os.path.exists(logo_path):
     img_base64 = base64.b64encode(open(logo_path, "rb").read()).decode()
     st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{img_base64}" width="80"></div>', unsafe_allow_html=True)
@@ -229,4 +229,5 @@ with tabs[2]:
         if val_d and (st.session_state.get("def_tiro_coords") != val_d):
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
+
     st.button("💾 Salva Difensiva", key="btn_def", on_click=esegui_salvataggio, args=("Azione Difensiva",))
