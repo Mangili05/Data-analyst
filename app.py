@@ -33,7 +33,7 @@ st.markdown("""
     .logo-container {
         position: absolute;
         top: -35px;   
-        right: -70px;  
+        right: -100px;  
         z-index: 999;
     }
     .block-container { 
@@ -212,6 +212,7 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
 
 
