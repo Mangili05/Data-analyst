@@ -11,7 +11,6 @@ from streamlit_gsheets import GSheetsConnection
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
 # --- CONNESSIONE GOOGLE SHEETS ---
-# Questa riga si collega alle credenziali che hai messo nei "Secrets"
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- GESTIONE COUNTER PER RESET ---
@@ -48,10 +47,18 @@ st.markdown("""
         background-color: #1f67b5;
         color: white;
     }
+    .video-container {
+        margin-top: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #30363d;
+        border-radius: 10px;
+        padding: 10px;
+        background-color: #161b22;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- INSERIMENTO LOGO (Percorso aggiornato senza assets) ---
+# --- INSERIMENTO LOGO ---
 logo_path = "logo.png"
 if os.path.exists(logo_path):
     img_base64 = base64.b64encode(open(logo_path, "rb").read()).decode()
@@ -77,6 +84,19 @@ with st.expander("ℹ️ Informazioni partita", expanded=True):
     with gc1: st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
     with gc2: st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
 
+# --- NUOVA SEZIONE: VIDEO MATCH (VEO) ---
+st.markdown("### 📺 Video Match")
+video_url = st.text_input("Incolla qui il link del video (Veo, YouTube, ecc.)", placeholder="https://app.veo.co/matches/...")
+
+if video_url:
+    with st.container():
+        st.markdown('<div class="video-container">', unsafe_allow_html=True)
+        try:
+            st.video(video_url)
+        except:
+            st.info("Impossibile riprodurre il video direttamente. [Clicca qui per aprire il video in una nuova scheda](" + video_url + ")")
+        st.markdown('</div>', unsafe_allow_html=True)
+
 st.divider()
 
 # --- LISTA CALCIATORI ---
@@ -93,7 +113,6 @@ def esegui_salvataggio(fase):
         st.warning("Compila le info partita!")
         return
 
-    # Preparazione record
     record = {
         "Giornata": g, 
         "Data": st.session_state.get('d_key').strftime("%d/%m/%Y") if st.session_state.get('d_key') else "",
@@ -129,11 +148,9 @@ def esegui_salvataggio(fase):
         })
 
     try:
-        # Carica dati attuali, aggiungi riga e carica su Google
         existing_data = conn.read()
         updated_df = pd.concat([existing_data, pd.DataFrame([record])], ignore_index=True)
         conn.update(data=updated_df)
-        
         st.session_state["messaggio_successo"] = f"✅ Inviato a Google Sheets!"
         reset_campi()
         st.rerun()
@@ -175,8 +192,8 @@ with tabs[1]:
     if es_off in ["Gol", "Tiro in porta", "Tiro fuori"]:
         st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
         st.write("🎯 **Posizione Conclusione**")
-        # Nota: assicurati che campo.jpg sia nella cartella assets o cambia percorso qui sotto
-        img = Image.open("assets/campo.jpg")
+        img_path = "assets/campo.jpg" if os.path.exists("assets/campo.jpg") else "campo.jpg"
+        img = Image.open(img_path)
         img_res = img.resize((500, int(img.size[1]*(500/img.size[0]))))
         if "off_coords" in st.session_state:
             draw = ImageDraw.Draw(img_res); x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
@@ -205,7 +222,8 @@ with tabs[2]:
     if es_def in ["Tiro subito", "Gol subito"]:
         st.selectbox("Esito Tiro", ["Porta", "Fuori", "Respinto"], key=f"def_esito_tiro{suffix}")
         st.write("📍 **Punto del tiro**")
-        img_d = Image.open("campo.jpg")
+        img_d_path = "assets/campo.jpg" if os.path.exists("assets/campo.jpg") else "campo.jpg"
+        img_d = Image.open(img_d_path)
         img_d_res = img_d.resize((500, int(img_d.size[1]*(500/img_d.size[0]))))
         if "def_tiro_coords" in st.session_state:
             draw_d = ImageDraw.Draw(img_d_res); x_d, y_d = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
@@ -215,6 +233,3 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
-
-
-
