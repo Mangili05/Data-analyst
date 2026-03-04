@@ -205,7 +205,7 @@ with tabs[2]:
     if es_def in ["Tiro subito", "Gol subito"]:
         st.selectbox("Esito Tiro", ["Porta", "Fuori", "Respinto"], key=f"def_esito_tiro{suffix}")
         st.write("📍 **Punto del tiro**")
-        img_d = Image.open("assets/campo.jpg")
+        img_d = Image.open("campo.jpg")
         img_d_res = img_d.resize((500, int(img_d.size[1]*(500/img_d.size[0]))))
         if "def_tiro_coords" in st.session_state:
             draw_d = ImageDraw.Draw(img_d_res); x_d, y_d = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
@@ -215,4 +215,5 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
