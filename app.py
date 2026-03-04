@@ -84,20 +84,23 @@ with st.expander("ℹ️ Informazioni partita", expanded=True):
     with gc1: st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
     with gc2: st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
 
-# --- NUOVA SEZIONE: VIDEO MATCH (VEO) ---
+# --- NUOVA SEZIONE: VIDEO MATCH (VEO) POTENZIATA ---
 st.markdown("### 📺 Video Match")
 video_url = st.text_input("Incolla qui il link del video (Veo, YouTube, ecc.)", placeholder="https://app.veo.co/matches/...")
 
 if video_url:
-    with st.container():
-        st.markdown('<div class="video-container">', unsafe_allow_html=True)
+    # Cerchiamo di capire se è un link Veo per adattare il player
+    if "veo.co" in video_url:
+        # Se il link è quello standard, proviamo a visualizzarlo via iframe
+        st.components.v1.iframe(video_url, height=500, scrolling=True)
+        st.info("💡 Se il video sopra non carica, Veo richiede l'accesso: [Apri video in un'altra scheda](" + video_url + ")")
+    else:
+        # Per YouTube e altri formati standard
         try:
             st.video(video_url)
         except:
-            st.info("Impossibile riprodurre il video direttamente. [Clicca qui per aprire il video in una nuova scheda](" + video_url + ")")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-st.divider()
+            st.write("Link non supportato per il player diretto.")
+            st.markdown(f"[Vai al video esternamente]({video_url})")
 
 # --- LISTA CALCIATORI ---
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
@@ -233,3 +236,4 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
