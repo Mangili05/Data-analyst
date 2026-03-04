@@ -3,3 +3,4 @@ pandas
 openpyxl
 streamlit-image-coordinates
 Pillow
+st-gsheets-connection
