@@ -47,14 +47,6 @@ st.markdown("""
         background-color: #1f67b5;
         color: white;
     }
-    .video-container {
-        margin-top: 10px;
-        margin-bottom: 20px;
-        border: 1px solid #30363d;
-        border-radius: 10px;
-        padding: 10px;
-        background-color: #161b22;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -84,23 +76,7 @@ with st.expander("ℹ️ Informazioni partita", expanded=True):
     with gc1: st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
     with gc2: st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
 
-# --- NUOVA SEZIONE: VIDEO MATCH (VEO) POTENZIATA ---
-st.markdown("### 📺 Video Match")
-video_url = st.text_input("Incolla qui il link del video (Veo, YouTube, ecc.)", placeholder="https://app.veo.co/matches/...")
-
-if video_url:
-    # Cerchiamo di capire se è un link Veo per adattare il player
-    if "veo.co" in video_url:
-        # Se il link è quello standard, proviamo a visualizzarlo via iframe
-        st.components.v1.iframe(video_url, height=500, scrolling=True)
-        st.info("💡 Se il video sopra non carica, Veo richiede l'accesso: [Apri video in un'altra scheda](" + video_url + ")")
-    else:
-        # Per YouTube e altri formati standard
-        try:
-            st.video(video_url)
-        except:
-            st.write("Link non supportato per il player diretto.")
-            st.markdown(f"[Vai al video esternamente]({video_url})")
+st.divider()
 
 # --- LISTA CALCIATORI ---
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
@@ -195,7 +171,7 @@ with tabs[1]:
     if es_off in ["Gol", "Tiro in porta", "Tiro fuori"]:
         st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
         st.write("🎯 **Posizione Conclusione**")
-        img_path = "assets/campo.jpg" if os.path.exists("assets/campo.jpg") else "campo.jpg"
+        img_path = "campo.jpg" # Percorso semplificato
         img = Image.open(img_path)
         img_res = img.resize((500, int(img.size[1]*(500/img.size[0]))))
         if "off_coords" in st.session_state:
@@ -225,7 +201,7 @@ with tabs[2]:
     if es_def in ["Tiro subito", "Gol subito"]:
         st.selectbox("Esito Tiro", ["Porta", "Fuori", "Respinto"], key=f"def_esito_tiro{suffix}")
         st.write("📍 **Punto del tiro**")
-        img_d_path = "assets/campo.jpg" if os.path.exists("assets/campo.jpg") else "campo.jpg"
+        img_d_path = "campo.jpg"
         img_d = Image.open(img_d_path)
         img_d_res = img_d.resize((500, int(img_d.size[1]*(500/img_d.size[0]))))
         if "def_tiro_coords" in st.session_state:
@@ -236,4 +212,5 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
