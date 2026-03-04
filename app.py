@@ -148,8 +148,8 @@ tabs = st.tabs(["⚽ Costruzione", "⚔️ Offensiva", "🛡️ Difensiva"])
 with tabs[0]:
     r1c1, r1c2 = st.columns(2)
     with r1c1:
-        st.text_input("Inizio (min:sec)", key=f"t_in{suffix}")
-        st.text_input("Fine (min:sec)", key=f"t_fi{suffix}")
+        st.text_input("Inizio", placeholder="min:sec", key=f"t_in{suffix}")
+        st.text_input("Fine", placeholder="min:sec", key=f"t_fi{suffix}")
     with r1c2:
         st.radio("Tipo", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}")
         st.radio("Esito", ["Positivo", "Negativo"], key=f"esito_rad{suffix}")
@@ -160,10 +160,10 @@ with tabs[0]:
 with tabs[1]:
     co1, co2 = st.columns(2)
     with co1:
-        st.text_input("Inizio", key=f"off_in{suffix}")
+        st.text_input("Inizio", placeholder="min:sec", key=f"off_in{suffix}")
         st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
     with co2:
-        st.text_input("Fine", key=f"off_fi{suffix}")
+        st.text_input("Fine", placeholder="min:sec", key=f"off_fi{suffix}")
         st.selectbox("Rifinitura", ["Seleziona", "Cross", "Filtrante", "Individuale", "Scarico", "Palla sopra"], key=f"off_rif{suffix}")
     
     es_off = st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa"], key=f"off_esito{suffix}")
@@ -171,7 +171,7 @@ with tabs[1]:
     if es_off in ["Gol", "Tiro in porta", "Tiro fuori"]:
         st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
         st.write("🎯 **Posizione Conclusione**")
-        img_path = "campo.jpg" # Percorso semplificato
+        img_path = "campo.jpg"
         img = Image.open(img_path)
         img_res = img.resize((500, int(img.size[1]*(500/img.size[0]))))
         if "off_coords" in st.session_state:
@@ -186,10 +186,10 @@ with tabs[1]:
 with tabs[2]:
     cd1, cd2 = st.columns(2)
     with cd1:
-        st.text_input("Inizio", key=f"def_in{suffix}")
+        st.text_input("Inizio", placeholder="min:sec", key=f"def_in{suffix}")
         st.selectbox("Tipo", ["Seleziona", "Azione manovrata", "Palla persa"], key=f"def_tipo{suffix}")
     with cd2:
-        st.text_input("Fine", key=f"def_fi{suffix}")
+        st.text_input("Fine", placeholder="min:sec", key=f"def_fi{suffix}")
         st.selectbox("Prov.", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"def_prov{suffix}")
 
     es_def = st.selectbox("Esito Difensivo", ["Seleziona", "Recuperata", "Tiro subito", "Gol subito"], key=f"def_esito{suffix}")
@@ -212,5 +212,6 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
 
