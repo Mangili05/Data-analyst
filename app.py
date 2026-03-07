@@ -168,21 +168,32 @@ tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Di
 
 # --- TAB 1: COSTRUZIONE ---
 with tabs[0]:
-    # Riga 1: Tempi affiancati
+    # Riga 1: Tempi affiancati (50% e 50%)
     rc1, rc2 = st.columns(2)
     with rc1:
         st.text_input("Inizio", placeholder="min:sec", key=f"t_in{suffix}")
     with rc2:
         st.text_input("Fine", placeholder="min:sec", key=f"t_fi{suffix}")
     
-    # Riga 2: Tre colonne per i Radio Button
+    st.markdown("<br>", unsafe_allow_html=True) # Piccolo spazio verticale
+
+    # Riga 2: Tre colonne per i Radio Button con allineamento visivo
+    # Usiamo pesi uguali [1, 1, 1] per distribuirli uniformemente
     rc3, rc4, rc5 = st.columns(3)
+    
     with rc3:
+        # Allineato naturalmente a sinistra
         st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}")
+    
     with rc4:
+        # Questo apparirà esattamente al centro della larghezza totale
         st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}")
+    
     with rc5:
+        # Allineato naturalmente a destra della griglia
         st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}")
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     if st.button("💾 Salva Costruzione"):
         ini_c = st.session_state.get(f"t_in{suffix}", "")
@@ -287,6 +298,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
