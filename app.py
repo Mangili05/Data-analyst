@@ -28,15 +28,7 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    
-    /* Rimuove l'icona del link/graffetta accanto ai titoli ## */
-    .element-container:has(#football-data-analyst) a {
-        display: none;
-    }
-    .stMarkdown h2 a {
-        display: none !important;
-    }
-    
+    .stMarkdown h2 a { display: none !important; }
     .main { background-color: #0e1117; color: white; }
     .logo-container {
         position: absolute;
@@ -65,7 +57,7 @@ if os.path.exists(logo_path):
     st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{img_base64}" width="80"></div>', unsafe_allow_html=True)
 
 # --- HEADER ---
-st.markdown("## FOOTBALL DATA ANALYST", help=None)
+st.markdown("## FOOTBALL DATA ANALYST")
 st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Match Analysis</p>", unsafe_allow_html=True)
 
 # --- INFO PARTITA ---
@@ -89,7 +81,7 @@ st.divider()
 # --- LISTA CALCIATORI ---
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
 
-# --- FUNZIONE SALVATAGGIO GOOGLE SHEETS AGGIORNATA ---
+# --- FUNZIONE SALVATAGGIO ---
 def esegui_salvataggio(fase):
     s = f"_{st.session_state.reset_counter}"
     g = st.session_state.get('g_key')
@@ -100,7 +92,6 @@ def esegui_salvataggio(fase):
         st.warning("Compila le info partita!")
         return
 
-    # Info comuni
     giornata = g
     data = st.session_state.get('d_key').strftime("%d/%m/%Y") if st.session_state.get('d_key') else ""
     s_casa = h
@@ -114,27 +105,24 @@ def esegui_salvataggio(fase):
         record = {
             "Giornata": giornata, "Data": data, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
             "Gol casa": g_casa, "Gol ospite": g_ospite,
-            "Inizio": st.session_state.get(f't_in{s}'), 
-            "Fine": st.session_state.get(f't_fi{s}'),
-            "Tipo": st.session_state.get(f'tipo_rad{s}'), 
-            "Modalità": st.session_state.get(f'mod_sel{s}'),
+            "Inizio": st.session_state.get(f't_in{s}'), "Fine": st.session_state.get(f't_fi{s}'),
+            "Tipo": st.session_state.get(f'tipo_rad{s}'), "Modalità": st.session_state.get(f'mod_sel{s}'),
             "Esito": st.session_state.get(f'esito_rad{s}')
         }
     elif fase == "Azione Offensiva":
         nome_foglio = "Offensiva"
         coords = st.session_state.get('off_coords')
-        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Canale", "Rifinitura", "Esito", "Giocatore", "Coord_X", "Coord_Y"]
+        # Nuovo ordine colonne GSheets richiesto
+        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito", "Giocatore", "Coord_X", "Coord_Y"]
         record = {
             "Giornata": giornata, "Data": data, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
             "Gol casa": g_casa, "Gol ospite": g_ospite,
-            "Inizio": st.session_state.get(f'off_in{s}'), 
-            "Fine": st.session_state.get(f'off_fi{s}'),
-            "Canale": st.session_state.get(f'off_canale{s}'), 
-            "Rifinitura": st.session_state.get(f'off_rif{s}'),
+            "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'),
+            "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
+            "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'),
             "Esito": st.session_state.get(f'off_esito{s}'), 
             "Giocatore": st.session_state.get(f'off_giocatore{s}') if st.session_state.get(f'off_giocatore{s}') != "Seleziona" else "",
-            "Coord_X": coords['x'] if coords else "", 
-            "Coord_Y": coords['y'] if coords else ""
+            "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
         }
     elif fase == "Azione Difensiva":
         nome_foglio = "Difensiva"
@@ -143,39 +131,26 @@ def esegui_salvataggio(fase):
         record = {
             "Giornata": giornata, "Data": data, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
             "Gol casa": g_casa, "Gol ospite": g_ospite,
-            "Inizio": st.session_state.get(f'def_in{s}'), 
-            "Fine": st.session_state.get(f'def_fi{s}'),
-            "Tipo": st.session_state.get(f'def_tipo{s}'), 
-            "Provenienza": st.session_state.get(f'def_prov{s}'),
-            "Esito": st.session_state.get(f'def_esito{s}'), 
-            "Causa": st.session_state.get(f'def_causa{s}'),
+            "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'),
+            "Tipo": st.session_state.get(f'def_tipo{s}'), "Provenienza": st.session_state.get(f'def_prov{s}'),
+            "Esito": st.session_state.get(f'def_esito{s}'), "Causa": st.session_state.get(f'def_causa{s}'),
             "Giocatore": st.session_state.get(f'def_giocatore{s}') if st.session_state.get(f'def_giocatore{s}') != "Seleziona" else "",
             "Esito Tiro": st.session_state.get(f'def_esito_tiro{s}'),
-            "Tiro_Coord_X": tiro_coords['x'] if tiro_coords else "", 
-            "Tiro_Coord_Y": tiro_coords['y'] if tiro_coords else ""
+            "Tiro_Coord_X": tiro_coords['x'] if tiro_coords else "", "Tiro_Coord_Y": tiro_coords['y'] if tiro_coords else ""
         }
 
     try:
         df_new = pd.DataFrame([record]).reindex(columns=cols_order)
         st.cache_data.clear()
         existing_data = conn.read(worksheet=nome_foglio)
-        if existing_data.empty:
-            updated_df = df_new
-        else:
-            existing_data = existing_data.reindex(columns=cols_order)
-            updated_df = pd.concat([existing_data, df_new], ignore_index=True)
-        
+        updated_df = pd.concat([existing_data, df_new], ignore_index=True)
         conn.update(worksheet=nome_foglio, data=updated_df)
-        
-        # Salviamo il messaggio e resettiamo
         st.session_state["messaggio_successo"] = f"✅ Salvato correttamente in {nome_foglio}!"
         reset_campi()
-        st.rerun() # FORZA IL REFRESH: Pulisce l'errore e attiva il toast
-        
+        st.rerun()
     except Exception as e:
         st.error(f"Errore: {e}")
 
-# Questo blocco fuori dalla funzione gestirà la notifica visiva
 if "messaggio_successo" in st.session_state:
     st.toast(st.session_state["messaggio_successo"])
     del st.session_state["messaggio_successo"]
@@ -202,30 +177,42 @@ with tabs[0]:
         else:
             esegui_salvataggio("Costruzione dal Basso")
 
-# --- TAB 2: OFFENSIVA ---
+# --- TAB 2: AZIONE OFFENSIVA ---
 with tabs[1]:
     co1, co2 = st.columns(2)
     with co1:
         st.text_input("Inizio", placeholder="min:sec", key=f"off_in{suffix}")
-        st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
+        # Nuovo campo Tipo di azione
+        st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Palla recuperata", "Transizione offensiva", "Palla inattiva"], key=f"off_tipo_azione{suffix}")
     with co2:
         st.text_input("Fine", placeholder="min:sec", key=f"off_fi{suffix}")
+        # Canale spostato qui
+        st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
+    
+    # Seconda riga di selectbox
+    co3, co4 = st.columns(2)
+    with co3:
+        # Esito Finale spostato sotto Tipo Azione
+        es_off = st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
+    with co4:
+        # Rifinitura spostata sotto Canale
         st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Filtrante", "Individuale", "Scarico", "Palla sopra"], key=f"off_rif{suffix}")
     
-    es_off = st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
-    
+    # Logica condizionale per giocatore e campetto
     if es_off in ["Gol", "Tiro in porta", "Tiro fuori"]:
         st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
         st.write("🎯 **Posizione Conclusione**")
         img_path = "campo.jpg"
-        img = Image.open(img_path)
-        img_res = img.resize((500, int(img.size[1]*(500/img.size[0]))))
-        if "off_coords" in st.session_state:
-            draw = ImageDraw.Draw(img_res); x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-            draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
-        val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
-        if val and (st.session_state.get("off_coords") != val):
-            st.session_state["off_coords"] = val; st.rerun()
+        if os.path.exists(img_path):
+            img = Image.open(img_path)
+            img_res = img.resize((500, int(img.size[1]*(500/img.size[0]))))
+            if "off_coords" in st.session_state:
+                draw = ImageDraw.Draw(img_res); x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
+                draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
+            val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
+            if val and (st.session_state.get("off_coords") != val):
+                st.session_state["off_coords"] = val; st.rerun()
+    
     if st.button("💾 Salva Azione Offensiva"):
         ini_o = st.session_state.get(f"off_in{suffix}", "")
         fin_o = st.session_state.get(f"off_fi{suffix}", "")
@@ -234,7 +221,7 @@ with tabs[1]:
         else:
             esegui_salvataggio("Azione Offensiva")
 
-# --- TAB 3: DIFENSIVA ---
+# --- TAB 3: AZIONE DIFENSIVA ---
 with tabs[2]:
     cd1, cd2 = st.columns(2)
     with cd1:
@@ -254,14 +241,15 @@ with tabs[2]:
         st.selectbox("Esito Tiro", ["Porta", "Fuori", "Respinto"], key=f"def_esito_tiro{suffix}")
         st.write("📍 **Punto del tiro**")
         img_d_path = "campo.jpg"
-        img_d = Image.open(img_d_path)
-        img_d_res = img_d.resize((500, int(img_d.size[1]*(500/img_d.size[0]))))
-        if "def_tiro_coords" in st.session_state:
-            draw_d = ImageDraw.Draw(img_d_res); x_d, y_d = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
-            draw_d.ellipse([x_d-5, y_d-5, x_d+5, y_d+5], fill="yellow", outline="black")
-        val_d = streamlit_image_coordinates(img_d_res, key=f"campetto_def{suffix}")
-        if val_d and (st.session_state.get("def_tiro_coords") != val_d):
-            st.session_state["def_tiro_coords"] = val_d; st.rerun()
+        if os.path.exists(img_d_path):
+            img_d = Image.open(img_d_path)
+            img_d_res = img_d.resize((500, int(img_d.size[1]*(500/img_d.size[0]))))
+            if "def_tiro_coords" in st.session_state:
+                draw_d = ImageDraw.Draw(img_d_res); x_d, y_d = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
+                draw_d.ellipse([x_d-5, y_d-5, x_d+5, y_d+5], fill="yellow", outline="black")
+            val_d = streamlit_image_coordinates(img_d_res, key=f"campetto_def{suffix}")
+            if val_d and (st.session_state.get("def_tiro_coords") != val_d):
+                st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     if st.button("💾 Salva Azione Difensiva"):
         ini_d = st.session_state.get(f"def_in{suffix}", "")
