@@ -20,7 +20,6 @@ if "reset_counter" not in st.session_state:
 def reset_campi():
     st.session_state.reset_counter += 1
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
-    if 'def_err_coords' in st.session_state: del st.session_state['def_err_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
 # --- CSS PERSONALIZZATO ---
@@ -29,11 +28,20 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    
+    /* Rimuove l'icona del link/graffetta accanto ai titoli ## */
+    .element-container:has(#football-data-analyst) a {
+        display: none;
+    }
+    .stMarkdown h2 a {
+        display: none !important;
+    }
+    
     .main { background-color: #0e1117; color: white; }
     .logo-container {
         position: absolute;
         top: -35px;   
-        right: -80px;  
+        right: -30px;  
         z-index: 999;
     }
     .block-container { 
@@ -57,7 +65,7 @@ if os.path.exists(logo_path):
     st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{img_base64}" width="80"></div>', unsafe_allow_html=True)
 
 # --- HEADER ---
-st.markdown("## FOOTBALL DATA ANALYST")
+st.markdown("## FOOTBALL DATA ANALYST", help=None)
 st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Match Analysis</p>", unsafe_allow_html=True)
 
 # --- INFO PARTITA ---
@@ -81,7 +89,7 @@ st.divider()
 # --- LISTA CALCIATORI ---
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
 
-# --- FUNZIONE SALVATAGGIO GOOGLE SHEETS ---
+# --- FUNZIONE SALVATAGGIO GOOGLE SHEETS (3 FOGLI) ---
 def esegui_salvataggio(fase):
     s = f"_{st.session_state.reset_counter}"
     g = st.session_state.get('g_key')
@@ -96,45 +104,61 @@ def esegui_salvataggio(fase):
         "Giornata": g, 
         "Data": st.session_state.get('d_key').strftime("%d/%m/%Y") if st.session_state.get('d_key') else "",
         "Squadra casa": h, "Squadra ospite": a,
-        "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
-        "Fase": fase
+        "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key')
     }
 
+    # Determina il foglio di destinazione e i dati extra
+    nome_foglio = ""
+    
     if fase == "Costruzione dal Basso":
+        nome_foglio = "Costruzione"
         record.update({
-            "Inizio": st.session_state.get(f't_in{s}'), "Fine": st.session_state.get(f't_fi{s}'),
-            "Tipo": st.session_state.get(f'tipo_rad{s}'), "Modalità": st.session_state.get(f'mod_sel{s}'),
+            "Inizio": st.session_state.get(f't_in{s}'), 
+            "Fine": st.session_state.get(f't_fi{s}'),
+            "Tipo": st.session_state.get(f'tipo_rad{s}'), 
+            "Modalità": st.session_state.get(f'mod_sel{s}'),
             "Esito": st.session_state.get(f'esito_rad{s}')
         })
     elif fase == "Azione Offensiva":
+        nome_foglio = "Offensiva"
         coords = st.session_state.get('off_coords')
         record.update({
-            "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'),
-            "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'),
+            "Inizio": st.session_state.get(f'off_in{s}'), 
+            "Fine": st.session_state.get(f'off_fi{s}'),
+            "Canale": st.session_state.get(f'off_canale{s}'), 
+            "Rifinitura": st.session_state.get(f'off_rif{s}'),
             "Esito": st.session_state.get(f'off_esito{s}'),
             "Giocatore": st.session_state.get(f'off_giocatore{s}') if st.session_state.get(f'off_giocatore{s}') != "Seleziona" else "",
-            "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
+            "Coord_X": coords['x'] if coords else "", 
+            "Coord_Y": coords['y'] if coords else ""
         })
     elif fase == "Azione Difensiva":
+        nome_foglio = "Difensiva"
         tiro_coords = st.session_state.get('def_tiro_coords')
         record.update({
-            "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'),
-            "Tipo": st.session_state.get(f'def_tipo{s}'), "Provenienza": st.session_state.get(f'def_prov{s}'),
-            "Esito": st.session_state.get(f'def_esito{s}'), "Causa": st.session_state.get(f'def_causa{s}'),
+            "Inizio": st.session_state.get(f'def_in{s}'), 
+            "Fine": st.session_state.get(f'def_fi{s}'),
+            "Tipo": st.session_state.get(f'def_tipo{s}'), 
+            "Provenienza": st.session_state.get(f'def_prov{s}'),
+            "Esito": st.session_state.get(f'def_esito{s}'), 
+            "Causa": st.session_state.get(f'def_causa{s}'),
             "Giocatore": st.session_state.get(f'def_giocatore{s}') if st.session_state.get(f'def_giocatore{s}') != "Seleziona" else "",
             "Esito Tiro": st.session_state.get(f'def_esito_tiro{s}'),
-            "Tiro_Coord_X": tiro_coords['x'] if tiro_coords else "", "Tiro_Coord_Y": tiro_coords['y'] if tiro_coords else ""
+            "Tiro_Coord_X": tiro_coords['x'] if tiro_coords else "", 
+            "Tiro_Coord_Y": tiro_coords['y'] if tiro_coords else ""
         })
 
     try:
-        existing_data = conn.read()
+        # Legge i dati esistenti dalla scheda specifica
+        existing_data = conn.read(worksheet=nome_foglio)
         updated_df = pd.concat([existing_data, pd.DataFrame([record])], ignore_index=True)
-        conn.update(data=updated_df)
-        st.session_state["messaggio_successo"] = f"✅ Inviato a Google Sheets!"
+        # Aggiorna la scheda specifica
+        conn.update(worksheet=nome_foglio, data=updated_df)
+        st.session_state["messaggio_successo"] = f"✅ Salvato in {nome_foglio}!"
         reset_campi()
         st.rerun()
     except Exception as e:
-        st.error(f"Errore di connessione: {e}")
+        st.error(f"Errore durante il salvataggio in {nome_foglio}: {e}")
 
 if "messaggio_successo" in st.session_state:
     st.toast(st.session_state["messaggio_successo"])
@@ -212,6 +236,7 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
 
 
