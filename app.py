@@ -92,6 +92,7 @@ def esegui_salvataggio(fase):
         st.warning("Compila le info partita!")
         return
 
+    # Info comuni
     giornata = g
     data = st.session_state.get('d_key').strftime("%d/%m/%Y") if st.session_state.get('d_key') else ""
     s_casa = h
@@ -99,9 +100,13 @@ def esegui_salvataggio(fase):
     g_casa = st.session_state.get('gh_key')
     g_ospite = st.session_state.get('ga_key')
 
+    # ORDINE COLONNE UNIFICATO (come da tua richiesta)
+    cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
+
     if fase == "Costruzione dal Basso":
         nome_foglio = "Costruzione"
-        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo", "Modalità", "Esito"]
+        # La costruzione ha colonne diverse, manteniamo le sue
+        cols_order_costr = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo", "Modalità", "Esito"]
         record = {
             "Giornata": giornata, "Data": data, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
             "Gol casa": g_casa, "Gol ospite": g_ospite,
@@ -109,46 +114,43 @@ def esegui_salvataggio(fase):
             "Tipo": st.session_state.get(f'tipo_rad{s}'), "Modalità": st.session_state.get(f'mod_sel{s}'),
             "Esito": st.session_state.get(f'esito_rad{s}')
         }
+        current_cols = cols_order_costr
     elif fase == "Azione Offensiva":
         nome_foglio = "Offensiva"
         coords = st.session_state.get('off_coords')
-        # Nuovo ordine colonne GSheets richiesto
-        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito", "Giocatore", "Coord_X", "Coord_Y"]
         record = {
             "Giornata": giornata, "Data": data, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
             "Gol casa": g_casa, "Gol ospite": g_ospite,
             "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'),
             "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
-            "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'),
-            "Esito": st.session_state.get(f'off_esito{s}'), 
-            "Giocatore": st.session_state.get(f'off_giocatore{s}') if st.session_state.get(f'off_giocatore{s}') != "Seleziona" else "",
+            "Canale": st.session_state.get(f'off_canale{s}'), 
+            "Rifinitura": st.session_state.get(f'off_rif{s}'),
+            "Esito finale": st.session_state.get(f'off_esito{s}'), 
             "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
         }
+        current_cols = cols_order
     elif fase == "Azione Difensiva":
         nome_foglio = "Difensiva"
-        tiro_coords = st.session_state.get('def_tiro_coords')
-        # Nuovo ordine colonne per GSheets
-        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale di sviluppo", "Rifinitura", "Esito", "Tiro_Coord_X", "Tiro_Coord_Y"]
+        coords = st.session_state.get('def_tiro_coords')
         record = {
             "Giornata": giornata, "Data": data, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
             "Gol casa": g_casa, "Gol ospite": g_ospite,
-            "Inizio": st.session_state.get(f'def_in{suffix}'), 
-            "Fine": st.session_state.get(f'def_fi{suffix}'),
-            "Tipo di azione": st.session_state.get(f'def_tipo_azione{suffix}'), 
-            "Canale di sviluppo": st.session_state.get(f'def_canale_sviluppo{suffix}'),
-            "Rifinitura": st.session_state.get(f'def_rif{suffix}'),
-            "Esito": st.session_state.get(f'def_esito{suffix}'),
-            "Tiro_Coord_X": tiro_coords['x'] if tiro_coords else "", 
-            "Tiro_Coord_Y": tiro_coords['y'] if tiro_coords else ""
+            "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'),
+            "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'), 
+            "Canale": st.session_state.get(f'def_canale_sviluppo{s}'),
+            "Rifinitura": st.session_state.get(f'def_rif{s}'),
+            "Esito finale": st.session_state.get(f'def_esito{s}'),
+            "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
         }
+        current_cols = cols_order
 
     try:
-        df_new = pd.DataFrame([record]).reindex(columns=cols_order)
+        df_new = pd.DataFrame([record]).reindex(columns=current_cols)
         st.cache_data.clear()
         existing_data = conn.read(worksheet=nome_foglio)
         updated_df = pd.concat([existing_data, df_new], ignore_index=True)
         conn.update(worksheet=nome_foglio, data=updated_df)
-        st.session_state["messaggio_successo"] = f"✅ Salvato correttamente in {nome_foglio}!"
+        st.session_state["messaggio_successo"] = f"✅ Salvato in {nome_foglio}!"
         reset_campi()
         st.rerun()
     except Exception as e:
@@ -275,6 +277,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
