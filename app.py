@@ -168,7 +168,7 @@ tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Di
 
 # --- TAB 1: COSTRUZIONE ---
 with tabs[0]:
-    # Riga 1: Tempi affiancati (rimane invariata, funziona bene)
+    # Riga 1: Tempi
     rc1, rc2 = st.columns(2)
     with rc1:
         st.text_input("Inizio", placeholder="min:sec", key=f"t_in{suffix}")
@@ -177,26 +177,22 @@ with tabs[0]:
     
     st.divider()
 
-    # Riga 2: Usiamo un sistema a 3 colonne uguali, 
-    # ma usiamo i container per gestire lo spazio interno
-    c1, c2, c3 = st.columns(3)
+    # Riga 2: Layout bilanciato per spingere i contenuti ai bordi
+    # Aumentiamo il peso delle colonne esterne (2.5) e usiamo buffer minimi
+    c1, buffer_a, c2, buffer_b, c3 = st.columns([2.5, 0.5, 2, 0.5, 2.5])
     
     with c1:
-        # Creiamo un micro-allineamento interno spostando leggermente a destra
-        _, col_content_1 = st.columns([0.1, 0.9])
-        with col_content_1:
-            st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
+        # Tipologia resta a sinistra
+        st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
     
     with c2:
-        # Centriamo la colonna centrale usando due piccoli buffer laterali
-        _, col_content_2, _ = st.columns([0.1, 0.8, 0.1])
-        with col_content_2:
-            st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}", horizontal=True)
+        # Modalità perfettamente al centro del layout
+        st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}", horizontal=True)
     
     with c3:
-        # Spingiamo leggermente verso sinistra per bilanciare l'ultima colonna
-        col_content_3, _ = st.columns([0.9, 0.1])
-        with col_content_3:
+        # Usiamo un ulteriore micro-colonna interna per forzare l'allineamento a DESTRA
+        _, col_push_right = st.columns([0.2, 0.8])
+        with col_push_right:
             st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -304,6 +300,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
