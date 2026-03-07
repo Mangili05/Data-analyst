@@ -150,14 +150,17 @@ def esegui_salvataggio(fase):
                 "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
             }
 
+        # --- LOGICA DI SALVATAGGIO ---
         df_new = pd.DataFrame([record]).reindex(columns=cols)
         st.cache_data.clear()
+        
         existing_df = conn.read(worksheet=nome_foglio)
         updated_df = pd.concat([existing_df, df_new], ignore_index=True)
         conn.update(worksheet=nome_foglio, data=updated_df)
         
-        # Salviamo il messaggio e resettiamo
-        st.session_state["messaggio_successo"] = f"✅ Dati salvati in {nome_foglio}!"
+        # Prepariamo il messaggio per il post-rerun
+        st.session_state["mostra_toast"] = f"✅ Dati salvati in {nome_foglio}!"
+        
         reset_campi()
         st.rerun()
 
@@ -171,6 +174,12 @@ if "messaggio_successo" in st.session_state:
 
 # --- TABS ---
 suffix = f"_{st.session_state.reset_counter}"
+
+# MOSTRA IL TOAST QUI (apparirà in basso a destra come volevi)
+if "mostra_toast" in st.session_state:
+    st.toast(st.session_state["mostra_toast"])
+    del st.session_state["mostra_toast"]
+
 tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
     
 # --- TAB 1: COSTRUZIONE ---
@@ -279,3 +288,4 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
