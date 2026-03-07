@@ -96,6 +96,23 @@ def esegui_salvataggio(fase):
     h = st.session_state.get('h_key')
     a = st.session_state.get('a_key')
     
+    # --- RECUPERO VALORI TEMPORALI PER VALIDAZIONE ---
+    if fase == "Costruzione dal Basso":
+        inizio_val = st.session_state.get(f"t_in{s}", "")
+        fine_val = st.session_state.get(f"t_fi{s}", "")
+    elif fase == "Azione Offensiva":
+        inizio_val = st.session_state.get(f"off_in{s}", "")
+        fine_val = st.session_state.get(f"off_fi{s}", "")
+    elif fase == "Azione Difensiva":
+        inizio_val = st.session_state.get(f"def_in{s}", "")
+        fine_val = st.session_state.get(f"def_fi{s}", "")
+    
+    # --- CONTROLLO OBBLIGO 5 CARATTERI ---
+    if len(inizio_val) < 5 or len(fine_val) < 5:
+        st.error("⚠️ Errore: I campi 'Inizio' e 'Fine' devono avere almeno 5 caratteri (es. 04:10 invece di 4:10).")
+        return
+
+    # --- CONTROLLO INFO PARTITA ---
     if g == "Seleziona giornata" or h == "Seleziona squadra" or a == "Seleziona squadra":
         st.warning("Compila le info partita!")
         return
@@ -107,6 +124,8 @@ def esegui_salvataggio(fase):
     s_ospite = a
     g_casa = st.session_state.get('gh_key')
     g_ospite = st.session_state.get('ga_key')
+
+    # ... da qui in poi prosegue con i blocchi 'if fase ==' per la creazione del record ...
 
     if fase == "Costruzione dal Basso":
         nome_foglio = "Costruzione"
@@ -268,6 +287,7 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
 
 
