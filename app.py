@@ -165,7 +165,11 @@ def esegui_salvataggio(fase):
         # 2. Riordiniamo le colonne del nuovo record secondo la lista cols_order
         df_new = df_new.reindex(columns=cols_order)
         
-        # 3. Leggiamo i dati esistenti
+        # --- MODIFICA FONDAMENTALE ---
+        # Puliamo la cache per assicurarci di leggere i dati aggiornati dal cloud
+        st.cache_data.clear()
+        
+        # 3. Leggiamo i dati esistenti (ora leggerà sempre l'ultima riga salvata)
         existing_data = conn.read(worksheet=nome_foglio)
         
         # 4. Se il foglio è vuoto o ha colonne diverse, lo forziamo a seguire cols_order
@@ -182,9 +186,12 @@ def esegui_salvataggio(fase):
         st.session_state["messaggio_successo"] = f"✅ Salvato correttamente in {nome_foglio}!"
         reset_campi()
         
+        # NON mettiamo st.rerun() qui per evitare il messaggio giallo
+        
     except Exception as e:
         st.error(f"Errore: {e}")
 
+# Questo blocco fuori dalla funzione gestirà la notifica visiva
 if "messaggio_successo" in st.session_state:
     st.toast(st.session_state["messaggio_successo"])
     del st.session_state["messaggio_successo"]
@@ -261,6 +268,7 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
 
 
