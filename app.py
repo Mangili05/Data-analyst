@@ -64,17 +64,26 @@ st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Match Analysis</p>",
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
 
 with st.expander("ℹ️ Informazioni partita", expanded=True):
+    # Riga 1: Giornata e Data (Invertite per affiancarle)
     c1, c2 = st.columns(2)
     with c1: 
         st.selectbox("Giornata", ["Seleziona giornata"] + list(range(1, 31)), key="g_key")
-        st.date_input("Data", value=None, format="DD/MM/YYYY", key="d_key")
     with c2:
+        st.date_input("Data", value=None, format="DD/MM/YYYY", key="d_key")
+    
+    # Riga 2: Squadre (Invertite per affiancarle)
+    c3, c4 = st.columns(2)
+    with c3:
         st.selectbox("Squadra di casa", ["Seleziona squadra"] + squadre_campionato, key="h_key")
+    with c4:
         st.selectbox("Squadra Ospite", ["Seleziona squadra"] + squadre_campionato, key="a_key")
     
+    # Riga 3: Punteggio
     gc1, gc2 = st.columns(2)
-    with gc1: st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
-    with gc2: st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
+    with gc1: 
+        st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
+    with gc2: 
+        st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
 
 st.divider()
 
@@ -302,6 +311,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
