@@ -177,45 +177,29 @@ with tabs[0]:
     
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Applichiamo un po' di CSS per centrare i testi dei radio button
-    st.markdown("""
-        <style>
-        [data-testid="stHorizontalBlock"] > div:nth-child(2) [data-testid="stMarkdownContainer"] p {
-            text-align: center;
-        }
-        div[role="radiogroup"] {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start; /* Allinea i cerchietti */
-            justify-content: center;
-        }
-        /* Forza il centro per la colonna centrale */
-        .centered-radio {
-            display: flex;
-            justify-content: center;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # Riga 2: Usiamo container per aiutare il posizionamento
-    rc3, rc4, rc5 = st.columns([1, 1, 1])
+    # Riga 2: Allineamento Radio Button
+    # Usiamo 5 colonne: le due esterne e quella centrale per i contenuti, 
+    # le altre due (vuote) servono a creare lo spazio per centrare.
+    col_sx, buffer1, col_centro, buffer2, col_dx = st.columns([1.5, 0.5, 1.5, 0.5, 1.5])
     
-    with rc3:
+    with col_sx:
         st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}")
     
-    with rc4:
-        # Usiamo un container interno per centrare visivamente
-        with st.container():
-            st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}")
+    with col_centro:
+        st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}")
     
-    with rc5:
-        # Per l'ultima colonna, se vuoi che stia a destra, possiamo lasciarla così
+    with col_dx:
         st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     if st.button("💾 Salva Costruzione"):
-        # ... (restante codice di salvataggio invariato)
+        ini_c = st.session_state.get(f"t_in{suffix}", "")
+        fin_c = st.session_state.get(f"t_fi{suffix}", "")
+        if len(ini_c) < 5 or len(fin_c) < 5:
+            st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
+        else:
+            esegui_salvataggio("Costruzione dal Basso")
 
 # --- TAB 2: AZIONE OFFENSIVA ---
 with tabs[1]:
@@ -312,6 +296,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
