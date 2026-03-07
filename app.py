@@ -158,11 +158,10 @@ def esegui_salvataggio(fase):
         updated_df = pd.concat([existing_df, df_new], ignore_index=True)
         conn.update(worksheet=nome_foglio, data=updated_df)
         
-        # Prepariamo il messaggio per il post-rerun
+        # Salviamo solo il messaggio
         st.session_state["mostra_toast"] = f"✅ Dati salvati in {nome_foglio}!"
-        
         reset_campi()
-        st.rerun()
+        # Rimosso st.rerun da qui dentro!
 
     except Exception as e:
         st.error(f"❌ Errore critico: {e}")
@@ -250,6 +249,7 @@ with tabs[1]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Offensiva")
+            st.rerun()
 
 # --- TAB 3: AZIONE DIFENSIVA ---
 with tabs[2]:
@@ -290,5 +290,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+            st.rerun()
+
 
 
