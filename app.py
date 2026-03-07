@@ -182,23 +182,23 @@ with tabs[1]:
     co1, co2 = st.columns(2)
     with co1:
         st.text_input("Inizio", placeholder="min:sec", key=f"off_in{suffix}")
-        # Nuovo campo Tipo di azione
+        # Tipo di azione
         st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Palla recuperata", "Transizione offensiva", "Palla inattiva"], key=f"off_tipo_azione{suffix}")
     with co2:
         st.text_input("Fine", placeholder="min:sec", key=f"off_fi{suffix}")
-        # Canale spostato qui
+        # Canale
         st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
     
-    # Seconda riga di selectbox
+    # Seconda riga di selectbox invertita come richiesto
     co3, co4 = st.columns(2)
     with co3:
-        # Esito Finale spostato sotto Tipo Azione
-        es_off = st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
-    with co4:
-        # Rifinitura spostata sotto Canale
+        # Rifinitura a SINISTRA (sotto Tipo di azione)
         st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Filtrante", "Individuale", "Scarico", "Palla sopra"], key=f"off_rif{suffix}")
+    with co4:
+        # Esito Finale a DESTRA (sotto Canale)
+        es_off = st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
     
-    # Logica condizionale per giocatore e campetto
+    # Logica condizionale per giocatore e campetto (ora legata a es_off che è a destra)
     if es_off in ["Gol", "Tiro in porta", "Tiro fuori"]:
         st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
         st.write("🎯 **Posizione Conclusione**")
@@ -258,3 +258,4 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
