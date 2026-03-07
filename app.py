@@ -237,8 +237,11 @@ with tabs[0]:
         st.radio("Esito", ["Positivo", "Negativo"], key=f"esito_rad{suffix}")
     st.selectbox("Modalità", ["Seleziona", "Bassa", "Manovrata", "Diretta"], key=f"mod_sel{suffix}")
     btn_cost = st.button("💾 Salva Costruzione", on_click=esegui_salvataggio, args=("Costruzione dal Basso",))
-    if btn_cost:
-        if len(st.session_state.get(f"t_in{suffix}", "")) < 5 or len(st.session_state.get(f"t_fi{suffix}", "")) < 5:
+    # Mostra l'errore solo se il pulsante è premuto E NON è appena apparso il messaggio di successo
+    if btn_cost and "messaggio_successo" not in st.session_state:
+        ini = st.session_state.get(f"t_in{suffix}", "")
+        fin = st.session_state.get(f"t_fi{suffix}", "")
+        if len(ini) < 5 or len(fin) < 5:
             st.error("⚠️ Inserire il formato mm:ss (es. 04:10)")
 
 # --- TAB 2: OFFENSIVA ---
@@ -266,8 +269,10 @@ with tabs[1]:
         if val and (st.session_state.get("off_coords") != val):
             st.session_state["off_coords"] = val; st.rerun()
     btn_off = st.button("💾 Salva Offensiva", on_click=esegui_salvataggio, args=("Azione Offensiva",))
-    if btn_off:
-        if len(st.session_state.get(f"off_in{suffix}", "")) < 5 or len(st.session_state.get(f"off_fi{suffix}", "")) < 5:
+    if btn_off and "messaggio_successo" not in st.session_state:
+        ini = st.session_state.get(f"off_in{suffix}", "")
+        fin = st.session_state.get(f"off_fi{suffix}", "")
+        if len(ini) < 5 or len(fin) < 5:
             st.error("⚠️ Inserire il formato mm:ss (es. 04:10)")
 
 # --- TAB 3: DIFENSIVA ---
@@ -300,9 +305,12 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     btn_def = st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
-    if btn_def:
-        if len(st.session_state.get(f"def_in{suffix}", "")) < 5 or len(st.session_state.get(f"def_fi{suffix}", "")) < 5:
+    if btn_def and "messaggio_successo" not in st.session_state:
+        ini = st.session_state.get(f"def_in{suffix}", "")
+        fin = st.session_state.get(f"def_fi{suffix}", "")
+        if len(ini) < 5 or len(fin) < 5:
             st.error("⚠️ Inserire il formato mm:ss (es. 04:10)")
+
 
 
 
