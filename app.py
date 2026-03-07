@@ -188,9 +188,9 @@ with tabs[1]:
         st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
     with co2:
         st.text_input("Fine", placeholder="min:sec", key=f"off_fi{suffix}")
-        st.selectbox("Rifinitura", ["Seleziona", "Cross", "Filtrante", "Individuale", "Scarico", "Palla sopra"], key=f"off_rif{suffix}")
+        st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Filtrante", "Individuale", "Scarico", "Palla sopra"], key=f"off_rif{suffix}")
     
-    es_off = st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa"], key=f"off_esito{suffix}")
+    es_off = st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
     
     if es_off in ["Gol", "Tiro in porta", "Tiro fuori"]:
         st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
@@ -236,6 +236,7 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
 
 
