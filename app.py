@@ -175,11 +175,26 @@ with tabs[0]:
     with rc2:
         st.text_input("Fine", placeholder="min:sec", key=f"t_fi{suffix}")
     
-    st.divider() # Una linea sottile per separare i tempi dalle scelte
+    st.divider()
 
-    # Riga 2: Radio Button Orizzontali per un allineamento perfetto
-    # Usiamo 3 colonne pulite
-    c_tipo, c_mod, c_esito = st.columns(3)
+    # CSS per forzare il centramento dei titoli e dei gruppi radio
+    st.markdown("""
+        <style>
+        /* Centra i titoli dei widget */
+        [data-testid="stWidgetLabel"] p {
+            text-align: center;
+            width: 100%;
+        }
+        /* Centra il contenitore dei radio button orizzontali */
+        [data-testid="stHorizontalBlock"] div[role="radiogroup"] {
+            justify-content: center;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Riga 2: Tre colonne per le selezioni
+    # Usiamo colonne leggermente più larghe per dare respiro
+    c_tipo, c_mod, c_esito = st.columns([1, 1, 1])
     
     with c_tipo:
         st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
@@ -192,7 +207,6 @@ with tabs[0]:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Bottone di salvataggio
     if st.button("💾 Salva Costruzione"):
         ini_c = st.session_state.get(f"t_in{suffix}", "")
         fin_c = st.session_state.get(f"t_fi{suffix}", "")
@@ -296,6 +310,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
