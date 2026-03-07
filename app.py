@@ -182,7 +182,7 @@ if "messaggio_successo" in st.session_state:
 
 # --- TABS ---
 suffix = f"_{st.session_state.reset_counter}"
-tabs = st.tabs(["⚽ Costruzione", "⚔️ Offensiva", "🛡️ Difensiva"])
+tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
 
 # --- TAB 1: COSTRUZIONE ---
 with tabs[0]:
@@ -226,7 +226,7 @@ with tabs[1]:
         val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
         if val and (st.session_state.get("off_coords") != val):
             st.session_state["off_coords"] = val; st.rerun()
-    if st.button("💾 Salva Offensiva"):
+    if st.button("💾 Salva Azione Offensiva"):
         ini_o = st.session_state.get(f"off_in{suffix}", "")
         fin_o = st.session_state.get(f"off_fi{suffix}", "")
         if len(ini_o) < 5 or len(fin_o) < 5:
@@ -263,13 +263,14 @@ with tabs[2]:
         if val_d and (st.session_state.get("def_tiro_coords") != val_d):
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
-    if st.button("💾 Salva Difensiva"):
+    if st.button("💾 Salva Azione Difensiva"):
         ini_d = st.session_state.get(f"def_in{suffix}", "")
         fin_d = st.session_state.get(f"def_fi{suffix}", "")
         if len(ini_d) < 5 or len(fin_d) < 5:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
