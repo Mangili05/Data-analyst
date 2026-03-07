@@ -177,18 +177,40 @@ with tabs[0]:
     
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Riga 2: Allineamento Radio Button
-    # Usiamo 5 colonne: le due esterne e quella centrale per i contenuti, 
-    # le altre due (vuote) servono a creare lo spazio per centrare.
-    col_sx, buffer1, col_centro, buffer2, col_dx = st.columns([1.5, 0.5, 1.5, 0.5, 1.5])
+    # CSS specifico per centrare etichette e opzioni dei radio button
+    st.markdown("""
+        <style>
+        /* Centra il titolo del radio button */
+        [data-testid="stWidgetLabel"] p {
+            text-align: center;
+            width: 100%;
+        }
+        /* Centra il gruppo delle opzioni (i cerchietti) */
+        [data-testid="stVerticalBlock"] div[role="radiogroup"] {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        /* Corregge il margine interno delle opzioni per non farle sembrare spostate a sx */
+        [data-testid="stVirtualizedList"] > div {
+            display: flex;
+            justify-content: center;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Riga 2: Tre colonne uguali
+    rc3, rc4, rc5 = st.columns(3)
     
-    with col_sx:
+    with rc3:
         st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}")
     
-    with col_centro:
+    with rc4:
         st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}")
     
-    with col_dx:
+    with rc5:
         st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}")
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -296,6 +318,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
