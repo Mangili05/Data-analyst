@@ -92,25 +92,32 @@ lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bos
 # --- FUNZIONE SALVATAGGIO GOOGLE SHEETS AGGIORNATA ---
 def esegui_salvataggio(fase):
     s = f"_{st.session_state.reset_counter}"
+    
+    # --- RECUPERO VALORI TEMPORALI PER VALIDAZIONE ---
+    if fase == "Costruzione dal Basso":
+        ini_v = st.session_state.get(f"t_in{s}", "")
+        fin_v = st.session_state.get(f"t_fi{s}", "")
+    elif fase == "Azione Offensiva":
+        ini_v = st.session_state.get(f"off_in{s}", "")
+        fin_v = st.session_state.get(f"off_fi{s}", "")
+    elif fase == "Azione Difensiva":
+        ini_v = st.session_state.get(f"def_in{s}", "")
+        fin_v = st.session_state.get(f"def_fi{s}", "")
+    
+    # Se meno di 5 caratteri, esce senza salvare
+    if len(ini_v) < 5 or len(fin_v) < 5:
+        return
+
+    # Prosegue con i controlli normali
     g = st.session_state.get('g_key')
     h = st.session_state.get('h_key')
     a = st.session_state.get('a_key')
     
-    # --- RECUPERO VALORI TEMPORALI PER VALIDAZIONE ---
-    if fase == "Costruzione dal Basso":
-        inizio_val = st.session_state.get(f"t_in{s}", "")
-        fine_val = st.session_state.get(f"t_fi{s}", "")
-    elif fase == "Azione Offensiva":
-        inizio_val = st.session_state.get(f"off_in{s}", "")
-        fine_val = st.session_state.get(f"off_fi{s}", "")
-    elif fase == "Azione Difensiva":
-        inizio_val = st.session_state.get(f"def_in{s}", "")
-        fine_val = st.session_state.get(f"def_fi{s}", "")
-    
-    # --- CONTROLLO OBBLIGO 5 CARATTERI ---
-    if len(inizio_val) < 5 or len(fine_val) < 5:
-        st.error("⚠️ Errore: I campi 'Inizio' e 'Fine' devono avere almeno 5 caratteri (es. 04:10 invece di 4:10).")
+    if g == "Seleziona giornata" or h == "Seleziona squadra" or a == "Seleziona squadra":
+        st.warning("Compila le info partita!")
         return
+
+    # ... (Resto del codice: record, reindex, cache_clear, concat e update) ...
 
     # --- CONTROLLO INFO PARTITA ---
     if g == "Seleziona giornata" or h == "Seleziona squadra" or a == "Seleziona squadra":
@@ -229,7 +236,10 @@ with tabs[0]:
         st.radio("Tipo", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}")
         st.radio("Esito", ["Positivo", "Negativo"], key=f"esito_rad{suffix}")
     st.selectbox("Modalità", ["Seleziona", "Bassa", "Manovrata", "Diretta"], key=f"mod_sel{suffix}")
-    st.button("💾 Salva Costruzione", on_click=esegui_salvataggio, args=("Costruzione dal Basso",))
+    btn_cost = st.button("💾 Salva Costruzione", on_click=esegui_salvataggio, args=("Costruzione dal Basso",))
+    if btn_cost:
+        if len(st.session_state.get(f"t_in{suffix}", "")) < 5 or len(st.session_state.get(f"t_fi{suffix}", "")) < 5:
+            st.error("⚠️ Inserire il formato mm:ss (es. 04:10)")
 
 # --- TAB 2: OFFENSIVA ---
 with tabs[1]:
@@ -255,7 +265,10 @@ with tabs[1]:
         val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
         if val and (st.session_state.get("off_coords") != val):
             st.session_state["off_coords"] = val; st.rerun()
-    st.button("💾 Salva Offensiva", on_click=esegui_salvataggio, args=("Azione Offensiva",))
+    btn_off = st.button("💾 Salva Offensiva", on_click=esegui_salvataggio, args=("Azione Offensiva",))
+    if btn_off:
+        if len(st.session_state.get(f"off_in{suffix}", "")) < 5 or len(st.session_state.get(f"off_fi{suffix}", "")) < 5:
+            st.error("⚠️ Inserire il formato mm:ss (es. 04:10)")
 
 # --- TAB 3: DIFENSIVA ---
 with tabs[2]:
@@ -286,7 +299,11 @@ with tabs[2]:
         if val_d and (st.session_state.get("def_tiro_coords") != val_d):
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
-    st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+    btn_def = st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+    if btn_def:
+        if len(st.session_state.get(f"def_in{suffix}", "")) < 5 or len(st.session_state.get(f"def_fi{suffix}", "")) < 5:
+            st.error("⚠️ Inserire il formato mm:ss (es. 04:10)")
+
 
 
 
