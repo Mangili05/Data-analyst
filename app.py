@@ -181,7 +181,7 @@ def esegui_salvataggio(fase):
         
         st.session_state["messaggio_successo"] = f"✅ Salvato correttamente in {nome_foglio}!"
         reset_campi()
-        st.rerun()
+        
     except Exception as e:
         st.error(f"Errore: {e}")
 
@@ -261,6 +261,7 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
 
 
