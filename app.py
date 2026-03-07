@@ -91,6 +91,7 @@ lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bos
 def esegui_salvataggio(fase):
     s = f"_{st.session_state.reset_counter}"
     
+    # 1. Recupero Info Partita
     giornata = st.session_state.get('g_key')
     data_val = st.session_state.get('d_key')
     data_str = data_val.strftime("%d/%m/%Y") if data_val else ""
@@ -104,19 +105,17 @@ def esegui_salvataggio(fase):
         return
 
     try:
+        # Definizione record e colonne (manteniamo i tuoi attuali)
         if fase == "Costruzione dal Basso":
             nome_foglio = "Costruzione"
             cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
             record = {
                 "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
                 "Gol casa": g_casa, "Gol ospite": g_ospite,
-                "Inizio": st.session_state.get(f't_in{s}'), 
-                "Fine": st.session_state.get(f't_fi{s}'),
-                "Tipologia": st.session_state.get(f'tipo_rad{s}'), 
-                "Modalità": st.session_state.get(f'mod_rad{s}'),
+                "Inizio": st.session_state.get(f't_in{s}'), "Fine": st.session_state.get(f't_fi{s}'),
+                "Tipologia": st.session_state.get(f'tipo_rad{s}'), "Modalità": st.session_state.get(f'mod_rad{s}'),
                 "Esito finale": st.session_state.get(f'esito_rad{s}')
             }
-
         elif fase == "Azione Offensiva":
             nome_foglio = "Offensiva"
             cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
@@ -124,17 +123,11 @@ def esegui_salvataggio(fase):
             record = {
                 "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
                 "Gol casa": g_casa, "Gol ospite": g_ospite,
-                "Inizio": st.session_state.get(f'off_in{s}'), 
-                "Fine": st.session_state.get(f'off_fi{s}'),
-                "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
-                "Canale": st.session_state.get(f'off_canale{s}'), 
-                "Rifinitura": st.session_state.get(f'off_rif{s}'),
-                "Esito finale": st.session_state.get(f'off_esito{s}'),
-                "Giocatore": st.session_state.get(f'off_giocatore{s}', ""),
-                "Coord_X": coords['x'] if coords else "", 
-                "Coord_Y": coords['y'] if coords else ""
+                "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'),
+                "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'), "Canale": st.session_state.get(f'off_canale{s}'), 
+                "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'),
+                "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
             }
-
         elif fase == "Azione Difensiva":
             nome_foglio = "Difensiva"
             cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
@@ -143,25 +136,28 @@ def esegui_salvataggio(fase):
                 "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
                 "Gol casa": g_casa, "Gol ospite": g_ospite,
                 "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'),
-                "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'), 
-                "Canale": st.session_state.get(f'def_canale_sviluppo{s}'),
-                "Rifinitura": st.session_state.get(f'def_rif{s}'),
-                "Esito finale": st.session_state.get(f'def_esito{s}'),
+                "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'), "Canale": st.session_state.get(f'def_canale_sviluppo{s}'),
+                "Rifinitura": st.session_state.get(f'def_rif{s}'), "Esito finale": st.session_state.get(f'def_esito{s}'),
                 "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
             }
 
-        # --- LOGICA DI SALVATAGGIO ---
+        # --- IL TRUCCO PER RIMUOVERE IL FLASH ---
         df_new = pd.DataFrame([record]).reindex(columns=cols)
-        st.cache_data.clear()
         
-        existing_df = conn.read(worksheet=nome_foglio)
-        updated_df = pd.concat([existing_df, df_new], ignore_index=True)
-        conn.update(worksheet=nome_foglio, data=updated_df)
-        
-        # Salviamo solo il messaggio
+        # Usiamo un container vuoto per "inghiottire" i messaggi di update
+        with st.container():
+            placeholder = st.empty()
+            with placeholder:
+                st.cache_data.clear()
+                existing_df = conn.read(worksheet=nome_foglio)
+                updated_df = pd.concat([existing_df, df_new], ignore_index=True)
+                conn.update(worksheet=nome_foglio, data=updated_df)
+            placeholder.empty() # Distrugge tutto ciò che è stato creato durante l'update
+
+        # Prepariamo il toast per dopo il rerun
         st.session_state["mostra_toast"] = f"✅ Dati salvati in {nome_foglio}!"
         reset_campi()
-        # Rimosso st.rerun da qui dentro!
+        st.rerun()
 
     except Exception as e:
         st.error(f"❌ Errore critico: {e}")
@@ -291,6 +287,7 @@ with tabs[2]:
         else:
             esegui_salvataggio("Azione Difensiva")
             st.rerun()
+
 
 
 
