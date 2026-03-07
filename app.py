@@ -105,14 +105,16 @@ def esegui_salvataggio(fase):
 
     if fase == "Costruzione dal Basso":
         nome_foglio = "Costruzione"
-        # La costruzione ha colonne diverse, manteniamo le sue
-        cols_order_costr = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo", "Modalità", "Esito"]
+        # Ordine colonne per GSheets (Tipologia, Modalità, Esito finale)
+        cols_order_costr = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
         record = {
             "Giornata": giornata, "Data": data, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
             "Gol casa": g_casa, "Gol ospite": g_ospite,
-            "Inizio": st.session_state.get(f't_in{s}'), "Fine": st.session_state.get(f't_fi{s}'),
-            "Tipo": st.session_state.get(f'tipo_rad{s}'), "Modalità": st.session_state.get(f'mod_sel{s}'),
-            "Esito": st.session_state.get(f'esito_rad{s}')
+            "Inizio": st.session_state.get(f't_in{s}'), 
+            "Fine": st.session_state.get(f't_fi{s}'),
+            "Tipologia": st.session_state.get(f'tipo_rad{s}'), 
+            "Modalità": st.session_state.get(f'mod_rad{s}'), # Cambiato in radio
+            "Esito finale": st.session_state.get(f'esito_rad{s}')
         }
         current_cols = cols_order_costr
     elif fase == "Azione Offensiva":
@@ -277,6 +279,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
