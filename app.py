@@ -64,21 +64,18 @@ st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Match Analysis</p>",
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
 
 with st.expander("ℹ️ Informazioni partita", expanded=True):
-    # Riga 1: Giornata e Data (Invertite per affiancarle)
     c1, c2 = st.columns(2)
     with c1: 
         st.selectbox("Giornata", ["Seleziona giornata"] + list(range(1, 31)), key="g_key")
     with c2:
         st.date_input("Data", value=None, format="DD/MM/YYYY", key="d_key")
     
-    # Riga 2: Squadre (Invertite per affiancarle)
     c3, c4 = st.columns(2)
     with c3:
         st.selectbox("Squadra di casa", ["Seleziona squadra"] + squadre_campionato, key="h_key")
     with c4:
         st.selectbox("Squadra Ospite", ["Seleziona squadra"] + squadre_campionato, key="a_key")
     
-    # Riga 3: Punteggio
     gc1, gc2 = st.columns(2)
     with gc1: 
         st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
@@ -94,7 +91,6 @@ lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bos
 def esegui_salvataggio(fase):
     s = f"_{st.session_state.reset_counter}"
     
-    # 1. Recupero Info Partita
     giornata = st.session_state.get('g_key')
     data_val = st.session_state.get('d_key')
     data_str = data_val.strftime("%d/%m/%Y") if data_val else ""
@@ -154,70 +150,47 @@ def esegui_salvataggio(fase):
                 "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
             }
 
-       # --- LOGICA DI SALVATAGGIO ---
         df_new = pd.DataFrame([record]).reindex(columns=cols)
         st.cache_data.clear()
-        
         existing_df = conn.read(worksheet=nome_foglio)
         updated_df = pd.concat([existing_df, df_new], ignore_index=True)
         conn.update(worksheet=nome_foglio, data=updated_df)
         
-        # TRUCCO: Salviamo il messaggio nello stato della sessione
+        # Salviamo il messaggio e resettiamo
         st.session_state["messaggio_successo"] = f"✅ Dati salvati in {nome_foglio}!"
-        
         reset_campi()
         st.rerun()
 
     except Exception as e:
         st.error(f"❌ Errore critico: {e}")
 
+# --- LOGICA NOTIFICA (UNA SOLA VOLTA) ---
 if "messaggio_successo" in st.session_state:
-    st.toast(st.session_state["messaggio_successo"])
+    st.success(st.session_state["messaggio_successo"])
     del st.session_state["messaggio_successo"]
 
 # --- TABS ---
 suffix = f"_{st.session_state.reset_counter}"
 tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
-
-# Controlla se c'è un messaggio di successo da mostrare dopo il rerun
-if "messaggio_successo" in st.session_state:
-    st.success(st.session_state["messaggio_successo"])
-    # Lo cancelliamo subito dopo averlo mostrato così non riappare al prossimo clic
-    del st.session_state["messaggio_successo"]
     
 # --- TAB 1: COSTRUZIONE ---
 with tabs[0]:
-    # Riga 1: Tempi
     rc1, rc2 = st.columns(2)
     with rc1:
         st.text_input("Inizio", placeholder="min:sec", key=f"t_in{suffix}")
     with rc2:
         st.text_input("Fine", placeholder="min:sec", key=f"t_fi{suffix}")
-    
     st.divider()
-
-    # Riga 2: Layout a "spinta esterna"
-    # La colonna centrale larga (2.5) spinge le laterali verso i bordi
     c_sx, c_cent, c_dx = st.columns([1, 2.5, 1])
-    
     with c_sx:
-        # Allineato a sinistra sotto 'Inizio'
         st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
-    
     with c_cent:
-        # Modalità al centro esatto della pagina
-        # Usiamo colonne interne per centrare i pallini nel grande spazio centrale
         _, inner_c, _ = st.columns([1, 2, 1])
         with inner_c:
             st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}", horizontal=True)
-    
     with c_dx:
-        # Esito finale forzato verso destra
-        # Usiamo un allineamento interno che non lascia spazio a destra
         st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
-
     st.markdown("<br>", unsafe_allow_html=True)
-
     if st.button("💾 Salva Costruzione"):
         ini_c = st.session_state.get(f"t_in{suffix}", "")
         fin_c = st.session_state.get(f"t_fi{suffix}", "")
@@ -234,20 +207,15 @@ with tabs[1]:
         st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione offensiva", "Palla inattiva"], key=f"off_tipo_azione{suffix}")
     with co2:
         st.text_input("Fine", placeholder="min:sec", key=f"off_fi{suffix}")
-        st.selectbox("Canale di sviluppo", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
+        st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
     
     co3, co4 = st.columns(2)
     with co3:
-        # Rifinitura a SINISTRA
         st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
     with co4:
-        # Esito Finale a DESTRA
-        st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
+        st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
 
-    # Recuperiamo il valore aggiornato per far apparire i campi condizionali
     es_off_val = st.session_state.get(f"off_esito{suffix}")
-
-    # Logica condizionale: ora punta correttamente al valore della selectbox
     if es_off_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
         st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
         st.write("🎯 **Posizione Conclusione**")
@@ -255,19 +223,15 @@ with tabs[1]:
         if os.path.exists(img_path):
             img = Image.open(img_path)
             img_res = img.resize((500, int(img.size[1]*(500/img.size[0]))))
-            
-            # Gestione coordinate
             if "off_coords" in st.session_state:
                 draw = ImageDraw.Draw(img_res)
                 x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
                 draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
-            
             val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
             if val and (st.session_state.get("off_coords") != val):
                 st.session_state["off_coords"] = val
                 st.rerun()
     
-    # Bottone di salvataggio
     if st.button("💾 Salva Azione Offensiva"):
         ini_o = st.session_state.get(f"off_in{suffix}", "")
         fin_o = st.session_state.get(f"off_fi{suffix}", "")
@@ -284,31 +248,25 @@ with tabs[2]:
         st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione difensiva", "Palla inattiva"], key=f"def_tipo_azione{suffix}")
     with cd2:
         st.text_input("Fine", placeholder="min:sec", key=f"def_fi{suffix}")
-        st.selectbox("Canale di sviluppo", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"def_canale_sviluppo{suffix}")
+        st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"def_canale_sviluppo{suffix}")
 
     cd3, cd4 = st.columns(2)
     with cd3:
-        # Rifinitura a sinistra (sotto Tipo di azione)
         st.selectbox("Rifinitura", ["Seleziona", "Cross/trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "Altro"], key=f"def_rif{suffix}")
     with cd4:
-        # Esito Finale a destra (sotto Canale di sviluppo)
-        st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla riconquistata", "Altro"], key=f"def_esito{suffix}")
+        st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla riconquistata", "Altro"], key=f"def_esito{suffix}")
 
-    # Recupero valore per logica condizionale campetto
     es_def_val = st.session_state.get(f"def_esito{suffix}")
-
     if es_def_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
         st.write("📍 **Punto del tiro subito**")
         img_d_path = "campo.jpg"
         if os.path.exists(img_d_path):
             img_d = Image.open(img_d_path)
             img_d_res = img_d.resize((500, int(img_d.size[1]*(500/img_d.size[0]))))
-            
             if "def_tiro_coords" in st.session_state:
                 draw_d = ImageDraw.Draw(img_d_res)
                 x_d, y_d = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
                 draw_d.ellipse([x_d-5, y_d-5, x_d+5, y_d+5], fill="yellow", outline="black")
-            
             val_d = streamlit_image_coordinates(img_d_res, key=f"campetto_def{suffix}")
             if val_d and (st.session_state.get("def_tiro_coords") != val_d):
                 st.session_state["def_tiro_coords"] = val_d
@@ -321,24 +279,3 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
