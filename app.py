@@ -270,27 +270,3 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
