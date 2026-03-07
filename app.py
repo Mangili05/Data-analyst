@@ -182,37 +182,43 @@ with tabs[1]:
     co1, co2 = st.columns(2)
     with co1:
         st.text_input("Inizio", placeholder="min:sec", key=f"off_in{suffix}")
-        # Tipo di azione
         st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Palla recuperata", "Transizione offensiva", "Palla inattiva"], key=f"off_tipo_azione{suffix}")
     with co2:
         st.text_input("Fine", placeholder="min:sec", key=f"off_fi{suffix}")
-        # Canale
         st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
     
-    # Seconda riga di selectbox invertita come richiesto
     co3, co4 = st.columns(2)
     with co3:
-        # Rifinitura a SINISTRA (sotto Tipo di azione)
+        # Rifinitura a SINISTRA
         st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Filtrante", "Individuale", "Scarico", "Palla sopra"], key=f"off_rif{suffix}")
     with co4:
-        # Esito Finale a DESTRA (sotto Canale)
-        es_off = st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
-    
-    # Logica condizionale per giocatore e campetto (ora legata a es_off che è a destra)
-    if es_off in ["Gol", "Tiro in porta", "Tiro fuori"]:
+        # Esito Finale a DESTRA
+        st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
+
+    # Recuperiamo il valore aggiornato per far apparire i campi condizionali
+    es_off_val = st.session_state.get(f"off_esito{suffix}")
+
+    # Logica condizionale: ora punta correttamente al valore della selectbox
+    if es_off_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
         st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
         st.write("🎯 **Posizione Conclusione**")
         img_path = "campo.jpg"
         if os.path.exists(img_path):
             img = Image.open(img_path)
             img_res = img.resize((500, int(img.size[1]*(500/img.size[0]))))
+            
+            # Gestione coordinate
             if "off_coords" in st.session_state:
-                draw = ImageDraw.Draw(img_res); x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
+                draw = ImageDraw.Draw(img_res)
+                x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
                 draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
+            
             val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
             if val and (st.session_state.get("off_coords") != val):
-                st.session_state["off_coords"] = val; st.rerun()
+                st.session_state["off_coords"] = val
+                st.rerun()
     
+    # Bottone di salvataggio
     if st.button("💾 Salva Azione Offensiva"):
         ini_o = st.session_state.get(f"off_in{suffix}", "")
         fin_o = st.session_state.get(f"off_fi{suffix}", "")
@@ -258,4 +264,5 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
