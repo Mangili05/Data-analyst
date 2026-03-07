@@ -206,7 +206,9 @@ with tabs[0]:
         if len(ini_c) < 5 or len(fin_c) < 5:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
+            # Chiamiamo la funzione e usiamo subito rerun per non lasciare tracce grafiche
             esegui_salvataggio("Costruzione dal Basso")
+            st.rerun()
 
 # --- TAB 2: AZIONE OFFENSIVA ---
 with tabs[1]:
@@ -288,4 +290,5 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
