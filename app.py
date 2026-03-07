@@ -22,7 +22,7 @@ def reset_campi():
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
-# --- CSS PERSONALIZZATO ---
+# --- CSS PERSONALIZZATO (AGGIORNATO PER NASCONDERE "RUNNING") ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -30,6 +30,13 @@ st.markdown("""
     header {visibility: hidden;}
     .stMarkdown h2 a { display: none !important; }
     .main { background-color: #0e1117; color: white; }
+    
+    /* NASCONDE LO STATUS "RUNNING" E GLI SPINNER */
+    [data-testid="stStatusWidget"] {
+        visibility: hidden;
+        display: none;
+    }
+    
     .logo-container {
         position: absolute;
         top: -35px;   
@@ -91,7 +98,6 @@ lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bos
 def esegui_salvataggio(fase):
     s = f"_{st.session_state.reset_counter}"
     
-    # 1. Recupero Info Partita
     giornata = st.session_state.get('g_key')
     data_val = st.session_state.get('d_key')
     data_str = data_val.strftime("%d/%m/%Y") if data_val else ""
@@ -105,7 +111,6 @@ def esegui_salvataggio(fase):
         return
 
     try:
-        # Definizione record e colonne (manteniamo i tuoi attuali)
         if fase == "Costruzione dal Basso":
             nome_foglio = "Costruzione"
             cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
@@ -141,20 +146,15 @@ def esegui_salvataggio(fase):
                 "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
             }
 
-        # --- IL TRUCCO PER RIMUOVERE IL FLASH ---
         df_new = pd.DataFrame([record]).reindex(columns=cols)
         
-        # Usiamo un container vuoto per "inghiottire" i messaggi di update
-        with st.container():
-            placeholder = st.empty()
-            with placeholder:
-                st.cache_data.clear()
-                existing_df = conn.read(worksheet=nome_foglio)
-                updated_df = pd.concat([existing_df, df_new], ignore_index=True)
-                conn.update(worksheet=nome_foglio, data=updated_df)
-            placeholder.empty() # Distrugge tutto ciò che è stato creato durante l'update
+        # OPERAZIONE SILENZIOSA
+        with st.empty():
+            st.cache_data.clear()
+            existing_df = conn.read(worksheet=nome_foglio, ttl=0)
+            updated_df = pd.concat([existing_df, df_new], ignore_index=True)
+            conn.update(worksheet=nome_foglio, data=updated_df)
 
-        # Prepariamo il toast per dopo il rerun
         st.session_state["mostra_toast"] = f"✅ Dati salvati in {nome_foglio}!"
         reset_campi()
         st.rerun()
@@ -162,19 +162,13 @@ def esegui_salvataggio(fase):
     except Exception as e:
         st.error(f"❌ Errore critico: {e}")
 
-# --- LOGICA NOTIFICA (UNA SOLA VOLTA) ---
-if "messaggio_successo" in st.session_state:
-    st.success(st.session_state["messaggio_successo"])
-    del st.session_state["messaggio_successo"]
-
-# --- TABS ---
-suffix = f"_{st.session_state.reset_counter}"
-
-# MOSTRA IL TOAST QUI (apparirà in basso a destra come volevi)
+# --- LOGICA NOTIFICA (SOLO TOAST) ---
 if "mostra_toast" in st.session_state:
     st.toast(st.session_state["mostra_toast"])
     del st.session_state["mostra_toast"]
 
+# --- TABS ---
+suffix = f"_{st.session_state.reset_counter}"
 tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
     
 # --- TAB 1: COSTRUZIONE ---
@@ -201,9 +195,7 @@ with tabs[0]:
         if len(ini_c) < 5 or len(fin_c) < 5:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
-            # Chiamiamo la funzione e usiamo subito rerun per non lasciare tracce grafiche
             esegui_salvataggio("Costruzione dal Basso")
-            st.rerun()
 
 # --- TAB 2: AZIONE OFFENSIVA ---
 with tabs[1]:
@@ -245,7 +237,6 @@ with tabs[1]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Offensiva")
-            st.rerun()
 
 # --- TAB 3: AZIONE DIFENSIVA ---
 with tabs[2]:
@@ -286,7 +277,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
-            st.rerun()
+
 
 
 
