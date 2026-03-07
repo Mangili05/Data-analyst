@@ -92,34 +92,10 @@ lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bos
 # --- FUNZIONE SALVATAGGIO GOOGLE SHEETS AGGIORNATA ---
 def esegui_salvataggio(fase):
     s = f"_{st.session_state.reset_counter}"
-    
-    # --- RECUPERO VALORI TEMPORALI PER VALIDAZIONE ---
-    if fase == "Costruzione dal Basso":
-        ini_v = st.session_state.get(f"t_in{s}", "")
-        fin_v = st.session_state.get(f"t_fi{s}", "")
-    elif fase == "Azione Offensiva":
-        ini_v = st.session_state.get(f"off_in{s}", "")
-        fin_v = st.session_state.get(f"off_fi{s}", "")
-    elif fase == "Azione Difensiva":
-        ini_v = st.session_state.get(f"def_in{s}", "")
-        fin_v = st.session_state.get(f"def_fi{s}", "")
-    
-    # Se meno di 5 caratteri, esce senza salvare
-    if len(ini_v) < 5 or len(fin_v) < 5:
-        return
-
-    # Prosegue con i controlli normali
     g = st.session_state.get('g_key')
     h = st.session_state.get('h_key')
     a = st.session_state.get('a_key')
     
-    if g == "Seleziona giornata" or h == "Seleziona squadra" or a == "Seleziona squadra":
-        st.warning("Compila le info partita!")
-        return
-
-    # ... (Resto del codice: record, reindex, cache_clear, concat e update) ...
-
-    # --- CONTROLLO INFO PARTITA ---
     if g == "Seleziona giornata" or h == "Seleziona squadra" or a == "Seleziona squadra":
         st.warning("Compila le info partita!")
         return
@@ -131,8 +107,6 @@ def esegui_salvataggio(fase):
     s_ospite = a
     g_casa = st.session_state.get('gh_key')
     g_ospite = st.session_state.get('ga_key')
-
-    # ... da qui in poi prosegue con i blocchi 'if fase ==' per la creazione del record ...
 
     if fase == "Costruzione dal Basso":
         nome_foglio = "Costruzione"
@@ -146,11 +120,9 @@ def esegui_salvataggio(fase):
             "Modalità": st.session_state.get(f'mod_sel{s}'),
             "Esito": st.session_state.get(f'esito_rad{s}')
         }
-
     elif fase == "Azione Offensiva":
         nome_foglio = "Offensiva"
         coords = st.session_state.get('off_coords')
-        # ORDINE COLONNE RICHIESTO DA TE
         cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Canale", "Rifinitura", "Esito", "Giocatore", "Coord_X", "Coord_Y"]
         record = {
             "Giornata": giornata, "Data": data, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
@@ -164,7 +136,6 @@ def esegui_salvataggio(fase):
             "Coord_X": coords['x'] if coords else "", 
             "Coord_Y": coords['y'] if coords else ""
         }
-
     elif fase == "Azione Difensiva":
         nome_foglio = "Difensiva"
         tiro_coords = st.session_state.get('def_tiro_coords')
@@ -185,34 +156,21 @@ def esegui_salvataggio(fase):
         }
 
     try:
-        # 1. Creiamo il DataFrame dal record appena creato
-        df_new = pd.DataFrame([record])
-        
-        # 2. Riordiniamo le colonne del nuovo record secondo la lista cols_order
-        df_new = df_new.reindex(columns=cols_order)
-        
-        # --- MODIFICA FONDAMENTALE ---
-        # Puliamo la cache per assicurarci di leggere i dati aggiornati dal cloud
+        df_new = pd.DataFrame([record]).reindex(columns=cols_order)
         st.cache_data.clear()
-        
-        # 3. Leggiamo i dati esistenti (ora leggerà sempre l'ultima riga salvata)
         existing_data = conn.read(worksheet=nome_foglio)
-        
-        # 4. Se il foglio è vuoto o ha colonne diverse, lo forziamo a seguire cols_order
         if existing_data.empty:
             updated_df = df_new
         else:
-            # Assicuriamoci che anche i dati vecchi seguano lo stesso ordine prima di unire
             existing_data = existing_data.reindex(columns=cols_order)
             updated_df = pd.concat([existing_data, df_new], ignore_index=True)
         
-        # 5. INVIO FINALE
         conn.update(worksheet=nome_foglio, data=updated_df)
         
+        # Salviamo il messaggio e resettiamo
         st.session_state["messaggio_successo"] = f"✅ Salvato correttamente in {nome_foglio}!"
         reset_campi()
-        
-        # NON mettiamo st.rerun() qui per evitare il messaggio giallo
+        st.rerun() # FORZA IL REFRESH: Pulisce l'errore e attiva il toast
         
     except Exception as e:
         st.error(f"Errore: {e}")
@@ -312,6 +270,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
