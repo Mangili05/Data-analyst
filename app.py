@@ -93,58 +93,60 @@ lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bos
 # --- FUNZIONE SALVATAGGIO ---
 def esegui_salvataggio(fase):
     s = f"_{st.session_state.reset_counter}"
-    g = st.session_state.get('g_key')
-    h = st.session_state.get('h_key')
-    a = st.session_state.get('a_key')
     
-    if g == "Seleziona giornata" or h == "Seleziona squadra" or a == "Seleziona squadra":
-        st.warning("Compila le info partita!")
-        return
-
-    # Info comuni
-    giornata = g
-    data = st.session_state.get('d_key').strftime("%d/%m/%Y") if st.session_state.get('d_key') else ""
-    s_casa = h
-    s_ospite = a
+    # Recupero info base
+    giornata = st.session_state.get('g_key')
+    data_val = st.session_state.get('d_key')
+    data_str = data_val.strftime("%d/%m/%Y") if data_val else ""
+    s_casa = st.session_state.get('h_key')
+    s_ospite = st.session_state.get('a_key')
     g_casa = st.session_state.get('gh_key')
     g_ospite = st.session_state.get('ga_key')
-
-    # ORDINE COLONNE UNIFICATO (come da tua richiesta)
-    cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
+    
+    if giornata == "Seleziona giornata" or s_casa == "Seleziona squadra" or s_ospite == "Seleziona squadra":
+        st.warning("Compila le informazioni della partita prima di salvare!")
+        return
 
     if fase == "Costruzione dal Basso":
         nome_foglio = "Costruzione"
-        # Ordine colonne per GSheets (Tipologia, Modalità, Esito finale)
-        cols_order_costr = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
+        # Colonne: Giornata, Data, Squadra casa, Squadra ospite, Gol casa, Gol ospite, Inizio, Fine, Tipologia, Modalità, Esito finale
+        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
         record = {
-            "Giornata": giornata, "Data": data, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
+            "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
             "Gol casa": g_casa, "Gol ospite": g_ospite,
             "Inizio": st.session_state.get(f't_in{s}'), 
             "Fine": st.session_state.get(f't_fi{s}'),
             "Tipologia": st.session_state.get(f'tipo_rad{s}'), 
-            "Modalità": st.session_state.get(f'mod_rad{s}'), # Cambiato in radio
+            "Modalità": st.session_state.get(f'mod_rad{s}'),
             "Esito finale": st.session_state.get(f'esito_rad{s}')
         }
-        current_cols = cols_order_costr
+
     elif fase == "Azione Offensiva":
         nome_foglio = "Offensiva"
+        # Colonne: Giornata, Data, Squadra casa, Squadra ospite, Gol casa, Gol ospite, Inizio, Fine, Tipo di azione, Canale, Rifinitura, Esito finale, Giocatore, Coord_X, Coord_Y
+        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
         coords = st.session_state.get('off_coords')
         record = {
-            "Giornata": giornata, "Data": data, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
+            "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
             "Gol casa": g_casa, "Gol ospite": g_ospite,
-            "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'),
+            "Inizio": st.session_state.get(f'off_in{s}'), 
+            "Fine": st.session_state.get(f'off_fi{s}'),
             "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
-            "Canale di sviluppo": st.session_state.get(f'off_canale{s}'), 
+            "Canale": st.session_state.get(f'off_canale{s}'), 
             "Rifinitura": st.session_state.get(f'off_rif{s}'),
-            "Esito finale": st.session_state.get(f'off_esito{s}'), 
-            "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
+            "Esito finale": st.session_state.get(f'off_esito{s}'),
+            "Giocatore": st.session_state.get(f'off_giocatore{s}', ""),
+            "Coord_X": coords['x'] if coords else "", 
+            "Coord_Y": coords['y'] if coords else ""
         }
-        current_cols = cols_order
+
     elif fase == "Azione Difensiva":
         nome_foglio = "Difensiva"
+        # (Codice già funzionante per la difensiva)
+        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
         coords = st.session_state.get('def_tiro_coords')
         record = {
-            "Giornata": giornata, "Data": data, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
+            "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
             "Gol casa": g_casa, "Gol ospite": g_ospite,
             "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'),
             "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'), 
@@ -153,19 +155,21 @@ def esegui_salvataggio(fase):
             "Esito finale": st.session_state.get(f'def_esito{s}'),
             "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
         }
-        current_cols = cols_order
 
     try:
-        df_new = pd.DataFrame([record]).reindex(columns=current_cols)
-        st.cache_data.clear()
+        # Trasforma in DataFrame e riordina le colonne per matchare il foglio Google
+        df_new = pd.DataFrame([record]).reindex(columns=cols_order)
+        
+        # Lettura e aggiornamento
         existing_data = conn.read(worksheet=nome_foglio)
         updated_df = pd.concat([existing_data, df_new], ignore_index=True)
         conn.update(worksheet=nome_foglio, data=updated_df)
-        st.session_state["messaggio_successo"] = f"✅ Salvato in {nome_foglio}!"
-        reset_campi()
+        
+        st.success(f"✅ Salvato correttamente in {nome_foglio}!")
+        reset_campi() # Assicurati che questa funzione esista per pulire i campi
         st.rerun()
     except Exception as e:
-        st.error(f"Errore: {e}")
+        st.error(f"Errore durante il salvataggio: {e}")
 
 if "messaggio_successo" in st.session_state:
     st.toast(st.session_state["messaggio_successo"])
@@ -311,6 +315,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
