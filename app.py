@@ -175,46 +175,24 @@ with tabs[0]:
     with rc2:
         st.text_input("Fine", placeholder="min:sec", key=f"t_fi{suffix}")
     
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.divider() # Una linea sottile per separare i tempi dalle scelte
 
-    # CSS specifico per centrare etichette e opzioni dei radio button
-    st.markdown("""
-        <style>
-        /* Centra il titolo del radio button */
-        [data-testid="stWidgetLabel"] p {
-            text-align: center;
-            width: 100%;
-        }
-        /* Centra il gruppo delle opzioni (i cerchietti) */
-        [data-testid="stVerticalBlock"] div[role="radiogroup"] {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-        }
-        /* Corregge il margine interno delle opzioni per non farle sembrare spostate a sx */
-        [data-testid="stVirtualizedList"] > div {
-            display: flex;
-            justify-content: center;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # Riga 2: Tre colonne uguali
-    rc3, rc4, rc5 = st.columns(3)
+    # Riga 2: Radio Button Orizzontali per un allineamento perfetto
+    # Usiamo 3 colonne pulite
+    c_tipo, c_mod, c_esito = st.columns(3)
     
-    with rc3:
-        st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}")
+    with c_tipo:
+        st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
     
-    with rc4:
-        st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}")
+    with c_mod:
+        st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}", horizontal=True)
     
-    with rc5:
-        st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}")
+    with c_esito:
+        st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # Bottone di salvataggio
     if st.button("💾 Salva Costruzione"):
         ini_c = st.session_state.get(f"t_in{suffix}", "")
         fin_c = st.session_state.get(f"t_fi{suffix}", "")
@@ -318,6 +296,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
