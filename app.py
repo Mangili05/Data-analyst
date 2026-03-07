@@ -154,21 +154,17 @@ def esegui_salvataggio(fase):
                 "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
             }
 
-        # --- LOGICA DI SALVATAGGIO ---
+       # --- LOGICA DI SALVATAGGIO ---
         df_new = pd.DataFrame([record]).reindex(columns=cols)
-        
-        # Pulizia cache per forzare l'invio
         st.cache_data.clear()
         
-        # Caricamento
         existing_df = conn.read(worksheet=nome_foglio)
         updated_df = pd.concat([existing_df, df_new], ignore_index=True)
         conn.update(worksheet=nome_foglio, data=updated_df)
         
-        # Notifica e Reset (Usa toast per una notifica che non scompare col rerun)
-        st.toast(f"✅ Dati salvati in {nome_foglio}!", icon="⚽")
+        # TRUCCO: Salviamo il messaggio nello stato della sessione
+        st.session_state["messaggio_successo"] = f"✅ Dati salvati in {nome_foglio}!"
         
-        # Piccolo ritardo o reset manuale invece di rerun immediato per vedere il risultato
         reset_campi()
         st.rerun()
 
@@ -183,6 +179,12 @@ if "messaggio_successo" in st.session_state:
 suffix = f"_{st.session_state.reset_counter}"
 tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
 
+# Controlla se c'è un messaggio di successo da mostrare dopo il rerun
+if "messaggio_successo" in st.session_state:
+    st.success(st.session_state["messaggio_successo"])
+    # Lo cancelliamo subito dopo averlo mostrato così non riappare al prossimo clic
+    del st.session_state["messaggio_successo"]
+    
 # --- TAB 1: COSTRUZIONE ---
 with tabs[0]:
     # Riga 1: Tempi
@@ -319,6 +321,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
