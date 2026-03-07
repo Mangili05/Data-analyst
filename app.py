@@ -236,7 +236,6 @@ with tabs[0]:
         st.radio("Tipo", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}")
         st.radio("Esito", ["Positivo", "Negativo"], key=f"esito_rad{suffix}")
     st.selectbox("Modalità", ["Seleziona", "Bassa", "Manovrata", "Diretta"], key=f"mod_sel{suffix}")
-    btn_cost = st.button("💾 Salva Costruzione", on_click=esegui_salvataggio, args=("Costruzione dal Basso",))
     if st.button("💾 Salva Costruzione"):
         ini_c = st.session_state.get(f"t_in{suffix}", "")
         fin_c = st.session_state.get(f"t_fi{suffix}", "")
@@ -269,7 +268,6 @@ with tabs[1]:
         val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
         if val and (st.session_state.get("off_coords") != val):
             st.session_state["off_coords"] = val; st.rerun()
-    btn_off = st.button("💾 Salva Offensiva", on_click=esegui_salvataggio, args=("Azione Offensiva",))
     if st.button("💾 Salva Offensiva"):
         ini_o = st.session_state.get(f"off_in{suffix}", "")
         fin_o = st.session_state.get(f"off_fi{suffix}", "")
@@ -307,7 +305,6 @@ with tabs[2]:
         if val_d and (st.session_state.get("def_tiro_coords") != val_d):
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
-    btn_def = st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
     if st.button("💾 Salva Difensiva"):
         ini_d = st.session_state.get(f"def_in{suffix}", "")
         fin_d = st.session_state.get(f"def_fi{suffix}", "")
@@ -315,6 +312,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
