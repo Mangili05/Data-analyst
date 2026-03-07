@@ -168,7 +168,7 @@ tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Di
 
 # --- TAB 1: COSTRUZIONE ---
 with tabs[0]:
-    # Riga 1: Tempi affiancati
+    # Riga 1: Tempi affiancati (rimane invariata, funziona bene)
     rc1, rc2 = st.columns(2)
     with rc1:
         st.text_input("Inizio", placeholder="min:sec", key=f"t_in{suffix}")
@@ -177,33 +177,27 @@ with tabs[0]:
     
     st.divider()
 
-    # CSS per forzare il centramento dei titoli e dei gruppi radio
-    st.markdown("""
-        <style>
-        /* Centra i titoli dei widget */
-        [data-testid="stWidgetLabel"] p {
-            text-align: center;
-            width: 100%;
-        }
-        /* Centra il contenitore dei radio button orizzontali */
-        [data-testid="stHorizontalBlock"] div[role="radiogroup"] {
-            justify-content: center;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # Riga 2: Tre colonne per le selezioni
-    # Usiamo colonne leggermente più larghe per dare respiro
-    c_tipo, c_mod, c_esito = st.columns([1, 1, 1])
+    # Riga 2: Usiamo un sistema a 3 colonne uguali, 
+    # ma usiamo i container per gestire lo spazio interno
+    c1, c2, c3 = st.columns(3)
     
-    with c_tipo:
-        st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
+    with c1:
+        # Creiamo un micro-allineamento interno spostando leggermente a destra
+        _, col_content_1 = st.columns([0.1, 0.9])
+        with col_content_1:
+            st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
     
-    with c_mod:
-        st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}", horizontal=True)
+    with c2:
+        # Centriamo la colonna centrale usando due piccoli buffer laterali
+        _, col_content_2, _ = st.columns([0.1, 0.8, 0.1])
+        with col_content_2:
+            st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}", horizontal=True)
     
-    with c_esito:
-        st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
+    with c3:
+        # Spingiamo leggermente verso sinistra per bilanciare l'ultima colonna
+        col_content_3, _ = st.columns([0.9, 0.1])
+        with col_content_3:
+            st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -310,6 +304,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
