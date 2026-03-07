@@ -125,7 +125,7 @@ def esegui_salvataggio(fase):
             "Gol casa": g_casa, "Gol ospite": g_ospite,
             "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'),
             "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
-            "Canale": st.session_state.get(f'off_canale{s}'), 
+            "Canale di sviluppo": st.session_state.get(f'off_canale{s}'), 
             "Rifinitura": st.session_state.get(f'off_rif{s}'),
             "Esito finale": st.session_state.get(f'off_esito{s}'), 
             "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
@@ -212,15 +212,15 @@ with tabs[1]:
     co1, co2 = st.columns(2)
     with co1:
         st.text_input("Inizio", placeholder="min:sec", key=f"off_in{suffix}")
-        st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Palla recuperata", "Transizione offensiva", "Palla inattiva"], key=f"off_tipo_azione{suffix}")
+        st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione offensiva", "Palla inattiva"], key=f"off_tipo_azione{suffix}")
     with co2:
         st.text_input("Fine", placeholder="min:sec", key=f"off_fi{suffix}")
-        st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
+        st.selectbox("Canale di sviluppo", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
     
     co3, co4 = st.columns(2)
     with co3:
         # Rifinitura a SINISTRA
-        st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Filtrante", "Individuale", "Scarico", "Palla sopra"], key=f"off_rif{suffix}")
+        st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
     with co4:
         # Esito Finale a DESTRA
         st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
@@ -273,7 +273,7 @@ with tabs[2]:
         st.selectbox("Rifinitura", ["Seleziona", "Cross/trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "Altro"], key=f"def_rif{suffix}")
     with cd4:
         # Esito Finale a destra (sotto Canale di sviluppo)
-        st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla guadagnata", "Altro"], key=f"def_esito{suffix}")
+        st.selectbox("Esito Finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla riconquistata", "Altro"], key=f"def_esito{suffix}")
 
     # Recupero valore per logica condizionale campetto
     es_def_val = st.session_state.get(f"def_esito{suffix}")
@@ -302,6 +302,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
