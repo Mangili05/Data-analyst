@@ -89,7 +89,7 @@ st.divider()
 # --- LISTA CALCIATORI ---
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
 
-# --- FUNZIONE SALVATAGGIO GOOGLE SHEETS (3 FOGLI) ---
+# --- FUNZIONE SALVATAGGIO GOOGLE SHEETS AGGIORNATA ---
 def esegui_salvataggio(fase):
     s = f"_{st.session_state.reset_counter}"
     g = st.session_state.get('g_key')
@@ -100,6 +100,7 @@ def esegui_salvataggio(fase):
         st.warning("Compila le info partita!")
         return
 
+    # Base del record comune a tutti i fogli
     record = {
         "Giornata": g, 
         "Data": st.session_state.get('d_key').strftime("%d/%m/%Y") if st.session_state.get('d_key') else "",
@@ -107,9 +108,6 @@ def esegui_salvataggio(fase):
         "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key')
     }
 
-    # Determina il foglio di destinazione e i dati extra
-    nome_foglio = ""
-    
     if fase == "Costruzione dal Basso":
         nome_foglio = "Costruzione"
         record.update({
@@ -119,6 +117,8 @@ def esegui_salvataggio(fase):
             "Modalità": st.session_state.get(f'mod_sel{s}'),
             "Esito": st.session_state.get(f'esito_rad{s}')
         })
+        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo", "Modalità", "Esito"]
+
     elif fase == "Azione Offensiva":
         nome_foglio = "Offensiva"
         coords = st.session_state.get('off_coords')
@@ -127,11 +127,13 @@ def esegui_salvataggio(fase):
             "Fine": st.session_state.get(f'off_fi{s}'),
             "Canale": st.session_state.get(f'off_canale{s}'), 
             "Rifinitura": st.session_state.get(f'off_rif{s}'),
-            "Esito": st.session_state.get(f'off_esito{s}'),
+            "Esito": st.session_state.get(f'off_esito{s}'), # Posizionato correttamente
             "Giocatore": st.session_state.get(f'off_giocatore{s}') if st.session_state.get(f'off_giocatore{s}') != "Seleziona" else "",
             "Coord_X": coords['x'] if coords else "", 
             "Coord_Y": coords['y'] if coords else ""
         })
+        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Canale", "Rifinitura", "Esito", "Giocatore", "Coord_X", "Coord_Y"]
+
     elif fase == "Azione Difensiva":
         nome_foglio = "Difensiva"
         tiro_coords = st.session_state.get('def_tiro_coords')
@@ -147,18 +149,25 @@ def esegui_salvataggio(fase):
             "Tiro_Coord_X": tiro_coords['x'] if tiro_coords else "", 
             "Tiro_Coord_Y": tiro_coords['y'] if tiro_coords else ""
         })
+        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo", "Provenienza", "Esito", "Causa", "Giocatore", "Esito Tiro", "Tiro_Coord_X", "Tiro_Coord_Y"]
 
     try:
-        # Legge i dati esistenti dalla scheda specifica
+        # Crea il DataFrame con l'ordine forzato
+        df_new = pd.DataFrame([record])
+        df_new = df_new[cols_order] 
+        
+        # Carica dati esistenti e concatena
         existing_data = conn.read(worksheet=nome_foglio)
-        updated_df = pd.concat([existing_data, pd.DataFrame([record])], ignore_index=True)
-        # Aggiorna la scheda specifica
+        updated_df = pd.concat([existing_data, df_new], ignore_index=True)
+        
+        # Aggiorna Google Sheets
         conn.update(worksheet=nome_foglio, data=updated_df)
+        
         st.session_state["messaggio_successo"] = f"✅ Salvato in {nome_foglio}!"
         reset_campi()
         st.rerun()
     except Exception as e:
-        st.error(f"Errore durante il salvataggio in {nome_foglio}: {e}")
+        st.error(f"Errore durante il salvataggio: {e}")
 
 if "messaggio_successo" in st.session_state:
     st.toast(st.session_state["messaggio_successo"])
@@ -236,6 +245,7 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
 
 
