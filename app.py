@@ -122,17 +122,26 @@ def esegui_salvataggio(fase):
     elif fase == "Azione Offensiva":
         nome_foglio = "Offensiva"
         coords = st.session_state.get('off_coords')
-        record.update({
+        
+        # Creiamo il record DEFINITIVO già ordinato colonna per colonna
+        record = {
+            "Giornata": g, 
+            "Data": st.session_state.get('d_key').strftime("%d/%m/%Y") if st.session_state.get('d_key') else "",
+            "Squadra casa": h, 
+            "Squadra ospite": a,
+            "Gol casa": st.session_state.get('gh_key'), 
+            "Gol ospite": st.session_state.get('ga_key'),
             "Inizio": st.session_state.get(f'off_in{s}'), 
             "Fine": st.session_state.get(f'off_fi{s}'),
             "Canale": st.session_state.get(f'off_canale{s}'), 
             "Rifinitura": st.session_state.get(f'off_rif{s}'),
-            "Esito": st.session_state.get(f'off_esito{s}'), # Posizionato correttamente
+            "Esito": st.session_state.get(f'off_esito{s}'), # <--- Fissato qui tra Rifinitura e Giocatore
             "Giocatore": st.session_state.get(f'off_giocatore{s}') if st.session_state.get(f'off_giocatore{s}') != "Seleziona" else "",
             "Coord_X": coords['x'] if coords else "", 
             "Coord_Y": coords['y'] if coords else ""
-        })
-        cols_order = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Canale", "Rifinitura", "Esito", "Giocatore", "Coord_X", "Coord_Y"]
+        }
+        # In questo caso cols_order non serve nemmeno più perché il dizionario è già perfetto
+        cols_order = list(record.keys())
 
     elif fase == "Azione Difensiva":
         nome_foglio = "Difensiva"
@@ -245,6 +254,7 @@ with tabs[2]:
             st.session_state["def_tiro_coords"] = val_d; st.rerun()
             
     st.button("💾 Salva Difensiva", on_click=esegui_salvataggio, args=("Azione Difensiva",))
+
 
 
 
