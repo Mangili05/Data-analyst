@@ -221,18 +221,21 @@ with tabs[1]:
         if os.path.exists(img_path):
             img = Image.open(img_path)
             
-            larghezza_display = 408
-            ratio = larghezza_display / img.size[0]
-            altezza_proporzionale = int(img.size[1] * ratio)
+            # Dimensioni reali dell'immagine ritagliata
+            larghezza_reale = 358
+            altezza_reale = 283
             
-            img_res = img.resize((larghezza_display, altezza_proporzionale)) 
+            # Visualizziamo l'immagine alla sua dimensione naturale o leggermente scalata
+            # Usiamo 358 per vederla 1:1, così i pixel nel database sono gli stessi dell'immagine
+            img_res = img.resize((larghezza_reale, altezza_reale)) 
             
             if "off_coords" in st.session_state:
                 draw = ImageDraw.Draw(img_res)
                 x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
                 draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
             
-            val = streamlit_image_coordinates(img_res, width=larghezza_display, key=f"campetto_off{suffix}")
+            # Mostriamo l'immagine senza forzare larghezze diverse
+            val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
             
             if val and (st.session_state.get("off_coords") != val):
                 st.session_state["off_coords"] = val
@@ -265,25 +268,28 @@ with tabs[2]:
     es_def_val = st.session_state.get(f"def_esito{suffix}")
     if es_def_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
         st.write("📍 **Punto del tiro subito**")
-        img_d_path = "campo.jpg"
-        if os.path.exists(img_d_path):
-            img_d = Image.open(img_d_path)
+        img_path = "campo.jpg"
+        if os.path.exists(img_path):
+            img = Image.open(img_path)
             
-            larghezza_display = 408
-            ratio = larghezza_display / img_d.size[0]
-            altezza_proporzionale = int(img_d.size[1] * ratio)
+            # Dimensioni reali dell'immagine ritagliata
+            larghezza_reale = 358
+            altezza_reale = 283
             
-            img_d_res = img_d.resize((larghezza_display, altezza_proporzionale)) 
+            # Visualizziamo l'immagine alla sua dimensione naturale o leggermente scalata
+            # Usiamo 358 per vederla 1:1, così i pixel nel database sono gli stessi dell'immagine
+            img_res = img.resize((larghezza_reale, altezza_reale)) 
             
-            if "def_tiro_coords" in st.session_state:
-                draw_d = ImageDraw.Draw(img_d_res)
-                x_d, y_d = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
-                draw_d.ellipse([x_d-5, y_d-5, x_d+5, y_d+5], fill="yellow", outline="black")
+            if "off_coords" in st.session_state:
+                draw = ImageDraw.Draw(img_res)
+                x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
+                draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
             
-            val_d = streamlit_image_coordinates(img_d_res, width=larghezza_display, key=f"campetto_def{suffix}")
+            # Mostriamo l'immagine senza forzare larghezze diverse
+            val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
             
-            if val_d and (st.session_state.get("def_tiro_coords") != val_d):
-                st.session_state["def_tiro_coords"] = val_d
+            if val and (st.session_state.get("off_coords") != val):
+                st.session_state["off_coords"] = val
                 st.rerun()
             
     if st.button("💾 Salva Azione Difensiva"):
@@ -293,6 +299,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
