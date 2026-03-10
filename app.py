@@ -218,25 +218,21 @@ with tabs[1]:
         st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
         st.write("🎯 **Posizione Conclusione**")
         img_path = "campo.jpg"
-        # --- Nella Tab 2 (Offensiva) ---
-if os.path.exists(img_path):
-    img = Image.open(img_path)
-    
-    # Calcoliamo l'altezza proporzionale per evitare lo schiacciamento
-    larghezza_display = 408
-    ratio = larghezza_display / img.size[0]
-    altezza_proporzionale = int(img.size[1] * ratio)
-    
-    # Resize mantenendo le proporzioni originali
-    img_res = img.resize((larghezza_display, altezza_proporzionale)) 
-    
-    if "off_coords" in st.session_state:
-        draw = ImageDraw.Draw(img_res)
-        x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-        draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
-    
-    # Visualizziamo con la larghezza corretta
-    val = streamlit_image_coordinates(img_res, width=larghezza_display, key=f"campetto_off{suffix}")
+        if os.path.exists(img_path):
+            img = Image.open(img_path)
+            
+            larghezza_display = 408
+            ratio = larghezza_display / img.size[0]
+            altezza_proporzionale = int(img.size[1] * ratio)
+            
+            img_res = img.resize((larghezza_display, altezza_proporzionale)) 
+            
+            if "off_coords" in st.session_state:
+                draw = ImageDraw.Draw(img_res)
+                x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
+                draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
+            
+            val = streamlit_image_coordinates(img_res, width=larghezza_display, key=f"campetto_off{suffix}")
             
             if val and (st.session_state.get("off_coords") != val):
                 st.session_state["off_coords"] = val
@@ -270,25 +266,21 @@ with tabs[2]:
     if es_def_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
         st.write("📍 **Punto del tiro subito**")
         img_d_path = "campo.jpg"
-        # --- Nella Tab 2 (Offensiva) ---
-if os.path.exists(img_path):
-    img = Image.open(img_path)
-    
-    # Calcoliamo l'altezza proporzionale per evitare lo schiacciamento
-    larghezza_display = 408
-    ratio = larghezza_display / img.size[0]
-    altezza_proporzionale = int(img.size[1] * ratio)
-    
-    # Resize mantenendo le proporzioni originali
-    img_res = img.resize((larghezza_display, altezza_proporzionale)) 
-    
-    if "off_coords" in st.session_state:
-        draw = ImageDraw.Draw(img_res)
-        x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-        draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
-    
-    # Visualizziamo con la larghezza corretta
-    val = streamlit_image_coordinates(img_res, width=larghezza_display, key=f"campetto_off{suffix}")
+        if os.path.exists(img_d_path):
+            img_d = Image.open(img_d_path)
+            
+            larghezza_display = 408
+            ratio = larghezza_display / img_d.size[0]
+            altezza_proporzionale = int(img_d.size[1] * ratio)
+            
+            img_d_res = img_d.resize((larghezza_display, altezza_proporzionale)) 
+            
+            if "def_tiro_coords" in st.session_state:
+                draw_d = ImageDraw.Draw(img_d_res)
+                x_d, y_d = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
+                draw_d.ellipse([x_d-5, y_d-5, x_d+5, y_d+5], fill="yellow", outline="black")
+            
+            val_d = streamlit_image_coordinates(img_d_res, width=larghezza_display, key=f"campetto_def{suffix}")
             
             if val_d and (st.session_state.get("def_tiro_coords") != val_d):
                 st.session_state["def_tiro_coords"] = val_d
@@ -301,6 +293,7 @@ if os.path.exists(img_path):
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
