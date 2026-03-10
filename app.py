@@ -220,12 +220,17 @@ with tabs[1]:
         img_path = "campo.jpg"
         if os.path.exists(img_path):
             img = Image.open(img_path)
-            img_res = img.resize((500, int(img.size[1]*(500/img.size[0]))))
+            # Fissiamo a 408 così le coordinate x,y corrispondono ai pixel reali dell'immagine
+            img_res = img.resize((408, 306)) 
+            
             if "off_coords" in st.session_state:
                 draw = ImageDraw.Draw(img_res)
                 x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
                 draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
-            val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
+            
+            # width=408 garantisce che il valore 'x' arrivi fino a 408
+            val = streamlit_image_coordinates(img_res, width=408, key=f"campetto_off{suffix}")
+            
             if val and (st.session_state.get("off_coords") != val):
                 st.session_state["off_coords"] = val
                 st.rerun()
@@ -260,12 +265,17 @@ with tabs[2]:
         img_d_path = "campo.jpg"
         if os.path.exists(img_d_path):
             img_d = Image.open(img_d_path)
-            img_d_res = img_d.resize((500, int(img_d.size[1]*(500/img_d.size[0]))))
+            # Fissiamo a 408 per coerenza con l'immagine ruotata
+            img_d_res = img_d.resize((408, 306))
+            
             if "def_tiro_coords" in st.session_state:
                 draw_d = ImageDraw.Draw(img_d_res)
                 x_d, y_d = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
                 draw_d.ellipse([x_d-5, y_d-5, x_d+5, y_d+5], fill="yellow", outline="black")
-            val_d = streamlit_image_coordinates(img_d_res, key=f"campetto_def{suffix}")
+            
+            # width=408 garantisce che il valore 'x' arrivi fino a 408
+            val_d = streamlit_image_coordinates(img_d_res, width=408, key=f"campetto_def{suffix}")
+            
             if val_d and (st.session_state.get("def_tiro_coords") != val_d):
                 st.session_state["def_tiro_coords"] = val_d
                 st.rerun()
@@ -277,6 +287,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
