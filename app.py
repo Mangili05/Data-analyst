@@ -272,24 +272,21 @@ with tabs[2]:
         if os.path.exists(img_path):
             img = Image.open(img_path)
             
-            # Dimensioni reali dell'immagine ritagliata
             larghezza_reale = 358
             altezza_reale = 283
-            
-            # Visualizziamo l'immagine alla sua dimensione naturale o leggermente scalata
-            # Usiamo 358 per vederla 1:1, così i pixel nel database sono gli stessi dell'immagine
             img_res = img.resize((larghezza_reale, altezza_reale)) 
             
-            if "off_coords" in st.session_state:
+            # --- CORREZIONE QUI: Usa 'def_tiro_coords' invece di 'off_coords' ---
+            if "def_tiro_coords" in st.session_state:
                 draw = ImageDraw.Draw(img_res)
-                x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
+                x, y = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
                 draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
             
-            # Mostriamo l'immagine senza forzare larghezze diverse
-            val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
+            # --- CORREZIONE QUI: Cambia la key in 'campetto_def' ---
+            val = streamlit_image_coordinates(img_res, key=f"campetto_def{suffix}")
             
-            if val and (st.session_state.get("off_coords") != val):
-                st.session_state["off_coords"] = val
+            if val and (st.session_state.get("def_tiro_coords") != val):
+                st.session_state["def_tiro_coords"] = val
                 st.rerun()
             
     if st.button("💾 Salva Azione Difensiva"):
@@ -299,6 +296,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
