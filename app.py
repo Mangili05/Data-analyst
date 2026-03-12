@@ -232,7 +232,7 @@ with tabs[1]:
             if "off_coords" in st.session_state:
                 draw = ImageDraw.Draw(img_res)
                 x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-                draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
+                draw.ellipse([x-2, y-2, x+2, y+2], fill="red", outline="white")
             
             # Mostriamo l'immagine senza forzare larghezze diverse
             val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
@@ -283,7 +283,7 @@ with tabs[2]:
             if "off_coords" in st.session_state:
                 draw = ImageDraw.Draw(img_res)
                 x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-                draw.ellipse([x-5, y-5, x+5, y+5], fill="red", outline="white")
+                draw.ellipse([x-2, y-2, x+2, y+2], fill="red", outline="white")
             
             # Mostriamo l'immagine senza forzare larghezze diverse
             val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
@@ -299,6 +299,7 @@ with tabs[2]:
             st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
         else:
             esegui_salvataggio("Azione Difensiva")
+
 
 
 
