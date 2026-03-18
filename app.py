@@ -41,18 +41,21 @@ tipo_analisi = st.segmented_control("NAVIGAZIONE", options=["Analisi Squadra", "
 st.divider()
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus Ciserano Bergamo"]
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
-with st.expander("ℹ️ Informazioni partita", expanded=True):
-    c1, c2 = st.columns(2)
-    with c1: st.selectbox("Giornata", ["Seleziona giornata"] + list(range(1, 31)), key="g_key")
-    with c2: st.date_input("Data", value=None, format="DD/MM/YYYY", key="d_key")
-    c3, c4 = st.columns(2)
-    with c3: st.selectbox("Squadra di casa", ["Seleziona squadra"] + squadre_campionato, key="h_key")
-    with c4: st.selectbox("Squadra Ospite", ["Seleziona squadra"] + squadre_campionato, key="a_key")
-    gc1, gc2 = st.columns(2)
-    with gc1: st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
-    with gc2: st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
-st.divider()
 if tipo_analisi == "Analisi Squadra":
+    # Le informazioni partita compaiono SOLO qui
+    with st.expander("ℹ️ Informazioni partita", expanded=True):
+        c1, c2 = st.columns(2)
+        with c1: st.selectbox("Giornata", ["Seleziona giornata"] + list(range(1, 31)), key="g_key")
+        with c2: st.date_input("Data", value=None, format="DD/MM/YYYY", key="d_key")
+        c3, c4 = st.columns(2)
+        with c3: st.selectbox("Squadra di casa", ["Seleziona squadra"] + squadre_campionato, key="h_key")
+        with c4: st.selectbox("Squadra Ospite", ["Seleziona squadra"] + squadre_campionato, key="a_key")
+        gc1, gc2 = st.columns(2)
+        with gc1: st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
+        with gc2: st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
+    
+    st.divider()
+
     def esegui_salvataggio(fase):
         s = f"_{st.session_state.reset_counter}"
         giornata = st.session_state.get('g_key'); data_val = st.session_state.get('d_key')
@@ -76,6 +79,7 @@ if tipo_analisi == "Analisi Squadra":
                 updated_df = pd.concat([existing_df, df_new], ignore_index=True); conn.update(worksheet=nome_foglio, data=updated_df)
             st.session_state["mostra_toast"] = f"✅ Dati salvati!"; reset_campi(); st.rerun()
         except Exception as e: st.error(f"❌ Errore: {e}")
+
     if "mostra_toast" in st.session_state: st.toast(st.session_state["mostra_toast"]); del st.session_state["mostra_toast"]
     suffix = f"_{st.session_state.reset_counter}"
     tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
@@ -102,9 +106,10 @@ if tipo_analisi == "Analisi Squadra":
         co3, co4 = st.columns(2)
         with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
         with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
+
 else:
+    # ANALISI INDIVIDUALE (Pulita e senza info partita)
     st.markdown("### 👤 VALUTAZIONE INDIVIDUALE")
-    # Nuova riga intestazione: Giornata, Calciatore e Minuto (Testo libero)
     ci1, ci2, ci3 = st.columns([1, 2, 1])
     with ci1: g_ind = st.selectbox("Giornata", ["Seleziona"] + list(range(1, 31)), key="g_ind_key")
     with ci2: p_ind = st.selectbox("Calciatore", lista_calciatori, key="p_ind_key")
@@ -112,7 +117,6 @@ else:
     
     st.divider()
     
-    # Mappa valori e opzioni pulite (senza numeri tra parentesi)
     mappa_voti = {"🟢 Verde": 1.0, "🟡 Giallo": 0.5, "🔴 Rosso": 0.0}
     opts = list(mappa_voti.keys())
     
@@ -133,26 +137,16 @@ else:
             st.error("⚠️ Compila Giornata, Calciatore e Minuto!")
         else:
             try:
-                # Calcolo totale e creazione record
                 tot = mappa_voti[v_res] + mappa_voti[v_com] + mappa_voti[v_int] + mappa_voti[v_acc] + mappa_voti[v_lea]
                 rec = {
-                    "Giornata": g_ind, 
-                    "Calciatore": p_ind, 
-                    "Minuto": t_ind, 
-                    "Resilienza": mappa_voti[v_res], 
-                    "Comunicazione": mappa_voti[v_com], 
-                    "Intensità": mappa_voti[v_int], 
-                    "Accettazione": mappa_voti[v_acc], 
-                    "Leadership": mappa_voti[v_lea], 
-                    "Totale": tot, 
-                    "Note": note_txt
+                    "Giornata": g_ind, "Calciatore": p_ind, "Minuto": t_ind, 
+                    "Resilienza": mappa_voti[v_res], "Comunicazione": mappa_voti[v_com], 
+                    "Intensità": mappa_voti[v_int], "Accettazione": mappa_voti[v_acc], 
+                    "Leadership": mappa_voti[v_lea], "Totale": tot, "Note": note_txt
                 }
-                
                 st.cache_data.clear()
                 df_old = conn.read(worksheet="Individuale", ttl=0)
                 df_up = pd.concat([df_old, pd.DataFrame([rec])], ignore_index=True)
                 conn.update(worksheet="Individuale", data=df_up)
-                
                 st.success(f"Salvato con successo per {p_ind}!"); st.rerun()
-            except Exception as e: 
-                st.error(f"Errore: Assicurati che esista il foglio 'Individuale'. Dettaglio: {e}")
+            except Exception as e: st.error(f"Errore: {e}")
