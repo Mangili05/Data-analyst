@@ -26,27 +26,34 @@ def reset_campi():
 # --- CSS DEFINITIVO ---
 st.markdown("""
     <style>
-    /* Nasconde l'header e tutto il suo contenuto */
+    /* 1. Nasconde l'header e recupera lo spazio in alto */
     header {visibility: hidden; height: 0px;}
-    
-    /* Forza la freccia di riapertura a essere visibile e bianca */
+    .block-container { padding-top: 0rem !important; }
+
+    /* 2. ELIMINA LA GRAFFETTA (Ancore dei titoli) */
+    .element-container:has(#analisi-squadra), 
+    .element-container:has(#analisi-individuale),
+    a.viewerBadge_link__qRIO0, 
+    .stMarkdown [data-testid="stMarkdownContainer"] a {
+        display: none !important;
+    }
+    /* Metodo universale per nascondere le ancore dei titoli */
+    [data-testid="stHeaderActionElements"] { display: none !important; }
+    .stMarkdown h2 a, .stMarkdown h1 a, .stMarkdown h3 a { display: none !important; }
+
+    /* 3. Forza la freccia di riapertura (posizionata in alto a sx) */
     [data-testid="stSidebarCollapseButton"] {
         visibility: visible !important;
         position: fixed;
-        top: 10px;
-        left: 10px;
+        top: 15px;
+        left: 15px;
         z-index: 99999;
         color: white !important;
-        background-color: #1f67b5 !important; /* Un quadratino blu per trovarla subito */
-        border-radius: 5px;
     }
 
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     .main { background-color: #0e1117; color: white; }
-    
-    /* Rimuove lo spazio bianco in alto creato dall'header nascosto */
-    .block-container { padding-top: 0rem !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -58,14 +65,16 @@ if os.path.exists(logo_path):
 
 # --- SIDEBAR DI NAVIGAZIONE ---
 with st.sidebar:
-    # Il logo qui dentro rimarrà fisso in alto a sinistra nella barra scura
+    # Logo integrato nella sidebar
     logo_path = "logo.png"
     if os.path.exists(logo_path):
-        st.image(logo_path, width=120) 
+        # Usiamo il comando nativo: niente HTML, massima stabilità
+        st.image(logo_path, width=150)
     
-    st.markdown("<h2 style='text-align: center; color: white; margin-top: -10px;'>DASHBOARD</h2>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; font-size: 32px; color: white; font-weight: bold; margin-bottom: 20px;'>DASHBOARD</h1>", unsafe_allow_html=True)
     st.divider()
 
+    # Menu cliccabile
     tipo_analisi = option_menu(
         menu_title=None, 
         options=["Analisi Squadra", "Analisi Individuale"],
@@ -82,7 +91,6 @@ with st.sidebar:
             },
         }
     )
-    st.divider()
 # --- HEADER DINAMICO ---
 st.markdown(f"## {tipo_analisi.upper()}")
 st.markdown(f"<p style='color: #8b949e;'>Pro Palazzolo U16 - {tipo_analisi}</p>", unsafe_allow_html=True)
