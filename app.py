@@ -23,52 +23,35 @@ def reset_campi():
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
-# --- CSS PERSONALIZZATO (PULIZIA TOTALE HEADER) ---
+# --- CSS PERSONALIZZATO ---
 st.markdown("""
     <style>
-    /* 1. Nasconde TUTTI gli elementi dell'header (icone github, menu, etc.) */
-    [data-testid="stHeader"] > div:first-child {
-        visibility: hidden;
-    }
+    /* Nasconde icone Github, Menu tre pallini, Stella, etc. */
+    [data-testid="stHeader"] > div:first-child { visibility: hidden; }
 
-    /* 2. Rende visibile SOLO il pulsante della sidebar (la freccia) */
+    /* Forza la visibilità del tasto Sidebar (la freccia) */
     [data-testid="stSidebarCollapseButton"] {
         visibility: visible !important;
         color: white !important;
-        background-color: transparent !important;
+        position: fixed;
+        left: 10px;
+        top: 10px;
+        z-index: 1000;
     }
 
-    /* 3. Nasconde il MainMenu e il Footer */
+    /* Nasconde MainMenu e Footer */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* 4. Mantiene lo sfondo scuro e pulito */
     .main { background-color: #0e1117; color: white; }
     
-    /* 5. Posizionamento Logo personalizzato */
-    .logo-container {
-        position: absolute;
-        top: -35px;   
-        right: -80px;  
-        z-index: 999;
-    }
-
-    /* 6. Stile pulsanti */
+    /* Pulizia Sidebar */
+    [data-testid="stSidebar"] { background-color: #11141b; }
+    
     .stButton button {
-        width: 100%;
         border-radius: 8px;
-        font-weight: bold;
         background-color: #1f67b5;
         color: white;
-    }
-
-    /* 7. Titolo Sidebar */
-    .sidebar-title {
-        font-size: 32px !important;
-        font-weight: bold;
-        color: #FFFFFF !important;
-        text-align: center;
-        margin-bottom: 20px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -81,34 +64,33 @@ if os.path.exists(logo_path):
 
 # --- SIDEBAR DI NAVIGAZIONE ---
 with st.sidebar:
-    # Titolo DASHBOARD più grande, bianco e senza ombre strane
-    st.markdown("<h1 style='text-align: center; font-size: 35px; color: #FFFFFF; margin-bottom: 20px;'>DASHBOARD</h1>", unsafe_allow_html=True)
+    # Inserimento Logo Professionale (sempre in alto nella sidebar)
+    logo_path = "logo.png"
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=150) # Regola la larghezza come preferisci
     
-    # Menu con colori forzati per eliminare il rettangolo nero e rendere tutto leggibile
+    st.markdown("<h1 style='text-align: center; font-size: 28px; color: white; margin-top: -10px;'>DASHBOARD</h1>", unsafe_allow_html=True)
+    st.divider()
+
+    # Menu ottimizzato
     tipo_analisi = option_menu(
         menu_title=None, 
         options=["Analisi Squadra", "Analisi Individuale"],
         icons=["shield-fill", "person-bounding-box"], 
         default_index=0,
         styles={
-            "container": {
-                "padding": "0!important", 
-                "background-color": "transparent", # Elimina il rettangolo nero
-            },
-            "icon": {
-                "color": "#FFFFFF", 
-                "font-size": "18px"
-            }, 
+            "container": {"padding": "0!important", "background-color": "transparent"},
+            "icon": {"color": "#FFFFFF", "font-size": "18px"}, 
             "nav-link": {
                 "font-size": "16px", 
+                "color": "#e0e0e0", 
                 "text-align": "left", 
                 "margin": "5px", 
-                "color": "#e0e0e0",       # Grigio chiaro per le opzioni non selezionate
-                "--hover-color": "#3e404b" # Colore al passaggio del mouse
+                "--hover-color": "#262730"
             },
             "nav-link-selected": {
-                "background-color": "#1f67b5", # Blu Pro Palazzolo
-                "color": "#FFFFFF",            # Testo bianco sull'opzione attiva
+                "background-color": "#1f67b5", 
+                "color": "#FFFFFF", 
                 "font-weight": "bold"
             },
         }
