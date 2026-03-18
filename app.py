@@ -180,145 +180,128 @@ if "mostra_toast" in st.session_state:
     st.toast(st.session_state["mostra_toast"])
     del st.session_state["mostra_toast"]
 
-# --- TABS ---
+# --- LOGICA DI NAVIGAZIONE E VISUALIZZAZIONE ---
 suffix = f"_{st.session_state.reset_counter}"
-tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
+
+if tipo_analisi == "👥 Analisi Squadra":
+    # Definiamo i tabs SOLO se siamo in analisi squadra
+    tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
     
-# --- TAB 1: COSTRUZIONE ---
-with tabs[0]:
-    rc1, rc2 = st.columns(2)
-    with rc1:
-        st.text_input("Inizio", placeholder="min:sec", key=f"t_in{suffix}")
-    with rc2:
-        st.text_input("Fine", placeholder="min:sec", key=f"t_fi{suffix}")
-    st.divider()
-    c_sx, c_cent, c_dx = st.columns([1, 2.5, 1])
-    with c_sx:
-        st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
-    with c_cent:
-        _, inner_c, _ = st.columns([1, 2, 1])
-        with inner_c:
-            st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}", horizontal=True)
-    with c_dx:
-        st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("💾 Salva Costruzione"):
-        ini_c = st.session_state.get(f"t_in{suffix}", "")
-        fin_c = st.session_state.get(f"t_fi{suffix}", "")
-        if len(ini_c) < 5 or len(fin_c) < 5:
-            st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
-        else:
-            esegui_salvataggio("Costruzione dal Basso")
+    # --- TAB 1: COSTRUZIONE ---
+    with tabs[0]:
+        rc1, rc2 = st.columns(2)
+        with rc1:
+            st.text_input("Inizio", placeholder="min:sec", key=f"t_in{suffix}")
+        with rc2:
+            st.text_input("Fine", placeholder="min:sec", key=f"t_fi{suffix}")
+        st.divider()
+        c_sx, c_cent, c_dx = st.columns([1, 2.5, 1])
+        with c_sx:
+            st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
+        with c_cent:
+            _, inner_c, _ = st.columns([1, 2, 1])
+            with inner_c:
+                st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}", horizontal=True)
+        with c_dx:
+            st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
+        
+        if st.button("💾 Salva Costruzione"):
+            ini_c = st.session_state.get(f"t_in{suffix}", "")
+            fin_c = st.session_state.get(f"t_fi{suffix}", "")
+            if len(ini_c) < 5 or len(fin_c) < 5:
+                st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
+            else:
+                esegui_salvataggio("Costruzione dal Basso")
 
-# --- TAB 2: AZIONE OFFENSIVA ---
-with tabs[1]:
-    co1, co2 = st.columns(2)
-    with co1:
-        st.text_input("Inizio", placeholder="min:sec", key=f"off_in{suffix}")
-        st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione offensiva", "Palla inattiva"], key=f"off_tipo_azione{suffix}")
-    with co2:
-        st.text_input("Fine", placeholder="min:sec", key=f"off_fi{suffix}")
-        st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
-    
-    co3, co4 = st.columns(2)
-    with co3:
-        st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
-    with co4:
-        st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
+    # --- TAB 2: AZIONE OFFENSIVA ---
+    with tabs[1]:
+        co1, co2 = st.columns(2)
+        with co1:
+            st.text_input("Inizio", placeholder="min:sec", key=f"off_in{suffix}")
+            st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione offensiva", "Palla inattiva"], key=f"off_tipo_azione{suffix}")
+        with co2:
+            st.text_input("Fine", placeholder="min:sec", key=f"off_fi{suffix}")
+            st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
+        
+        co3, co4 = st.columns(2)
+        with co3:
+            st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
+        with co4:
+            st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
 
-    es_off_val = st.session_state.get(f"off_esito{suffix}")
-    if es_off_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
-        st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
-        st.write("🎯 **Posizione Conclusione**")
-        img_path = "campo.jpg"
-        if os.path.exists(img_path):
-            img = Image.open(img_path)
-            
-            # Dimensioni reali dell'immagine ritagliata
-            larghezza_reale = 358
-            altezza_reale = 283
-            
-            # Visualizziamo l'immagine alla sua dimensione naturale o leggermente scalata
-            # Usiamo 358 per vederla 1:1, così i pixel nel database sono gli stessi dell'immagine
-            img_res = img.resize((larghezza_reale, altezza_reale)) 
-            
-            if "off_coords" in st.session_state:
-                draw = ImageDraw.Draw(img_res)
-                x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-                draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
-            
-            # Mostriamo l'immagine senza forzare larghezze diverse
-            val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
-            
-            if val and (st.session_state.get("off_coords") != val):
-                st.session_state["off_coords"] = val
-                st.rerun()
-    
-    if st.button("💾 Salva Azione Offensiva"):
-        ini_o = st.session_state.get(f"off_in{suffix}", "")
-        fin_o = st.session_state.get(f"off_fi{suffix}", "")
-        if len(ini_o) < 5 or len(fin_o) < 5:
-            st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
-        else:
-            esegui_salvataggio("Azione Offensiva")
+        es_off_val = st.session_state.get(f"off_esito{suffix}")
+        if es_off_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
+            st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
+            st.write("🎯 **Posizione Conclusione**")
+            img_path = "campo.jpg"
+            if os.path.exists(img_path):
+                img = Image.open(img_path)
+                larghezza_reale, altezza_reale = 358, 283
+                img_res = img.resize((larghezza_reale, altezza_reale)) 
+                
+                if "off_coords" in st.session_state:
+                    draw = ImageDraw.Draw(img_res)
+                    x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
+                    draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
+                
+                val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
+                if val and (st.session_state.get("off_coords") != val):
+                    st.session_state["off_coords"] = val
+                    st.rerun()
+        
+        if st.button("💾 Salva Azione Offensiva"):
+            ini_o = st.session_state.get(f"off_in{suffix}", "")
+            fin_o = st.session_state.get(f"off_fi{suffix}", "")
+            if len(ini_o) < 5 or len(fin_o) < 5:
+                st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
+            else:
+                esegui_salvataggio("Azione Offensiva")
 
-# --- TAB 3: AZIONE DIFENSIVA ---
-with tabs[2]:
-    cd1, cd2 = st.columns(2)
-    with cd1:
-        st.text_input("Inizio", placeholder="min:sec", key=f"def_in{suffix}")
-        st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione difensiva", "Palla inattiva"], key=f"def_tipo_azione{suffix}")
-    with cd2:
-        st.text_input("Fine", placeholder="min:sec", key=f"def_fi{suffix}")
-        st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"def_canale_sviluppo{suffix}")
+    # --- TAB 3: AZIONE DIFENSIVA ---
+    with tabs[2]:
+        cd1, cd2 = st.columns(2)
+        with cd1:
+            st.text_input("Inizio", placeholder="min:sec", key=f"def_in{suffix}")
+            st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione difensiva", "Palla inattiva"], key=f"def_tipo_azione{suffix}")
+        with cd2:
+            st.text_input("Fine", placeholder="min:sec", key=f"def_fi{suffix}")
+            st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"def_canale_sviluppo{suffix}")
 
-    cd3, cd4 = st.columns(2)
-    with cd3:
-        st.selectbox("Rifinitura", ["Seleziona", "Cross/trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "Altro"], key=f"def_rif{suffix}")
-    with cd4:
-        st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla riconquistata", "Altro"], key=f"def_esito{suffix}")
+        cd3, cd4 = st.columns(2)
+        with cd3:
+            st.selectbox("Rifinitura", ["Seleziona", "Cross/trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "Altro"], key=f"def_rif{suffix}")
+        with cd4:
+            st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla riconquistata", "Altro"], key=f"def_esito{suffix}")
 
-    es_def_val = st.session_state.get(f"def_esito{suffix}")
-    if es_def_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
-        st.write("📍 **Punto del tiro subito**")
-        img_path = "campo.jpg"
-        if os.path.exists(img_path):
-            img = Image.open(img_path)
-            
-            larghezza_reale = 358
-            altezza_reale = 283
-            img_res = img.resize((larghezza_reale, altezza_reale)) 
-            
-            # --- CORREZIONE QUI: Usa 'def_tiro_coords' invece di 'off_coords' ---
-            if "def_tiro_coords" in st.session_state:
-                draw = ImageDraw.Draw(img_res)
-                x, y = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
-                draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
-            
-            # --- CORREZIONE QUI: Cambia la key in 'campetto_def' ---
-            val = streamlit_image_coordinates(img_res, key=f"campetto_def{suffix}")
-            
-            if val and (st.session_state.get("def_tiro_coords") != val):
-                st.session_state["def_tiro_coords"] = val
-                st.rerun()
-            
-    if st.button("💾 Salva Azione Difensiva"):
-        ini_d = st.session_state.get(f"def_in{suffix}", "")
-        fin_d = st.session_state.get(f"def_fi{suffix}", "")
-        if len(ini_d) < 5 or len(fin_d) < 5:
-            st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
-        else:
-            esegui_salvataggio("Azione Difensiva")
+        es_def_val = st.session_state.get(f"def_esito{suffix}")
+        if es_def_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
+            st.write("📍 **Punto del tiro subito**")
+            img_path = "campo.jpg"
+            if os.path.exists(img_path):
+                img = Image.open(img_path)
+                larghezza_reale, altezza_reale = 358, 283
+                img_res = img.resize((larghezza_reale, altezza_reale)) 
+                
+                if "def_tiro_coords" in st.session_state:
+                    draw = ImageDraw.Draw(img_res)
+                    x, y = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
+                    draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
+                
+                val = streamlit_image_coordinates(img_res, key=f"campetto_def{suffix}")
+                if val and (st.session_state.get("def_tiro_coords") != val):
+                    st.session_state["def_tiro_coords"] = val
+                    st.rerun()
+                
+        if st.button("💾 Salva Azione Difensiva"):
+            ini_d = st.session_state.get(f"def_in{suffix}", "")
+            fin_d = st.session_state.get(f"def_fi{suffix}", "")
+            if len(ini_d) < 5 or len(fin_d) < 5:
+                st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
+            else:
+                esegui_salvataggio("Azione Difensiva")
 
-
-
-
-
-
-
-
-
-
-
-
-
+else:
+    # --- SEZIONE INDIVIDUALE ---
+    st.success("✅ Menù laterale funzionante!")
+    st.info("Qui inseriremo il form per i 5 parametri comportamentali.")
+    # Spazio per lo sviluppo del punto 2
