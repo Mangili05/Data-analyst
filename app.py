@@ -71,27 +71,30 @@ if os.path.exists(logo_path):
 with st.sidebar:
     st.markdown('<p class="sidebar-title">DASHBOARD</p>', unsafe_allow_html=True)
     
-    # Menù cliccabile con stile blu chiaro sulla selezione
+    # Menu con colori forzati per la leggibilità
     tipo_analisi = option_menu(
         menu_title=None, 
         options=["Analisi Squadra", "Analisi Individuale"],
-        icons=["shield-fill", "person-bounding-box"], # Nuove icone
+        icons=["shield-fill", "person-bounding-box"], 
         menu_icon="cast", 
         default_index=0,
         styles={
-            "container": {"padding": "0!important", "background-color": "transparent"},
-            "icon": {"color": "#8b949e", "font-size": "20px"}, 
+            "container": {"padding": "0!important", "background-color": "#262730"}, # Sfondo sidebar scuro
+            "icon": {"color": "#FFFFFF", "font-size": "20px"}, 
             "nav-link": {
                 "font-size": "17px", 
                 "text-align": "left", 
                 "margin": "10px", 
-                "--hover-color": "#262730",
-                "color": "white"
+                "color": "#FFFFFF",      # <--- TESTO BIANCO (Visibile)
+                "--hover-color": "#3e404b"
             },
-            "nav-link-selected": {"background-color": "#1f67b5"}, # Blu chiaro/azzurro
+            "nav-link-selected": {
+                "background-color": "#1f67b5", # Blu Pro Palazzolo
+                "color": "#FFFFFF",            # <--- TESTO BIANCO su Blu
+                "font-weight": "bold"
+            },
         }
     )
-
 # --- HEADER DINAMICO ---
 st.markdown(f"## {tipo_analisi.upper()}")
 st.markdown(f"<p style='color: #8b949e;'>Pro Palazzolo U16 - {tipo_analisi}</p>", unsafe_allow_html=True)
