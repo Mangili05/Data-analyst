@@ -26,11 +26,22 @@ def reset_campi():
 # --- CSS PERSONALIZZATO ---
 st.markdown("""
     <style>
+    /* 1. Rende l'header trasparente invece di nasconderlo (così la freccia resta visibile) */
+    [data-testid="stHeader"] {
+        background-color: rgba(0,0,0,0) !important;
+        color: white !important;
+    }
+    
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
+    
+    /* 2. Nasconde i link alle intestazioni */
     .stMarkdown h2 a { display: none !important; }
+    
+    /* 3. Sfondo scuro e testo bianco */
     .main { background-color: #0e1117; color: white; }
+    
+    /* 4. Nasconde lo status di caricamento */
     [data-testid="stStatusWidget"] { visibility: hidden; display: none; }
     
     .logo-container {
@@ -39,10 +50,12 @@ st.markdown("""
         right: -80px;  
         z-index: 999;
     }
+    
     .block-container { 
         padding-top: 1.5rem !important; 
         position: relative; 
     }
+    
     .stButton button {
         width: 100%;
         border-radius: 8px;
@@ -50,14 +63,19 @@ st.markdown("""
         background-color: #1f67b5;
         color: white;
     }
-    /* Stile per ingrandire il titolo nella sidebar */
+
+    /* 5. Stile Sidebar e Titolo (per massima leggibilità) */
     .sidebar-title {
         font-size: 32px !important;
         font-weight: bold;
-        color: white;
+        color: #FFFFFF !important;
         text-align: center;
         margin-bottom: 20px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
+
+    /* Rimuove eventuali bordi neri fastidiosi dal menu laterale */
+    [data-testid="stSidebarNav"] {background-image: none !important;}
     </style>
     """, unsafe_allow_html=True)
 
