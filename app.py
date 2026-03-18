@@ -22,12 +22,23 @@ def reset_campi():
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
-# --- CSS ESSENZIALE (VERSIONE ORIGINALE) ---
+# --- CSS PERSONALIZZATO ---
 st.markdown("""
     <style>
+    /* Nasconde le ancore dei link (la graffetta) in tutta la pagina */
+    .stMarkdown h2 a, .stMarkdown h1 a, .stMarkdown h3 a {
+        display: none !important;
+    }
+    
+    /* Rimuove lo spazio extra che Streamlit riserva alle ancore */
+    [data-testid="stHeaderActionElements"] {
+        display: none !important;
+    }
+
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
+    header {visibility: hidden;} /* Lo teniamo nascosto come preferivi */
+    
     .main { background-color: #0e1117; color: white; }
     
     .logo-container {
@@ -36,17 +47,7 @@ st.markdown("""
         right: -80px;  
         z-index: 999;
     }
-    .block-container { 
-        padding-top: 1.5rem !important; 
-        position: relative; 
-    }
-    .stButton button {
-        width: 100%;
-        border-radius: 8px;
-        font-weight: bold;
-        background-color: #1f67b5;
-        color: white;
-    }
+    /* ... resto del tuo CSS ... */
     </style>
     """, unsafe_allow_html=True)
 
@@ -68,10 +69,16 @@ with st.sidebar:
     st.info("Seleziona la modalità per visualizzare i relativi form di inserimento.")
 
 # --- HEADER DINAMICO ---
-st.markdown(f"## {tipo_analisi.upper()}")
-st.markdown(f"<p style='color: #8b949e;'>Pro Palazzolo U16 - {tipo_analisi}</p>", unsafe_allow_html=True)
+# Puliamo il nome eliminando le icone per il titolo centrale
+titolo_display = tipo_analisi.replace("👥 ", "").replace("👤 ", "").upper()
 
-# --- [RESTO DEL TUO CODICE PER INFO PARTITA E TABS...] ---
+# Usiamo un div HTML: questo impedisce a Streamlit di creare il link con la graffetta
+st.markdown(f"""
+    <div style='margin-top: -20px;'>
+        <h2 style='color: white; margin-bottom: 0px;'>{titolo_display}</h2>
+        <p style='color: #8b949e; margin-top: 0px;'>Pro Palazzolo U16 - {tipo_analisi}</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # --- INFO PARTITA ---
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus Ciserano Bergamo"]
