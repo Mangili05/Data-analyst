@@ -63,9 +63,22 @@ if os.path.exists(logo_path):
     img_base64 = base64.b64encode(open(logo_path, "rb").read()).decode()
     st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{img_base64}" width="80"></div>', unsafe_allow_html=True)
 
-# --- HEADER ---
-st.markdown("## FOOTBALL DATA ANALYST")
-st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Match Analysis</p>", unsafe_allow_html=True)
+# --- SIDEBAR DI NAVIGAZIONE ---
+with st.sidebar:
+    st.markdown("### 🏟️ DASHBOARD")
+    # Selettore per cambiare modalità di analisi
+    tipo_analisi = st.radio(
+        "COSA VUOI ANALIZZARE?",
+        ["👥 Analisi Squadra", "👤 Analisi Individuale"],
+        index=0
+    )
+    st.divider()
+    st.info("Seleziona la modalità per visualizzare i relativi form di inserimento.")
+
+# --- HEADER DINAMICO ---
+# Il titolo della pagina cambierà in base alla scelta nella sidebar
+st.markdown(f"## {tipo_analisi.upper()}")
+st.markdown(f"<p style='color: #8b949e;'>Pro Palazzolo U16 - {tipo_analisi}</p>", unsafe_allow_html=True)
 
 # --- INFO PARTITA ---
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus Ciserano Bergamo"]
