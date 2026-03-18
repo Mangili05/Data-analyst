@@ -117,17 +117,19 @@ else:
     
     st.divider()
     
-    mappa_voti = {"🟢 Verde": 1.0, "🟡 Giallo": 0.5, "🔴 Rosso": 0.0}
+    # Aggiungiamo "N.D." come opzione neutra
+    mappa_voti = {"N.D.": None, "🟢 Verde": 1.0, "🟡 Giallo": 0.5, "🔴 Rosso": 0.0}
     opts = list(mappa_voti.keys())
     
     col_ind1, col_ind2 = st.columns(2)
     with col_ind1:
-        v_res = st.radio("Resilienza all'Errore", opts, index=1, horizontal=True, key="v_res")
-        v_com = st.radio("Comunicazione Proattiva", opts, index=1, horizontal=True, key="v_com")
-        v_int = st.radio("Intensità Mentale", opts, index=1, horizontal=True, key="v_int")
+        # index=0 imposta "N.D." come scelta predefinita
+        v_res = st.radio("Resilienza all'Errore", opts, index=0, horizontal=True, key="v_res")
+        v_com = st.radio("Comunicazione Proattiva", opts, index=0, horizontal=True, key="v_com")
+        v_int = st.radio("Intensità Mentale", opts, index=0, horizontal=True, key="v_int")
     with col_ind2:
-        v_acc = st.radio("Accettazione delle Scelte", opts, index=1, horizontal=True, key="v_acc")
-        v_lea = st.radio("Leadership / Spirito di Sacrificio", opts, index=1, horizontal=True, key="v_lea")
+        v_acc = st.radio("Accettazione delle Scelte", opts, index=0, horizontal=True, key="v_acc")
+        v_lea = st.radio("Leadership / Spirito di Sacrificio", opts, index=0, horizontal=True, key="v_lea")
     
     st.markdown("<br>", unsafe_allow_html=True)
     note_txt = st.text_area("Note Tecnico/Comportamentali", placeholder="Inserisci osservazioni specifiche...")
