@@ -139,16 +139,25 @@ else:
             st.error("⚠️ Compila Giornata, Calciatore e Minuto!")
         else:
             try:
-                tot = mappa_voti[v_res] + mappa_voti[v_com] + mappa_voti[v_int] + mappa_voti[v_acc] + mappa_voti[v_lea]
-                rec = {
-                    "Giornata": g_ind, "Calciatore": p_ind, "Minuto": t_ind, 
-                    "Resilienza": mappa_voti[v_res], "Comunicazione": mappa_voti[v_com], 
-                    "Intensità": mappa_voti[v_int], "Accettazione": mappa_voti[v_acc], 
-                    "Leadership": mappa_voti[v_lea], "Totale": tot, "Note": note_txt
-                }
-                st.cache_data.clear()
-                df_old = conn.read(worksheet="Individuale", ttl=0)
-                df_up = pd.concat([df_old, pd.DataFrame([rec])], ignore_index=True)
-                conn.update(worksheet="Individuale", data=df_up)
-                st.success(f"Salvato con successo per {p_ind}!"); st.rerun()
+                # Creiamo una lista dei voti selezionati escludendo i None (N.D.)
+                voti_selezionati = [mappa_voti[v] for v in [v_res, v_com, v_int, v_acc, v_lea] if mappa_voti[v] is not None]
+                
+                if not voti_selezionati:
+                    st.warning("⚠️ Seleziona almeno un parametro (Verde, Giallo o Rosso) prima di salvare!")
+                else:
+                    tot = sum(voti_selezionati)
+                    rec = {
+                        "Giornata": g_ind, "Calciatore": p_ind, "Minuto": t_ind, 
+                        "Resilienza": mappa_voti[v_res] if mappa_voti[v_res] is not None else "", 
+                        "Comunicazione": mappa_voti[v_com] if mappa_voti[v_com] is not None else "", 
+                        "Intensità": mappa_voti[v_int] if mappa_voti[v_int] is not None else "", 
+                        "Accettazione": mappa_voti[v_acc] if mappa_voti[v_acc] is not None else "", 
+                        "Leadership": mappa_voti[v_lea] if mappa_voti[v_lea] is not None else "", 
+                        "Totale": tot, "Note": note_txt
+                    }
+                    st.cache_data.clear()
+                    df_old = conn.read(worksheet="Individuale", ttl=0)
+                    df_up = pd.concat([df_old, pd.DataFrame([rec])], ignore_index=True)
+                    conn.update(worksheet="Individuale", data=df_up)
+                    st.success(f"Salvato! Registrati {len(voti_selezionati)} parametri per {p_ind}."); st.rerun()
             except Exception as e: st.error(f"Errore: {e}")
