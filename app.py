@@ -43,12 +43,25 @@ st.markdown("""
         background-color: #1f67b5;
         color: white;
     }
-    /* Stile per il menu di navigazione orizzontale */
-    .nav-container {
+    /* Estetica per la barra di navigazione orizzontale */
+    div[data-testid="stSegmentedControl"] {
+        display: flex;
+        justify-content: center;
         background-color: #1e2129;
-        padding: 10px;
-        border-radius: 10px;
-        margin-bottom: 20px;
+        padding: 5px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+    }
+    div[data-testid="stSegmentedControl"] button {
+        flex: 1;
+        border: none !important;
+        background-color: transparent !important;
+        color: #8b949e !important;
+    }
+    div[data-testid="stSegmentedControl"] button[aria-checked="true"] {
+        background-color: #1f67b5 !important;
+        color: white !important;
+        border-radius: 8px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -60,31 +73,28 @@ if os.path.exists(logo_path):
 # --- HEADER ---
 st.markdown("## FOOTBALL DATA ANALYST")
 st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Match Analysis</p>", unsafe_allow_html=True)
-# --- MENU DI NAVIGAZIONE ORIZZONTALE ---
-tipo_analisi = st.selectbox("SELEZIONA TIPO DI ANALISI", ["Analisi Squadra", "Analisi Individuale"], label_visibility="collapsed")
+# --- NAVIGAZIONE ORIZZONTALE (SITO WEB STYLE) ---
+tipo_analisi = st.segmented_control(
+    "NAVIGAZIONE",
+    options=["Analisi Squadra", "Analisi Individuale"],
+    default="Analisi Squadra",
+    label_visibility="collapsed"
+)
 st.divider()
 # --- LOGICA DI NAVIGAZIONE ---
 if tipo_analisi == "Analisi Squadra":
-    # --- INFO PARTITA ---
     squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus Ciserano Bergamo"]
     with st.expander("ℹ️ Informazioni partita", expanded=True):
         c1, c2 = st.columns(2)
-        with c1: 
-            st.selectbox("Giornata", ["Seleziona giornata"] + list(range(1, 31)), key="g_key")
-        with c2:
-            st.date_input("Data", value=None, format="DD/MM/YYYY", key="d_key")
+        with c1: st.selectbox("Giornata", ["Seleziona giornata"] + list(range(1, 31)), key="g_key")
+        with c2: st.date_input("Data", value=None, format="DD/MM/YYYY", key="d_key")
         c3, c4 = st.columns(2)
-        with c3:
-            st.selectbox("Squadra di casa", ["Seleziona squadra"] + squadre_campionato, key="h_key")
-        with c4:
-            st.selectbox("Squadra Ospite", ["Seleziona squadra"] + squadre_campionato, key="a_key")
+        with c3: st.selectbox("Squadra di casa", ["Seleziona squadra"] + squadre_campionato, key="h_key")
+        with c4: st.selectbox("Squadra Ospite", ["Seleziona squadra"] + squadre_campionato, key="a_key")
         gc1, gc2 = st.columns(2)
-        with gc1: 
-            st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
-        with gc2: 
-            st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
+        with gc1: st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
+        with gc2: st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
     st.divider()
-    # --- FUNZIONE SALVATAGGIO ---
     def esegui_salvataggio(fase):
         s = f"_{st.session_state.reset_counter}"
         giornata = st.session_state.get('g_key')
@@ -107,11 +117,6 @@ if tipo_analisi == "Analisi Squadra":
                 cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
                 coords = st.session_state.get('off_coords')
                 record = {"Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": g_casa, "Gol ospite": g_ospite, "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'), "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'), "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""}
-            elif fase == "Azione Difensiva":
-                nome_foglio = "Difensiva"
-                cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
-                coords = st.session_state.get('def_tiro_coords')
-                record = {"Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": g_casa, "Gol ospite": g_ospite, "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'), "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'), "Canale": st.session_state.get(f'def_canale_sviluppo{s}'), "Rifinitura": st.session_state.get(f'def_rif{s}'), "Esito finale": st.session_state.get(f'def_esito{s}'), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""}
             df_new = pd.DataFrame([record]).reindex(columns=cols)
             with st.empty():
                 st.cache_data.clear()
@@ -121,13 +126,10 @@ if tipo_analisi == "Analisi Squadra":
             st.session_state["mostra_toast"] = f"✅ Dati salvati in {nome_foglio}!"
             reset_campi()
             st.rerun()
-        except Exception as e:
-            st.error(f"❌ Errore critico: {e}")
-    # --- LOGICA NOTIFICA ---
+        except Exception as e: st.error(f"❌ Errore critico: {e}")
     if "mostra_toast" in st.session_state:
         st.toast(st.session_state["mostra_toast"])
         del st.session_state["mostra_toast"]
-    # --- TABS SQUADRA ---
     suffix = f"_{st.session_state.reset_counter}"
     tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
     with tabs[0]:
@@ -157,9 +159,6 @@ if tipo_analisi == "Analisi Squadra":
         co3, co4 = st.columns(2)
         with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
         with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
-    with tabs[2]:
-        st.write("Sezione Azione Difensiva in fase di completamento...")
 else:
-    # --- ANALISI INDIVIDUALE ---
-    st.markdown("### ANALISI INDIVIDUALE")
-    st.write("Qui inseriremo i 5 parametri comportamentali (Leadership, Comunicazione, Resilienza, Intensità, Accettazione).")
+    st.markdown("### 👤 SEZIONE INDIVIDUALE")
+    st.info("Configurazione parametri comportamentali in corso...")
