@@ -104,37 +104,55 @@ if tipo_analisi == "Analisi Squadra":
         with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
 else:
     st.markdown("### 👤 VALUTAZIONE INDIVIDUALE")
-    ci1, ci2 = st.columns([1, 1])
-    with ci1: calciatore_ind = st.selectbox("Seleziona Calciatore", lista_calciatori, key="ind_player")
-    with ci2: minutaggio_ind = st.radio("Minutaggio", ["Intera gara", "1° Tempo", "2° Tempo", "Subentrato"], horizontal=True, key="ind_time")
+    # Nuova riga intestazione: Giornata, Calciatore e Minuto (Testo libero)
+    ci1, ci2, ci3 = st.columns([1, 2, 1])
+    with ci1: g_ind = st.selectbox("Giornata", ["Seleziona"] + list(range(1, 31)), key="g_ind_key")
+    with ci2: p_ind = st.selectbox("Calciatore", lista_calciatori, key="p_ind_key")
+    with ci3: t_ind = st.text_input("Minuto", placeholder="mm:ss", key="t_ind_key")
+    
     st.divider()
-    mappa_semaforo = {"🟢 Verde (1)": 1.0, "🟡 Giallo (0.5)": 0.5, "🔴 Rosso (0)": 0.0}
-    semaforo_opts = list(mappa_semaforo.keys())
+    
+    # Mappa valori e opzioni pulite (senza numeri tra parentesi)
+    mappa_voti = {"🟢 Verde": 1.0, "🟡 Giallo": 0.5, "🔴 Rosso": 0.0}
+    opts = list(mappa_voti.keys())
+    
     col_ind1, col_ind2 = st.columns(2)
     with col_ind1:
-        resilienza = st.radio("Resilienza all'Errore", semaforo_opts, index=1, horizontal=True, key="res_ind")
-        comunicazione = st.radio("Comunicazione Proattiva", semaforo_opts, index=1, horizontal=True, key="com_ind")
-        intensita = st.radio("Intensità Mentale", semaforo_opts, index=1, horizontal=True, key="int_ind")
+        v_res = st.radio("Resilienza all'Errore", opts, index=1, horizontal=True, key="v_res")
+        v_com = st.radio("Comunicazione Proattiva", opts, index=1, horizontal=True, key="v_com")
+        v_int = st.radio("Intensità Mentale", opts, index=1, horizontal=True, key="v_int")
     with col_ind2:
-        accettazione = st.radio("Accettazione delle Scelte", semaforo_opts, index=1, horizontal=True, key="acc_ind")
-        leadership = st.radio("Leadership / Spirito di Sacrificio", semaforo_opts, index=1, horizontal=True, key="lead_ind")
+        v_acc = st.radio("Accettazione delle Scelte", opts, index=1, horizontal=True, key="v_acc")
+        v_lea = st.radio("Leadership / Spirito di Sacrificio", opts, index=1, horizontal=True, key="v_lea")
+    
     st.markdown("<br>", unsafe_allow_html=True)
-    note_ind = st.text_area("Note Tecnico/Comportamentali", placeholder="Inserisci osservazioni specifiche...")
+    note_txt = st.text_area("Note Tecnico/Comportamentali", placeholder="Inserisci osservazioni specifiche...")
+    
     if st.button("💾 Salva Analisi Individuale"):
-        giornata = st.session_state.get('g_key'); data_val = st.session_state.get('d_key')
-        data_str = data_val.strftime("%d/%m/%Y") if data_val else ""
-        if calciatore_ind == "Seleziona" or giornata == "Seleziona giornata":
-            st.error("⚠️ Seleziona calciatore e compila i dati partita!")
+        if g_ind == "Seleziona" or p_ind == "Seleziona" or not t_ind:
+            st.error("⚠️ Compila Giornata, Calciatore e Minuto!")
         else:
             try:
-                record_ind = {
-                    "Giornata": giornata, "Data": data_str, "Squadra casa": st.session_state.get('h_key'), "Squadra ospite": st.session_state.get('a_key'),
-                    "Calciatore": calciatore_ind, "Minutaggio": minutaggio_ind, "Resilienza": mappa_semaforo[resilienza], "Comunicazione": mappa_semaforo[comunicazione],
-                    "Intensità": mappa_semaforo[intensita], "Accettazione": mappa_semaforo[accettazione], "Leadership": mappa_semaforo[leadership],
-                    "Totale": mappa_semaforo[resilienza]+mappa_semaforo[comunicazione]+mappa_semaforo[intensita]+mappa_semaforo[accettazione]+mappa_semaforo[leadership],
-                    "Note": note_ind
+                # Calcolo totale e creazione record
+                tot = mappa_voti[v_res] + mappa_voti[v_com] + mappa_voti[v_int] + mappa_voti[v_acc] + mappa_voti[v_lea]
+                rec = {
+                    "Giornata": g_ind, 
+                    "Calciatore": p_ind, 
+                    "Minuto": t_ind, 
+                    "Resilienza": mappa_voti[v_res], 
+                    "Comunicazione": mappa_voti[v_com], 
+                    "Intensità": mappa_voti[v_int], 
+                    "Accettazione": mappa_voti[v_acc], 
+                    "Leadership": mappa_voti[v_lea], 
+                    "Totale": tot, 
+                    "Note": note_txt
                 }
-                st.cache_data.clear(); df_ind_old = conn.read(worksheet="Individuale", ttl=0)
-                df_ind_new = pd.concat([df_ind_old, pd.DataFrame([record_ind])], ignore_index=True); conn.update(worksheet="Individuale", data=df_ind_new)
-                st.success(f"Analisi di {calciatore_ind} salvata con successo!"); st.rerun()
-            except Exception as e: st.error(f"Errore: Assicurati che esista il foglio 'Individuale' nel database. Dettaglio: {e}")
+                
+                st.cache_data.clear()
+                df_old = conn.read(worksheet="Individuale", ttl=0)
+                df_up = pd.concat([df_old, pd.DataFrame([rec])], ignore_index=True)
+                conn.update(worksheet="Individuale", data=df_up)
+                
+                st.success(f"Salvato con successo per {p_ind}!"); st.rerun()
+            except Exception as e: 
+                st.error(f"Errore: Assicurati che esista il foglio 'Individuale'. Dettaglio: {e}")
