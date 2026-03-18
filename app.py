@@ -69,32 +69,39 @@ if os.path.exists(logo_path):
 
 # --- SIDEBAR DI NAVIGAZIONE ---
 with st.sidebar:
-    st.markdown('<p class="sidebar-title">DASHBOARD</p>', unsafe_allow_html=True)
+    # Titolo DASHBOARD più grande, bianco e senza ombre strane
+    st.markdown("<h1 style='text-align: center; font-size: 35px; color: #FFFFFF; margin-bottom: 20px;'>DASHBOARD</h1>", unsafe_allow_html=True)
     
-    # Menu con colori forzati per la leggibilità
+    # Menu con colori forzati per eliminare il rettangolo nero e rendere tutto leggibile
     tipo_analisi = option_menu(
         menu_title=None, 
         options=["Analisi Squadra", "Analisi Individuale"],
         icons=["shield-fill", "person-bounding-box"], 
-        menu_icon="cast", 
         default_index=0,
         styles={
-            "container": {"padding": "0!important", "background-color": "#262730"}, # Sfondo sidebar scuro
-            "icon": {"color": "#FFFFFF", "font-size": "20px"}, 
+            "container": {
+                "padding": "0!important", 
+                "background-color": "transparent", # Elimina il rettangolo nero
+            },
+            "icon": {
+                "color": "#FFFFFF", 
+                "font-size": "18px"
+            }, 
             "nav-link": {
-                "font-size": "17px", 
+                "font-size": "16px", 
                 "text-align": "left", 
-                "margin": "10px", 
-                "color": "#FFFFFF",      # <--- TESTO BIANCO (Visibile)
-                "--hover-color": "#3e404b"
+                "margin": "5px", 
+                "color": "#e0e0e0",       # Grigio chiaro per le opzioni non selezionate
+                "--hover-color": "#3e404b" # Colore al passaggio del mouse
             },
             "nav-link-selected": {
                 "background-color": "#1f67b5", # Blu Pro Palazzolo
-                "color": "#FFFFFF",            # <--- TESTO BIANCO su Blu
+                "color": "#FFFFFF",            # Testo bianco sull'opzione attiva
                 "font-weight": "bold"
             },
         }
     )
+    st.divider()
 # --- HEADER DINAMICO ---
 st.markdown(f"## {tipo_analisi.upper()}")
 st.markdown(f"<p style='color: #8b949e;'>Pro Palazzolo U16 - {tipo_analisi}</p>", unsafe_allow_html=True)
