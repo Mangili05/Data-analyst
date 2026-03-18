@@ -4,3 +4,4 @@ openpyxl
 streamlit-image-coordinates
 Pillow
 st-gsheets-connection
+streamlit-option-menu
