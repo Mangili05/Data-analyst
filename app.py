@@ -23,39 +23,37 @@ def reset_campi():
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
-# --- CSS PERSONALIZZATO ---
+# --- CSS PERSONALIZZATO (PULIZIA TOTALE HEADER) ---
 st.markdown("""
     <style>
-    /* 1. Rende l'header trasparente invece di nasconderlo (così la freccia resta visibile) */
-    [data-testid="stHeader"] {
-        background-color: rgba(0,0,0,0) !important;
-        color: white !important;
+    /* 1. Nasconde TUTTI gli elementi dell'header (icone github, menu, etc.) */
+    [data-testid="stHeader"] > div:first-child {
+        visibility: hidden;
     }
-    
+
+    /* 2. Rende visibile SOLO il pulsante della sidebar (la freccia) */
+    [data-testid="stSidebarCollapseButton"] {
+        visibility: visible !important;
+        color: white !important;
+        background-color: transparent !important;
+    }
+
+    /* 3. Nasconde il MainMenu e il Footer */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* 2. Nasconde i link alle intestazioni */
-    .stMarkdown h2 a { display: none !important; }
-    
-    /* 3. Sfondo scuro e testo bianco */
+    /* 4. Mantiene lo sfondo scuro e pulito */
     .main { background-color: #0e1117; color: white; }
     
-    /* 4. Nasconde lo status di caricamento */
-    [data-testid="stStatusWidget"] { visibility: hidden; display: none; }
-    
+    /* 5. Posizionamento Logo personalizzato */
     .logo-container {
         position: absolute;
         top: -35px;   
         right: -80px;  
         z-index: 999;
     }
-    
-    .block-container { 
-        padding-top: 1.5rem !important; 
-        position: relative; 
-    }
-    
+
+    /* 6. Stile pulsanti */
     .stButton button {
         width: 100%;
         border-radius: 8px;
@@ -64,18 +62,14 @@ st.markdown("""
         color: white;
     }
 
-    /* 5. Stile Sidebar e Titolo (per massima leggibilità) */
+    /* 7. Titolo Sidebar */
     .sidebar-title {
         font-size: 32px !important;
         font-weight: bold;
         color: #FFFFFF !important;
         text-align: center;
         margin-bottom: 20px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
-
-    /* Rimuove eventuali bordi neri fastidiosi dal menu laterale */
-    [data-testid="stSidebarNav"] {background-image: none !important;}
     </style>
     """, unsafe_allow_html=True)
 
