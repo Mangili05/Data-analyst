@@ -23,36 +23,30 @@ def reset_campi():
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
-# --- CSS PERSONALIZZATO ---
+# --- CSS DEFINITIVO ---
 st.markdown("""
     <style>
-    /* Nasconde icone Github, Menu tre pallini, Stella, etc. */
-    [data-testid="stHeader"] > div:first-child { visibility: hidden; }
-
-    /* Forza la visibilità del tasto Sidebar (la freccia) */
+    /* Nasconde l'header e tutto il suo contenuto */
+    header {visibility: hidden; height: 0px;}
+    
+    /* Forza la freccia di riapertura a essere visibile e bianca */
     [data-testid="stSidebarCollapseButton"] {
         visibility: visible !important;
-        color: white !important;
         position: fixed;
-        left: 10px;
         top: 10px;
-        z-index: 1000;
+        left: 10px;
+        z-index: 99999;
+        color: white !important;
+        background-color: #1f67b5 !important; /* Un quadratino blu per trovarla subito */
+        border-radius: 5px;
     }
 
-    /* Nasconde MainMenu e Footer */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    
     .main { background-color: #0e1117; color: white; }
     
-    /* Pulizia Sidebar */
-    [data-testid="stSidebar"] { background-color: #11141b; }
-    
-    .stButton button {
-        border-radius: 8px;
-        background-color: #1f67b5;
-        color: white;
-    }
+    /* Rimuove lo spazio bianco in alto creato dall'header nascosto */
+    .block-container { padding-top: 0rem !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -64,15 +58,14 @@ if os.path.exists(logo_path):
 
 # --- SIDEBAR DI NAVIGAZIONE ---
 with st.sidebar:
-    # Inserimento Logo Professionale (sempre in alto nella sidebar)
+    # Il logo qui dentro rimarrà fisso in alto a sinistra nella barra scura
     logo_path = "logo.png"
     if os.path.exists(logo_path):
-        st.image(logo_path, width=150) # Regola la larghezza come preferisci
+        st.image(logo_path, width=120) 
     
-    st.markdown("<h1 style='text-align: center; font-size: 28px; color: white; margin-top: -10px;'>DASHBOARD</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: white; margin-top: -10px;'>DASHBOARD</h2>", unsafe_allow_html=True)
     st.divider()
 
-    # Menu ottimizzato
     tipo_analisi = option_menu(
         menu_title=None, 
         options=["Analisi Squadra", "Analisi Individuale"],
@@ -80,18 +73,12 @@ with st.sidebar:
         default_index=0,
         styles={
             "container": {"padding": "0!important", "background-color": "transparent"},
-            "icon": {"color": "#FFFFFF", "font-size": "18px"}, 
+            "icon": {"color": "white", "font-size": "18px"}, 
             "nav-link": {
-                "font-size": "16px", 
-                "color": "#e0e0e0", 
-                "text-align": "left", 
-                "margin": "5px", 
-                "--hover-color": "#262730"
+                "font-size": "16px", "color": "#e0e0e0", "text-align": "left", "margin": "5px"
             },
             "nav-link-selected": {
-                "background-color": "#1f67b5", 
-                "color": "#FFFFFF", 
-                "font-weight": "bold"
+                "background-color": "#1f67b5", "color": "white", "font-weight": "bold"
             },
         }
     )
