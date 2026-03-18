@@ -6,7 +6,6 @@ from datetime import datetime
 from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
-from streamlit_option_menu import option_menu # <--- NUOVO IMPORT
 
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
@@ -23,37 +22,38 @@ def reset_campi():
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
-# --- CSS DEFINITIVO ---
+# --- CSS PERSONALIZZATO (AGGIORNATO PER NASCONDERE "RUNNING") ---
 st.markdown("""
     <style>
-    /* 1. Nasconde l'header e recupera lo spazio in alto */
-    header {visibility: hidden; height: 0px;}
-    .block-container { padding-top: 0rem !important; }
-
-    /* 2. ELIMINA LA GRAFFETTA (Ancore dei titoli) */
-    .element-container:has(#analisi-squadra), 
-    .element-container:has(#analisi-individuale),
-    a.viewerBadge_link__qRIO0, 
-    .stMarkdown [data-testid="stMarkdownContainer"] a {
-        display: none !important;
-    }
-    /* Metodo universale per nascondere le ancore dei titoli */
-    [data-testid="stHeaderActionElements"] { display: none !important; }
-    .stMarkdown h2 a, .stMarkdown h1 a, .stMarkdown h3 a { display: none !important; }
-
-    /* 3. Forza la freccia di riapertura (posizionata in alto a sx) */
-    [data-testid="stSidebarCollapseButton"] {
-        visibility: visible !important;
-        position: fixed;
-        top: 15px;
-        left: 15px;
-        z-index: 99999;
-        color: white !important;
-    }
-
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stMarkdown h2 a { display: none !important; }
     .main { background-color: #0e1117; color: white; }
+    
+    /* NASCONDE LO STATUS "RUNNING" E GLI SPINNER */
+    [data-testid="stStatusWidget"] {
+        visibility: hidden;
+        display: none;
+    }
+    
+    .logo-container {
+        position: absolute;
+        top: -35px;   
+        right: -80px;  
+        z-index: 999;
+    }
+    .block-container { 
+        padding-top: 1.5rem !important; 
+        position: relative; 
+    }
+    .stButton button {
+        width: 100%;
+        border-radius: 8px;
+        font-weight: bold;
+        background-color: #1f67b5;
+        color: white;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -65,37 +65,22 @@ if os.path.exists(logo_path):
 
 # --- SIDEBAR DI NAVIGAZIONE ---
 with st.sidebar:
-    # Logo integrato nella sidebar
-    logo_path = "logo.png"
-    if os.path.exists(logo_path):
-        # Usiamo il comando nativo: niente HTML, massima stabilità
-        st.image(logo_path, width=150)
-    
-    st.markdown("<h1 style='text-align: center; font-size: 32px; color: white; font-weight: bold; margin-bottom: 20px;'>DASHBOARD</h1>", unsafe_allow_html=True)
-    st.divider()
-
-    # Menu cliccabile
-    tipo_analisi = option_menu(
-        menu_title=None, 
-        options=["Analisi Squadra", "Analisi Individuale"],
-        icons=["shield-fill", "person-bounding-box"], 
-        default_index=0,
-        styles={
-            "container": {"padding": "0!important", "background-color": "transparent"},
-            "icon": {"color": "white", "font-size": "18px"}, 
-            "nav-link": {
-                "font-size": "16px", "color": "#e0e0e0", "text-align": "left", "margin": "5px"
-            },
-            "nav-link-selected": {
-                "background-color": "#1f67b5", "color": "white", "font-weight": "bold"
-            },
-        }
+    st.markdown("### 🏟️ DASHBOARD")
+    # Selettore per cambiare modalità di analisi
+    tipo_analisi = st.radio(
+        "COSA VUOI ANALIZZARE?",
+        ["👥 Analisi Squadra", "👤 Analisi Individuale"],
+        index=0
     )
+    st.divider()
+    st.info("Seleziona la modalità per visualizzare i relativi form di inserimento.")
+
 # --- HEADER DINAMICO ---
+# Il titolo della pagina cambierà in base alla scelta nella sidebar
 st.markdown(f"## {tipo_analisi.upper()}")
 st.markdown(f"<p style='color: #8b949e;'>Pro Palazzolo U16 - {tipo_analisi}</p>", unsafe_allow_html=True)
 
-# --- INFO PARTITA (Comune a entrambe) ---
+# --- INFO PARTITA ---
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus Ciserano Bergamo"]
 
 with st.expander("ℹ️ Informazioni partita", expanded=True):
@@ -125,6 +110,7 @@ lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bos
 # --- FUNZIONE SALVATAGGIO ---
 def esegui_salvataggio(fase):
     s = f"_{st.session_state.reset_counter}"
+    
     giornata = st.session_state.get('g_key')
     data_val = st.session_state.get('d_key')
     data_str = data_val.strftime("%d/%m/%Y") if data_val else ""
@@ -174,6 +160,8 @@ def esegui_salvataggio(fase):
             }
 
         df_new = pd.DataFrame([record]).reindex(columns=cols)
+        
+        # OPERAZIONE SILENZIOSA
         with st.empty():
             st.cache_data.clear()
             existing_df = conn.read(worksheet=nome_foglio, ttl=0)
@@ -187,6 +175,7 @@ def esegui_salvataggio(fase):
     except Exception as e:
         st.error(f"❌ Errore critico: {e}")
 
+# --- LOGICA NOTIFICA (SOLO TOAST) ---
 if "mostra_toast" in st.session_state:
     st.toast(st.session_state["mostra_toast"])
     del st.session_state["mostra_toast"]
@@ -194,10 +183,11 @@ if "mostra_toast" in st.session_state:
 # --- LOGICA DI NAVIGAZIONE E VISUALIZZAZIONE ---
 suffix = f"_{st.session_state.reset_counter}"
 
-if tipo_analisi == "Analisi Squadra":
+if tipo_analisi == "👥 Analisi Squadra":
+    # Definiamo i tabs SOLO se siamo in analisi squadra
     tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
     
-    # TAB 1: COSTRUZIONE
+    # --- TAB 1: COSTRUZIONE ---
     with tabs[0]:
         rc1, rc2 = st.columns(2)
         with rc1:
@@ -223,7 +213,7 @@ if tipo_analisi == "Analisi Squadra":
             else:
                 esegui_salvataggio("Costruzione dal Basso")
 
-    # TAB 2: AZIONE OFFENSIVA
+    # --- TAB 2: AZIONE OFFENSIVA ---
     with tabs[1]:
         co1, co2 = st.columns(2)
         with co1:
@@ -248,10 +238,12 @@ if tipo_analisi == "Analisi Squadra":
                 img = Image.open(img_path)
                 larghezza_reale, altezza_reale = 358, 283
                 img_res = img.resize((larghezza_reale, altezza_reale)) 
+                
                 if "off_coords" in st.session_state:
                     draw = ImageDraw.Draw(img_res)
                     x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
                     draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
+                
                 val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
                 if val and (st.session_state.get("off_coords") != val):
                     st.session_state["off_coords"] = val
@@ -265,7 +257,7 @@ if tipo_analisi == "Analisi Squadra":
             else:
                 esegui_salvataggio("Azione Offensiva")
 
-    # TAB 3: AZIONE DIFENSIVA
+    # --- TAB 3: AZIONE DIFENSIVA ---
     with tabs[2]:
         cd1, cd2 = st.columns(2)
         with cd1:
@@ -289,10 +281,12 @@ if tipo_analisi == "Analisi Squadra":
                 img = Image.open(img_path)
                 larghezza_reale, altezza_reale = 358, 283
                 img_res = img.resize((larghezza_reale, altezza_reale)) 
+                
                 if "def_tiro_coords" in st.session_state:
                     draw = ImageDraw.Draw(img_res)
                     x, y = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
                     draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
+                
                 val = streamlit_image_coordinates(img_res, key=f"campetto_def{suffix}")
                 if val and (st.session_state.get("def_tiro_coords") != val):
                     st.session_state["def_tiro_coords"] = val
@@ -308,6 +302,6 @@ if tipo_analisi == "Analisi Squadra":
 
 else:
     # --- SEZIONE INDIVIDUALE ---
-    st.info("Configurazione Parametri Comportamentali")
-    st.write("In questa sezione potrai monitorare Leadership, Comunicazione, Resilienza, Intensità e Accettazione.")
-    # Prossimo step: inserire qui i widget per i 5 parametri
+    st.success("✅ Menù laterale funzionante!")
+    st.info("Qui inseriremo il form per i 5 parametri comportamentali.")
+    # Spazio per lo sviluppo del punto 2
