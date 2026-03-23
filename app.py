@@ -132,43 +132,50 @@ if tipo_analisi == "Analisi Squadra":
         with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
         with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
     with tabs[2]:
-    cd1, cd2 = st.columns(2)
-    with cd1:
-        st.text_input("Inizio", placeholder="min:sec", key=f"def_in{suffix}")
-        st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione difensiva", "Palla inattiva"], key=f"def_tipo_azione{suffix}")
-    with cd2:
-        st.text_input("Fine", placeholder="min:sec", key=f"def_fi{suffix}")
-        st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"def_canale_sviluppo{suffix}")
+        cd1, cd2 = st.columns(2)
+        with cd1:
+            st.text_input("Inizio", placeholder="min:sec", key=f"def_in{suffix}")
+            st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione difensiva", "Palla inattiva"], key=f"def_tipo_azione{suffix}")
+        with cd2:
+            st.text_input("Fine", placeholder="min:sec", key=f"def_fi{suffix}")
+            st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"def_canale_sviluppo{suffix}")
 
-    cd3, cd4 = st.columns(2)
-    with cd3:
-        st.selectbox("Rifinitura", ["Seleziona", "Cross/trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "Altro"], key=f"def_rif{suffix}")
-    with cd4:
-        st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla riconquistata", "Altro"], key=f"def_esito{suffix}")
+        cd3, cd4 = st.columns(2)
+        with cd3:
+            st.selectbox("Rifinitura", ["Seleziona", "Cross/trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "Altro"], key=f"def_rif{suffix}")
+        with cd4:
+            st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla riconquistata", "Altro"], key=f"def_esito{suffix}")
 
-    es_def_val = st.session_state.get(f"def_esito{suffix}")
-    if es_def_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
-        st.write("📍 **Punto del tiro subito**")
-        img_d_path = "campo.jpg"
-        if os.path.exists(img_d_path):
-            img_d = Image.open(img_d_path)
-            img_d_res = img_d.resize((500, int(img_d.size[1]*(500/img_d.size[0]))))
-            if "def_tiro_coords" in st.session_state:
-                draw_d = ImageDraw.Draw(img_d_res)
-                x_d, y_d = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
-                draw_d.ellipse([x_d-5, y_d-5, x_d+5, y_d+5], fill="yellow", outline="black")
-            val_d = streamlit_image_coordinates(img_d_res, key=f"campetto_def{suffix}")
-            if val_d and (st.session_state.get("def_tiro_coords") != val_d):
-                st.session_state["def_tiro_coords"] = val_d
-                st.rerun()
+        es_def_val = st.session_state.get(f"def_esito{suffix}")
+        if es_def_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
+            st.write("📍 **Punto del tiro subito**")
+            img_d_path = "campo.jpg"
+            if os.path.exists(img_d_path):
+                img_d = Image.open(img_d_path)
+                # Ridimensionamento proporzionale
+                width_d = 500
+                height_d = int(img_d.size[1] * (width_d / img_d.size[0]))
+                img_d_res = img_d.resize((width_d, height_d))
+                
+                if "def_tiro_coords" in st.session_state:
+                    draw_d = ImageDraw.Draw(img_d_res)
+                    x_d, y_d = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
+                    draw_d.ellipse([x_d-5, y_d-5, x_d+5, y_d+5], fill="yellow", outline="black")
+                
+                val_d = streamlit_image_coordinates(img_d_res, key=f"campetto_def{suffix}")
+                if val_d and (st.session_state.get("def_tiro_coords") != val_d):
+                    st.session_state["def_tiro_coords"] = val_d
+                    st.rerun()
             
-    if st.button("💾 Salva Azione Difensiva"):
-        ini_d = st.session_state.get(f"def_in{suffix}", "")
-        fin_d = st.session_state.get(f"def_fi{suffix}", "")
-        if len(ini_d) < 5 or len(fin_d) < 5:
-            st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
-        else:
-            esegui_salvataggio("Azione Difensiva")
+        if st.button("💾 Salva Azione Difensiva"):
+            ini_d = st.session_state.get(f"def_in{suffix}", "")
+            fin_d = st.session_state.get(f"def_fi{suffix}", "")
+            if len(ini_d) < 5 or len(fin_d) < 5:
+                st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
+            else:
+                esegui_salvataggio("Azione Difensiva")
+
+# Da qui in poi il codice riprende con "else:" per l'analisi individuale
 else:
     # ANALISI INDIVIDUALE (Pulita e senza info partita)
     st.markdown("### 👤 VALUTAZIONE INDIVIDUALE")
