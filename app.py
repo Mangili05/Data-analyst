@@ -108,6 +108,7 @@ if tipo_analisi == "Analisi Squadra":
     if "mostra_toast" in st.session_state: st.toast(st.session_state["mostra_toast"]); del st.session_state["mostra_toast"]
     suffix = f"_{st.session_state.reset_counter}"
     tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
+    
     with tabs[0]:
         rc1, rc2 = st.columns(2)
         with rc1: st.text_input("Inizio", placeholder="min:sec", key=f"t_in{suffix}")
@@ -120,6 +121,7 @@ if tipo_analisi == "Analisi Squadra":
             with inner_c: st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}", horizontal=True)
         with c_dx: st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
         if st.button("💾 Salva Costruzione"): esegui_salvataggio("Costruzione dal Basso")
+
     with tabs[1]:
         co1, co2 = st.columns(2)
         with co1:
@@ -131,6 +133,10 @@ if tipo_analisi == "Analisi Squadra":
         co3, co4 = st.columns(2)
         with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
         with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
+        
+        # AGGIUNTO IL BOTTONE MANCANTE
+        if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
+
     with tabs[2]:
         cd1, cd2 = st.columns(2)
         with cd1:
@@ -152,16 +158,11 @@ if tipo_analisi == "Analisi Squadra":
             img_d_path = "campo.jpg"
             if os.path.exists(img_d_path):
                 img_d = Image.open(img_d_path)
-                # Ridimensionamento proporzionale
-                width_d = 500
-                height_d = int(img_d.size[1] * (width_d / img_d.size[0]))
-                img_d_res = img_d.resize((width_d, height_d))
-                
+                img_d_res = img_d.resize((500, int(img_d.size[1]*(500/img_d.size[0]))))
                 if "def_tiro_coords" in st.session_state:
                     draw_d = ImageDraw.Draw(img_d_res)
                     x_d, y_d = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
                     draw_d.ellipse([x_d-5, y_d-5, x_d+5, y_d+5], fill="yellow", outline="black")
-                
                 val_d = streamlit_image_coordinates(img_d_res, key=f"campetto_def{suffix}")
                 if val_d and (st.session_state.get("def_tiro_coords") != val_d):
                     st.session_state["def_tiro_coords"] = val_d
