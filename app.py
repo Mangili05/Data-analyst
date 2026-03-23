@@ -74,6 +74,21 @@ if tipo_analisi == "Analisi Squadra":
                 coords = st.session_state.get('off_coords')
                 record = {"Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": g_casa, "Gol ospite": g_ospite, "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'), "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'), "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""}
             df_new = pd.DataFrame([record]).reindex(columns=cols)
+            elif fase == "Azione Difensiva":
+            nome_foglio = "Difensiva"
+            cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
+            coords = st.session_state.get('def_tiro_coords')
+            record = {
+                "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
+                "Gol casa": g_casa, "Gol ospite": g_ospite,
+                "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'),
+                "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'), "Canale": st.session_state.get(f'def_canale_sviluppo{s}'),
+                "Rifinitura": st.session_state.get(f'def_rif{s}'), "Esito finale": st.session_state.get(f'def_esito{s}'),
+                "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
+            }
+
+        df_new = pd.DataFrame([record]).reindex(columns=cols)
+
             with st.empty():
                 st.cache_data.clear(); existing_df = conn.read(worksheet=nome_foglio, ttl=0)
                 updated_df = pd.concat([existing_df, df_new], ignore_index=True); conn.update(worksheet=nome_foglio, data=updated_df)
