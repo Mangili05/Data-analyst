@@ -57,24 +57,27 @@ if tipo_analisi == "Analisi Squadra":
     st.divider()
 
     def esegui_salvataggio(fase):
-        s = f"_{st.session_state.reset_counter}"
-        giornata = st.session_state.get('g_key'); data_val = st.session_state.get('d_key')
-        data_str = data_val.strftime("%d/%m/%Y") if data_val else ""; s_casa = st.session_state.get('h_key')
-        s_ospite = st.session_state.get('a_key'); g_casa = st.session_state.get('gh_key'); g_ospite = st.session_state.get('ga_key')
-        if giornata == "Seleziona giornata" or s_casa == "Seleziona squadra" or s_ospite == "Seleziona squadra":
-            st.error("⚠️ Compila i dati della partita!"); return
-        try:
-            if fase == "Costruzione dal Basso":
-                nome_foglio = "Costruzione"
-                cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
-                record = {"Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": g_casa, "Gol ospite": g_ospite, "Inizio": st.session_state.get(f't_in{s}'), "Fine": st.session_state.get(f't_fi{s}'), "Tipologia": st.session_state.get(f'tipo_rad{s}'), "Modalità": st.session_state.get(f'mod_rad{s}'), "Esito finale": st.session_state.get(f'esito_rad{s}')}
-            elif fase == "Azione Offensiva":
-                nome_foglio = "Offensiva"
-                cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
-                coords = st.session_state.get('off_coords')
-                record = {"Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": g_casa, "Gol ospite": g_ospite, "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'), "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'), "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""}
-            df_new = pd.DataFrame([record]).reindex(columns=cols)
-            elif fase == "Azione Difensiva":
+    s = f"_{st.session_state.reset_counter}"
+    giornata = st.session_state.get('g_key'); data_val = st.session_state.get('d_key')
+    data_str = data_val.strftime("%d/%m/%Y") if data_val else ""; s_casa = st.session_state.get('h_key')
+    s_ospite = st.session_state.get('a_key'); g_casa = st.session_state.get('gh_key'); g_ospite = st.session_state.get('ga_key')
+    
+    if giornata == "Seleziona giornata" or s_casa == "Seleziona squadra" or s_ospite == "Seleziona squadra":
+        st.error("⚠️ Compila i dati della partita!"); return
+    
+    try:
+        if fase == "Costruzione dal Basso":
+            nome_foglio = "Costruzione"
+            cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
+            record = {"Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": g_casa, "Gol ospite": g_ospite, "Inizio": st.session_state.get(f't_in{s}'), "Fine": st.session_state.get(f't_fi{s}'), "Tipologia": st.session_state.get(f'tipo_rad{s}'), "Modalità": st.session_state.get(f'mod_rad{s}'), "Esito finale": st.session_state.get(f'esito_rad{s}')}
+        
+        elif fase == "Azione Offensiva":
+            nome_foglio = "Offensiva"
+            cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
+            coords = st.session_state.get('off_coords')
+            record = {"Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": g_casa, "Gol ospite": g_ospite, "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'), "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'), "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""}
+        
+        elif fase == "Azione Difensiva":
             nome_foglio = "Difensiva"
             cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
             coords = st.session_state.get('def_tiro_coords')
@@ -87,13 +90,20 @@ if tipo_analisi == "Analisi Squadra":
                 "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
             }
 
+        # La creazione del DataFrame e l'invio vanno fatti alla fine, FUORI dagli if/elif
         df_new = pd.DataFrame([record]).reindex(columns=cols)
-
-            with st.empty():
-                st.cache_data.clear(); existing_df = conn.read(worksheet=nome_foglio, ttl=0)
-                updated_df = pd.concat([existing_df, df_new], ignore_index=True); conn.update(worksheet=nome_foglio, data=updated_df)
-            st.session_state["mostra_toast"] = f"✅ Dati salvati!"; reset_campi(); st.rerun()
-        except Exception as e: st.error(f"❌ Errore: {e}")
+        with st.empty():
+            st.cache_data.clear()
+            existing_df = conn.read(worksheet=nome_foglio, ttl=0)
+            updated_df = pd.concat([existing_df, df_new], ignore_index=True)
+            conn.update(worksheet=nome_foglio, data=updated_df)
+        
+        st.session_state["mostra_toast"] = f"✅ Dati {fase} salvati!"
+        reset_campi()
+        st.rerun()
+        
+    except Exception as e: 
+        st.error(f"❌ Errore durante il salvataggio: {e}")
 
     if "mostra_toast" in st.session_state: st.toast(st.session_state["mostra_toast"]); del st.session_state["mostra_toast"]
     suffix = f"_{st.session_state.reset_counter}"
