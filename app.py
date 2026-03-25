@@ -188,12 +188,11 @@ if scelta_analisi == "Squadra":
         if st.button("💾 Salva Azione Difensiva"): esegui_salvataggio("Azione Difensiva")
 
 # ---------------------------------------------------------
-# ANALISI INDIVIDUALE (AGGIORNATA CON RESET E VALIDAZIONE)
+# ANALISI INDIVIDUALE (CORRETTA)
 # ---------------------------------------------------------
 else:
     st.markdown("### 👤 VALUTAZIONE COMPORTAMENTALE INDIVIDUALE")
     
-    # Counter specifico per resettare i widget individuali
     if "reset_ind" not in st.session_state:
         st.session_state.reset_ind = 0
     
@@ -201,7 +200,6 @@ else:
 
     ci1, ci2, ci3 = st.columns([1, 1, 2])
     with ci1: 
-        # La giornata NON ha il suffix_ind, così non si resetta al rerun
         g_ind = st.selectbox("Giornata", ["Seleziona"] + list(range(1, 31)), key="g_ind_key")
     with ci2: 
         t_ind = st.text_input("Minuto", placeholder="mm:ss", key=f"t_ind{suffix_ind}")
@@ -226,12 +224,10 @@ else:
     note_txt = st.text_area("Note Tecnico/Comportamentali", placeholder="Inserisci osservazioni specifiche...", key=f"note{suffix_ind}")
     
     if st.button("💾 Salva Analisi Individuale"):
-        # 1. RESTRIZIONE MINUTO (Minimo 5 caratteri)
         if g_ind == "Seleziona" or p_ind == "Seleziona" or len(t_ind) < 5:
             st.error("⚠️ Errore: Compila tutti i campi. Il minuto deve essere nel formato mm:ss (es. 05:20)")
         else:
             try:
-                # Calcolo Totale
                 voti_validi = [mappa_voti[st.session_state[f"v_res{suffix_ind}"]], 
                                mappa_voti[st.session_state[f"v_com{suffix_ind}"]], 
                                mappa_voti[st.session_state[f"v_int{suffix_ind}"]], 
@@ -241,19 +237,15 @@ else:
                 totale_punti = sum(voti_filtrati) if voti_filtrati else 0
                 
                 rec_ind = {
-                    "Giornata": g_ind,
-                    "Minuto": t_ind,
-                    "Calciatore": p_ind,
+                    "Giornata": g_ind, "Minuto": t_ind, "Calciatore": p_ind,
                     "Resilienza": mappa_voti[st.session_state[f"v_res{suffix_ind}"]],
                     "Comunicazione": mappa_voti[st.session_state[f"v_com{suffix_ind}"]],
                     "Intensità": mappa_voti[st.session_state[f"v_int{suffix_ind}"]],
                     "Accettazione": mappa_voti[st.session_state[f"v_acc{suffix_ind}"]],
                     "Leadership": mappa_voti[st.session_state[f"v_lea{suffix_ind}"]],
-                    "Totale": totale_punti,
-                    "Note": note_txt
+                    "Totale": totale_punti, "Note": note_txt
                 }
                 
-                # Salvataggio
                 df_ordine = ["Giornata", "Minuto", "Calciatore", "Resilienza", "Comunicazione", "Intensità", "Accettazione", "Leadership", "Totale", "Note"]
                 df_nuovo = pd.DataFrame([rec_ind]).reindex(columns=df_ordine)
                 
@@ -262,28 +254,23 @@ else:
                 df_finale = pd.concat([df_esistente, df_nuovo], ignore_index=True)
                 conn.update(worksheet="Individuale", data=df_finale)
                 
-                # 2. MESSAGGIO DI SUCCESSO (Toast)
                 st.session_state["mostra_toast"] = f"✅ Analisi di {p_ind} salvata!"
-                
-                # 3. RESET CAMPI (tranne giornata)
                 st.session_state.reset_ind += 1
                 st.rerun()
                 
             except Exception as e:
                 st.error(f"❌ Errore: {e}")
 
-# Ricorda di mantenere questa logica fuori dall'else per mostrare il toast dopo il rerun
-if "mostra_toast" in st.session_state:
-    st.toast(st.session_state["mostra_toast"])
-    del st.session_state["mostra_toast"]
+    # LOGICA TOAST (Indentata dentro l'else se vuoi che appaia solo qui, 
+    # o fuori se è per tutta l'app)
+    if "mostra_toast" in st.session_state:
+        st.toast(st.session_state["mostra_toast"])
+        del st.session_state["mostra_toast"]
 
-# ---------------------------------------------------------
-    # NUOVA SEZIONE: GENERAZIONE RADAR CHART (DA AGGIUNGERE SOTTO IL SALVATAGGIO)
-    # ---------------------------------------------------------
+    # --- SEZIONE RADAR (DEVE ESSERE INDENTATA DENTRO L'ELSE) ---
     st.divider()
     st.markdown("### 📊 VISUALIZZAZIONE PROFILO")
 
-    # Controlli per il grafico
     c_rep1, c_rep2 = st.columns(2)
     with c_rep1:
         p_sel = st.selectbox("Seleziona Calciatore per il Radar", lista_calciatori, key="p_radar_sel")
@@ -292,59 +279,26 @@ if "mostra_toast" in st.session_state:
 
     if p_sel != "Seleziona":
         try:
-            # Recupero dati dal foglio Google
             df_ind = conn.read(worksheet="Individuale", ttl=0)
-            
-            # Filtro per il calciatore scelto
             df_player = df_ind[df_ind['Calciatore'] == p_sel]
             
-            # Filtro per giornata (se non è "Tutte")
             if g_sel != "Tutte le giornate":
                 df_player = df_player[df_player['Giornata'] == g_sel]
             
             if df_player.empty:
-                st.warning(f"Nessun dato trovato per {p_sel} con i filtri selezionati.")
+                st.warning(f"Nessun dato trovato per {p_sel}.")
             else:
-                # Definiamo i parametri (i nomi delle colonne nel tuo Sheets)
                 categorie = ['Resilienza', 'Comunicazione', 'Intensità', 'Accettazione', 'Leadership']
-                
-                # Calcoliamo la media dei voti per il calciatore
                 valori = df_player[categorie].mean().tolist()
-                # Calcoliamo la media della squadra per il confronto
                 media_squadra = df_ind[categorie].mean().tolist()
 
-                # Creazione del grafico Plotly
                 import plotly.graph_objects as go
-                
                 fig = go.Figure()
-
-                # Traccia Calciatore
-                fig.add_trace(go.Scatterpolar(
-                    r=valori + [valori[0]],
-                    theta=categorie + [categorie[0]],
-                    fill='toself',
-                    name=f'Media {p_sel}',
-                    line=dict(color='#1f67b5')
-                ))
-
-                # Traccia Squadra (confronto)
-                fig.add_trace(go.Scatterpolar(
-                    r=media_squadra + [media_squadra[0]],
-                    theta=categorie + [categorie[0]],
-                    mode='lines',
-                    name='Media Squadra',
-                    line=dict(color='rgba(200, 200, 200, 0.5)', dash='dash')
-                ))
-
-                fig.update_layout(
-                    polar=dict(
-                        radialaxis=dict(visible=True, range=[0, 1]) # Range 0-1 perché i tuoi voti sono 0, 0.5, 1
-                    ),
-                    showlegend=True,
-                    template="plotly_dark"
-                )
-
+                fig.add_trace(go.Scatterpolar(r=valori + [valori[0]], theta=categorie + [categorie[0]], fill='toself', name=f'Media {p_sel}', line=dict(color='#1f67b5')))
+                fig.add_trace(go.Scatterpolar(r=media_squadra + [media_squadra[0]], theta=categorie + [categorie[0]], mode='lines', name='Media Squadra', line=dict(color='rgba(200, 200, 200, 0.5)', dash='dash')))
+                
+                fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), showlegend=True, template="plotly_dark")
                 st.plotly_chart(fig, use_container_width=True)
                 
         except Exception as e:
-            st.error(f"Errore nella generazione del grafico: {e}")
+            st.error(f"Errore radar: {e}")
