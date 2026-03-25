@@ -276,3 +276,75 @@ else:
 if "mostra_toast" in st.session_state:
     st.toast(st.session_state["mostra_toast"])
     del st.session_state["mostra_toast"]
+
+# ---------------------------------------------------------
+    # NUOVA SEZIONE: GENERAZIONE RADAR CHART (DA AGGIUNGERE SOTTO IL SALVATAGGIO)
+    # ---------------------------------------------------------
+    st.divider()
+    st.markdown("### 📊 VISUALIZZAZIONE PROFILO")
+
+    # Controlli per il grafico
+    c_rep1, c_rep2 = st.columns(2)
+    with c_rep1:
+        p_sel = st.selectbox("Seleziona Calciatore per il Radar", lista_calciatori, key="p_radar_sel")
+    with c_rep2:
+        g_sel = st.selectbox("Filtro Sessione", ["Tutte le giornate"] + list(range(1, 31)), key="g_radar_sel")
+
+    if p_sel != "Seleziona":
+        try:
+            # Recupero dati dal foglio Google
+            df_ind = conn.read(worksheet="Individuale", ttl=0)
+            
+            # Filtro per il calciatore scelto
+            df_player = df_ind[df_ind['Calciatore'] == p_sel]
+            
+            # Filtro per giornata (se non è "Tutte")
+            if g_sel != "Tutte le giornate":
+                df_player = df_player[df_player['Giornata'] == g_sel]
+            
+            if df_player.empty:
+                st.warning(f"Nessun dato trovato per {p_sel} con i filtri selezionati.")
+            else:
+                # Definiamo i parametri (i nomi delle colonne nel tuo Sheets)
+                categorie = ['Resilienza', 'Comunicazione', 'Intensità', 'Accettazione', 'Leadership']
+                
+                # Calcoliamo la media dei voti per il calciatore
+                valori = df_player[categorie].mean().tolist()
+                # Calcoliamo la media della squadra per il confronto
+                media_squadra = df_ind[categorie].mean().tolist()
+
+                # Creazione del grafico Plotly
+                import plotly.graph_objects as go
+                
+                fig = go.Figure()
+
+                # Traccia Calciatore
+                fig.add_trace(go.Scatterpolar(
+                    r=valori + [valori[0]],
+                    theta=categorie + [categorie[0]],
+                    fill='toself',
+                    name=f'Media {p_sel}',
+                    line=dict(color='#1f67b5')
+                ))
+
+                # Traccia Squadra (confronto)
+                fig.add_trace(go.Scatterpolar(
+                    r=media_squadra + [media_squadra[0]],
+                    theta=categorie + [categorie[0]],
+                    mode='lines',
+                    name='Media Squadra',
+                    line=dict(color='rgba(200, 200, 200, 0.5)', dash='dash')
+                ))
+
+                fig.update_layout(
+                    polar=dict(
+                        radialaxis=dict(visible=True, range=[0, 1]) # Range 0-1 perché i tuoi voti sono 0, 0.5, 1
+                    ),
+                    showlegend=True,
+                    template="plotly_dark"
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+                
+        except Exception as e:
+            st.error(f"Errore nella generazione del grafico: {e}")
