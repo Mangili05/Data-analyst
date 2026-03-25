@@ -188,72 +188,91 @@ if scelta_analisi == "Squadra":
         if st.button("💾 Salva Azione Difensiva"): esegui_salvataggio("Azione Difensiva")
 
 # ---------------------------------------------------------
-# ANALISI INDIVIDUALE (SINCRONIZZATA CON COLONNE GOOGLE SHEETS)
+# ANALISI INDIVIDUALE (AGGIORNATA CON RESET E VALIDAZIONE)
 # ---------------------------------------------------------
 else:
     st.markdown("### 👤 VALUTAZIONE COMPORTAMENTALE INDIVIDUALE")
     
+    # Counter specifico per resettare i widget individuali
+    if "reset_ind" not in st.session_state:
+        st.session_state.reset_ind = 0
+    
+    suffix_ind = f"_ind_{st.session_state.reset_ind}"
+
     ci1, ci2, ci3 = st.columns([1, 1, 2])
     with ci1: 
+        # La giornata NON ha il suffix_ind, così non si resetta al rerun
         g_ind = st.selectbox("Giornata", ["Seleziona"] + list(range(1, 31)), key="g_ind_key")
     with ci2: 
-        t_ind = st.text_input("Minuto", placeholder="mm:ss", key="t_ind_key")
+        t_ind = st.text_input("Minuto", placeholder="mm:ss", key=f"t_ind{suffix_ind}")
     with ci3: 
-        p_ind = st.selectbox("Calciatore", lista_calciatori, key="p_ind_key")
+        p_ind = st.selectbox("Calciatore", lista_calciatori, key=f"p_ind{suffix_ind}")
     
     st.divider()
     
-    # Parametri Comportamentali
     mappa_voti = {"N.D.": None, "🟢 Verde": 1.0, "🟡 Giallo": 0.5, "🔴 Rosso": 0.0}
     opts = list(mappa_voti.keys())
     
     col_ind1, col_ind2 = st.columns(2)
     with col_ind1:
-        v_res = st.radio("Resilienza all'Errore", opts, index=0, horizontal=True, key="v_res")
-        v_com = st.radio("Comunicazione Proattiva", opts, index=0, horizontal=True, key="v_com")
-        v_int = st.radio("Intensità Mentale", opts, index=0, horizontal=True, key="v_int")
+        v_res = st.radio("Resilienza all'Errore", opts, index=0, horizontal=True, key=f"v_res{suffix_ind}")
+        v_com = st.radio("Comunicazione Proattiva", opts, index=0, horizontal=True, key=f"v_com{suffix_ind}")
+        v_int = st.radio("Intensità Mentale", opts, index=0, horizontal=True, key=f"v_int{suffix_ind}")
     with col_ind2:
-        v_acc = st.radio("Accettazione delle Scelte", opts, index=0, horizontal=True, key="v_acc")
-        v_lea = st.radio("Leadership / Spirito di Sacrificio", opts, index=0, horizontal=True, key="v_lea")
+        v_acc = st.radio("Accettazione delle Scelte", opts, index=0, horizontal=True, key=f"v_acc{suffix_ind}")
+        v_lea = st.radio("Leadership / Spirito di Sacrificio", opts, index=0, horizontal=True, key=f"v_lea{suffix_ind}")
     
     st.markdown("<br>", unsafe_allow_html=True)
-    note_txt = st.text_area("Note Tecnico/Comportamentali", placeholder="Inserisci osservazioni specifiche...")
+    note_txt = st.text_area("Note Tecnico/Comportamentali", placeholder="Inserisci osservazioni specifiche...", key=f"note{suffix_ind}")
     
     if st.button("💾 Salva Analisi Individuale"):
-        if g_ind == "Seleziona" or p_ind == "Seleziona" or not t_ind:
-            st.error("⚠️ Compila Giornata, Minuto e Calciatore!")
+        # 1. RESTRIZIONE MINUTO (Minimo 5 caratteri)
+        if g_ind == "Seleziona" or p_ind == "Seleziona" or len(t_ind) < 5:
+            st.error("⚠️ Errore: Compila tutti i campi. Il minuto deve essere nel formato mm:ss (es. 05:20)")
         else:
             try:
-                # Calcolo Totale (Ignora i N.D.)
-                voti_validi = [mappa_voti[v] for v in [v_res, v_com, v_int, v_acc, v_lea] if mappa_voti[v] is not None]
-                totale_punti = sum(voti_validi) if voti_validi else 0
+                # Calcolo Totale
+                voti_validi = [mappa_voti[st.session_state[f"v_res{suffix_ind}"]], 
+                               mappa_voti[st.session_state[f"v_com{suffix_ind}"]], 
+                               mappa_voti[st.session_state[f"v_int{suffix_ind}"]], 
+                               mappa_voti[st.session_state[f"v_acc{suffix_ind}"]], 
+                               mappa_voti[st.session_state[f"v_lea{suffix_ind}"]]]
+                voti_filtrati = [v for v in voti_validi if v is not None]
+                totale_punti = sum(voti_filtrati) if voti_filtrati else 0
                 
-                # CREAZIONE RECORD NELL'ORDINE ESATTO DEL TUO FOGLIO
                 rec_ind = {
                     "Giornata": g_ind,
                     "Minuto": t_ind,
                     "Calciatore": p_ind,
-                    "Resilienza": mappa_voti[v_res],
-                    "Comunicazione": mappa_voti[v_com],
-                    "Intensità": mappa_voti[v_int], # Nota: 'Intensità' con accento come nel tuo foglio
-                    "Accettazione": mappa_voti[v_acc],
-                    "Leadership": mappa_voti[v_lea],
+                    "Resilienza": mappa_voti[st.session_state[f"v_res{suffix_ind}"]],
+                    "Comunicazione": mappa_voti[st.session_state[f"v_com{suffix_ind}"]],
+                    "Intensità": mappa_voti[st.session_state[f"v_int{suffix_ind}"]],
+                    "Accettazione": mappa_voti[st.session_state[f"v_acc{suffix_ind}"]],
+                    "Leadership": mappa_voti[st.session_state[f"v_lea{suffix_ind}"]],
                     "Totale": totale_punti,
                     "Note": note_txt
                 }
                 
-                # Conversione in DataFrame per garantire l'ordine delle colonne
+                # Salvataggio
                 df_ordine = ["Giornata", "Minuto", "Calciatore", "Resilienza", "Comunicazione", "Intensità", "Accettazione", "Leadership", "Totale", "Note"]
                 df_nuovo = pd.DataFrame([rec_ind]).reindex(columns=df_ordine)
                 
                 st.cache_data.clear()
                 df_esistente = conn.read(worksheet="Individuale", ttl=0)
                 df_finale = pd.concat([df_esistente, df_nuovo], ignore_index=True)
-                
                 conn.update(worksheet="Individuale", data=df_finale)
                 
-                st.success(f"✅ Analisi di {p_ind} (Giorno {g_ind}) salvata!")
+                # 2. MESSAGGIO DI SUCCESSO (Toast)
+                st.session_state["mostra_toast"] = f"✅ Analisi di {p_ind} salvata!"
+                
+                # 3. RESET CAMPI (tranne giornata)
+                st.session_state.reset_ind += 1
                 st.rerun()
                 
             except Exception as e:
-                st.error(f"❌ Errore durante il salvataggio: {e}")
+                st.error(f"❌ Errore: {e}")
+
+# Ricorda di mantenere questa logica fuori dall'else per mostrare il toast dopo il rerun
+if "mostra_toast" in st.session_state:
+    st.toast(st.session_state["mostra_toast"])
+    del st.session_state["mostra_toast"]
