@@ -50,6 +50,46 @@ st.sidebar.divider()
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
 
+# --- LOGICA DI ACCESSO (LANDING PAGE) ---
+if "autenticato" not in st.session_state:
+    st.session_state.autenticato = False
+    st.session_state.profilo = None
+
+if not st.session_state.autenticato:
+    # Questa è la pagina che compare APPENA apri l'app
+    st.markdown("## 🏟️ BENVENUTO NELL'HUB PRO PALAZZOLO")
+    st.markdown("### Seleziona il tuo profilo per accedere ai dati:")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.info("### 👤 STAFF TECNICO")
+        st.write("Accesso in sola consultazione ai report e ai radar della squadra.")
+        if st.button("ACCEDI COME STAFF"):
+            st.session_state.autenticato = True
+            st.session_state.profilo = "Staff Tecnico"
+            st.rerun()
+
+    with col2:
+        st.success("### 🛠️ MATCH ANALYST")
+        st.write("Accesso completo: inserimento dati, gestione database e analisi.")
+        if st.button("ACCEDI COME ANALYST"):
+            st.session_state.autenticato = True
+            st.session_state.profilo = "Match Analyst"
+            st.rerun()
+    
+    st.stop() # Blocca l'esecuzione qui, non mostra altro finché non cliccano
+
+# Se siamo qui, l'utente è autenticato. 
+# Creiamo un tasto nella sidebar per tornare indietro (Logout)
+if st.sidebar.button("⬅️ CAMBIA PROFILO"):
+    st.session_state.autenticato = False
+    st.session_state.profilo = None
+    st.rerun()
+
+# Recuperiamo il ruolo scelto per far funzionare il resto del codice
+ruolo = st.session_state.profilo
+st.sidebar.write(f"Connesso come: **{ruolo}**")
+
 # =========================================================
 # LOGICA MATCH ANALYST (RACCOLTA + VISUALIZZAZIONE)
 # =========================================================
