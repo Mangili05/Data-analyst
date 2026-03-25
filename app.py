@@ -188,19 +188,22 @@ if scelta_analisi == "Squadra":
         if st.button("💾 Salva Azione Difensiva"): esegui_salvataggio("Azione Difensiva")
 
 # ---------------------------------------------------------
-# ANALISI INDIVIDUALE (NUOVA SEZIONE INTEGRATA)
+# ANALISI INDIVIDUALE (SINCRONIZZATA CON COLONNE GOOGLE SHEETS)
 # ---------------------------------------------------------
 else:
     st.markdown("### 👤 VALUTAZIONE COMPORTAMENTALE INDIVIDUALE")
     
-    ci1, ci2, ci3 = st.columns([1, 2, 1])
-    with ci1: g_ind = st.selectbox("Giornata", ["Seleziona"] + list(range(1, 31)), key="g_ind_key")
-    with ci2: p_ind = st.selectbox("Calciatore", lista_calciatori, key="p_ind_key")
-    with ci3: t_ind = st.text_input("Minuto", placeholder="mm:ss", key="t_ind_key")
+    ci1, ci2, ci3 = st.columns([1, 1, 2])
+    with ci1: 
+        g_ind = st.selectbox("Giornata", ["Seleziona"] + list(range(1, 31)), key="g_ind_key")
+    with ci2: 
+        t_ind = st.text_input("Minuto", placeholder="mm:ss", key="t_ind_key")
+    with ci3: 
+        p_ind = st.selectbox("Calciatore", lista_calciatori, key="p_ind_key")
     
     st.divider()
     
-    # Parametri Comportamentali (Valori numerici per analisi dati)
+    # Parametri Comportamentali
     mappa_voti = {"N.D.": None, "🟢 Verde": 1.0, "🟡 Giallo": 0.5, "🔴 Rosso": 0.0}
     opts = list(mappa_voti.keys())
     
@@ -218,23 +221,39 @@ else:
     
     if st.button("💾 Salva Analisi Individuale"):
         if g_ind == "Seleziona" or p_ind == "Seleziona" or not t_ind:
-            st.error("⚠️ Compila Giornata, Calciatore e Minuto!")
+            st.error("⚠️ Compila Giornata, Minuto e Calciatore!")
         else:
             try:
-                # Calcolo Totale Solo sui voti espressi (non N.D.)
-                voti = [mappa_voti[v] for v in [v_res, v_com, v_int, v_acc, v_lea] if mappa_voti[v] is not None]
-                totale_punti = sum(voti) if voti else 0
+                # Calcolo Totale (Ignora i N.D.)
+                voti_validi = [mappa_voti[v] for v in [v_res, v_com, v_int, v_acc, v_lea] if mappa_voti[v] is not None]
+                totale_punti = sum(voti_validi) if voti_validi else 0
                 
+                # CREAZIONE RECORD NELL'ORDINE ESATTO DEL TUO FOGLIO
                 rec_ind = {
-                    "Giornata": g_ind, "Calciatore": p_ind, "Minuto": t_ind,
-                    "Resilienza": mappa_voti[v_res], "Comunicazione": mappa_voti[v_com],
-                    "Intensita": mappa_voti[v_int], "Accettazione": mappa_voti[v_acc],
-                    "Leadership": mappa_voti[v_lea], "Totale": totale_punti, "Note": note_txt
+                    "Giornata": g_ind,
+                    "Minuto": t_ind,
+                    "Calciatore": p_ind,
+                    "Resilienza": mappa_voti[v_res],
+                    "Comunicazione": mappa_voti[v_com],
+                    "Intensità": mappa_voti[v_int], # Nota: 'Intensità' con accento come nel tuo foglio
+                    "Accettazione": mappa_voti[v_acc],
+                    "Leadership": mappa_voti[v_lea],
+                    "Totale": totale_punti,
+                    "Note": note_txt
                 }
                 
+                # Conversione in DataFrame per garantire l'ordine delle colonne
+                df_ordine = ["Giornata", "Minuto", "Calciatore", "Resilienza", "Comunicazione", "Intensità", "Accettazione", "Leadership", "Totale", "Note"]
+                df_nuovo = pd.DataFrame([rec_ind]).reindex(columns=df_ordine)
+                
                 st.cache_data.clear()
-                df_old = conn.read(worksheet="Individuale", ttl=0)
-                df_up = pd.concat([df_old, pd.DataFrame([rec_ind])], ignore_index=True)
-                conn.update(worksheet="Individuale", data=df_up)
-                st.success(f"✅ Analisi di {p_ind} salvata correttamente!"); st.rerun()
-            except Exception as e: st.error(f"❌ Errore durante il salvataggio: {e}")
+                df_esistente = conn.read(worksheet="Individuale", ttl=0)
+                df_finale = pd.concat([df_esistente, df_nuovo], ignore_index=True)
+                
+                conn.update(worksheet="Individuale", data=df_finale)
+                
+                st.success(f"✅ Analisi di {p_ind} (Giorno {g_ind}) salvata!")
+                st.rerun()
+                
+            except Exception as e:
+                st.error(f"❌ Errore durante il salvataggio: {e}")
