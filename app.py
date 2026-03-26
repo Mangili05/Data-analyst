@@ -6,10 +6,10 @@ from datetime import datetime
 from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
-
+ 
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
-
+ 
 # --- CONFIGURAZIONE STILE CSS ---
 st.markdown("""
     <style>
@@ -22,12 +22,12 @@ st.markdown("""
     h1, h2, h3, p, label, .stMarkdown {
         color: white !important;
     }
-
+ 
     /* Stile specifico per le scritte delle Selectbox (che a volte restano nere) */
     .stSelectbox label p {
         color: white !important;
     }
-
+ 
     /* Rende i testi dei bottoni leggibili */
     .stButton>button {
         width: 100%;
@@ -44,21 +44,29 @@ st.markdown("""
         background-color: transparent !important;
         box-shadow: none !important;
     }
+
+    /* --- AGGIUNTA LOGO IN ALTO A DESTRA --- */
+    .logo-top-right {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
     </style>
     """, unsafe_allow_html=True)
-
+ 
 # --- CONNESSIONE GOOGLE SHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
-
+ 
 # --- GESTIONE COUNTER PER RESET ---
 if "reset_counter" not in st.session_state:
     st.session_state.reset_counter = 0
-
+ 
 def reset_campi():
     st.session_state.reset_counter += 1
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
-
+ 
 # --- CSS PERSONALIZZATO PER LANDING PAGE E STILE PRO PALAZZOLO ---
 st.markdown("""
     <style>
@@ -82,7 +90,7 @@ st.markdown("""
     }
     
     /* Bottoni stile Pro Palazzolo */
-    .stButton>button {
+   .stButton>button {
         width: 100%;
         border-radius: 8px;
         height: 3em;
@@ -97,21 +105,31 @@ st.markdown("""
     }
     </style>
     """, unsafe_allow_html=True)
-
+ 
 # --- DATI COMUNI ---
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
-
+ 
 # --- LOGICA DI ACCESSO (LANDING PAGE) ---
 if "autenticato" not in st.session_state:
     st.session_state.autenticato = False
     st.session_state.profilo = None
-
+ 
 if not st.session_state.autenticato:
+    # --- INIEZIONE LOGO IN ALTO A DESTRA ---
+    if os.path.exists("logo.png"):
+        with open("logo.png", "rb") as f:
+            data = base64.b64encode(f.read()).decode("utf-8")
+            st.markdown(
+                f'<div class="logo-top-right"><img src="data:image/png;base64,{data}" width="120"></div>',
+                unsafe_allow_html=True
+            )
+
     # Usiamo le colonne solo per centrare il contenuto
     _, col_main, _ = st.columns([1, 2, 1])
-
+ 
     with col_main:
+        st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True) # Spazio opzionale per non sovrapporre il logo al titolo
         # Titolo centrale senza div bianchi
         st.markdown("<h1 style='text-align: center;'>⚽ HUB PERFORMANCE U16</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center;'>Benvenuto. Seleziona il tuo profilo per continuare.</p>", unsafe_allow_html=True)
@@ -132,7 +150,7 @@ if not st.session_state.autenticato:
         
         elif ruolo_scelto == "Staff Tecnico":
             permesso_entrata = True
-
+ 
         st.markdown("<br>", unsafe_allow_html=True)
         
         if st.button("ENTRA NELL'APP"):
@@ -144,14 +162,14 @@ if not st.session_state.autenticato:
                 st.warning("Seleziona un profilo o verifica il codice.")
     
     st.stop()
-
+ 
 # --- SIDEBAR DI SERVIZIO (SOLO DOPO ACCESSO) ---
 st.sidebar.image("logo.png", width=150) # Assicurati di avere il file logo.png nella cartella del progetto
 st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
 if st.sidebar.button("⬅️ LOGOUT"):
     st.session_state.autenticato = False
     st.rerun()
-
+ 
 ruolo = st.session_state.profilo
 
 
