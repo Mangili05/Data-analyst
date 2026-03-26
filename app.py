@@ -10,7 +10,7 @@ from streamlit_gsheets import GSheetsConnection
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
-# --- CONFIGURAZIONE STILE CSS ---
+# --- CONFIGURAZIONE STILE CSS (PRO PALAZZOLO STYLE) ---
 st.markdown("""
     <style>
     /* Sfondo dell'intera app */
@@ -18,34 +18,42 @@ st.markdown("""
         background-color: #1E3A8A; 
     }
     
-    /* Forza il colore bianco per TUTTI i testi */
-    h1, h2, h3, p, label, .stMarkdown {
+    /* Logo in alto a destra */
+    .logo-top-right {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+
+    /* Testi bianchi ovunque */
+    h1, h2, h3, p, label, .stMarkdown, .stSelectbox label p {
         color: white !important;
     }
 
-    /* Stile specifico per le scritte delle Selectbox (che a volte restano nere) */
-    .stSelectbox label p {
-        color: white !important;
+    /* Input text e selectbox: testo nero dentro fondo bianco per leggibilità */
+    .stTextInput input, .stSelectbox div[data-baseweb="select"] {
+        color: #1E3A8A !important;
     }
 
-    /* Rende i testi dei bottoni leggibili */
+    /* Bottoni bianchi con testo blu */
     .stButton>button {
         width: 100%;
         border-radius: 8px;
         height: 3em;
-        background-color: #ffffff; /* Bottone bianco */
-        color: #1E3A8A !important; /* Testo blu scuro */
+        background-color: white !important;
+        color: #1E3A8A !important;
         font-weight: bold;
         border: none;
+        margin-top: 20px;
     }
     
-    /* Rimuove quel riquadro bianco fastidioso se presente come 'card' */
-    .main-card {
-        background-color: transparent !important;
-        box-shadow: none !important;
-    }
+    /* Nascondi elementi Streamlit inutili */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
-    """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True
 
 # --- CONNESSIONE GOOGLE SHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -108,40 +116,46 @@ if "autenticato" not in st.session_state:
     st.session_state.profilo = None
 
 if not st.session_state.autenticato:
-    # Usiamo le colonne solo per centrare il contenuto
+    # 1. Inserimento Logo in alto a destra
+    if os.path.exists("logo.png"):
+        # Usiamo base64 per iniettare l'immagine direttamente nel CSS/HTML
+        import base64
+        with open("logo.png", "rb") as f:
+            data = base64.b64encode(f.read()).decode("utf-8")
+            st.markdown(
+                f'<div class="logo-top-right"><img src="data:image/png;base64,{data}" width="120"></div>',
+                unsafe_allow_html=True
+            )
+
+    # 2. Contenuto Centrale
     _, col_main, _ = st.columns([1, 2, 1])
 
     with col_main:
-        # Titolo centrale senza div bianchi
-        st.markdown("<h1 style='text-align: center;'>⚽ HUB PERFORMANCE U16</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center;'>Benvenuto. Seleziona il tuo profilo per continuare.</p>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True) # Spazio dal bordo alto
+        st.markdown("<h1 style='text-align: center;'>🏟️ HUB PERFORMANCE U16</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; font-size: 1.2rem;'>Benvenuto. Seleziona il tuo profilo per accedere ai dati della Pro Palazzolo.</p>", unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Selezione Profilo - La label è ora bianca grazie al CSS sopra
-        ruolo_scelto = st.selectbox("Chi sta accedendo?", ["Seleziona...", "Match Analyst", "Staff Tecnico"])
+        ruolo_scelto = st.selectbox("Seleziona Profilo:", ["Seleziona...", "Match Analyst", "Staff Tecnico"])
         
         permesso_entrata = False
-        
         if ruolo_scelto == "Match Analyst":
-            password = st.text_input("Codice Accesso Analyst", type="password", placeholder="Inserisci PIN")
-            if password == "1234": 
+            password = st.text_input("Inserisci PIN di sicurezza:", type="password")
+            if password == "1234":
                 permesso_entrata = True
             elif password != "":
-                st.error("PIN Errato")
-        
+                st.error("PIN non corretto")
         elif ruolo_scelto == "Staff Tecnico":
             permesso_entrata = True
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        if st.button("ENTRA NELL'APP"):
+        if st.button("ACCEDI ALL'AREA RISERVATA"):
             if ruolo_scelto != "Seleziona..." and permesso_entrata:
                 st.session_state.autenticato = True
                 st.session_state.profilo = ruolo_scelto
                 st.rerun()
             else:
-                st.warning("Seleziona un profilo o verifica il codice.")
+                st.warning("Assicurati di aver selezionato un profilo e inserito il PIN corretto.")
     
     st.stop()
 
