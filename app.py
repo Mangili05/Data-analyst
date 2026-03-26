@@ -112,6 +112,7 @@ if ruolo == "Match Analyst":
     st.markdown("## 🛠️ CONSOLE MATCH ANALYST")
     st.markdown("<p style='color: #8b949e;'>Inserimento dati e gestione database</p>", unsafe_allow_html=True)
 
+    # Nota: segmented_control è disponibile nelle versioni recenti di Streamlit
     scelta_analisi = st.segmented_control("MODALITÀ INSERIMENTO", ["Squadra", "Individuale"], default="Squadra")
     st.divider()
 
@@ -128,6 +129,7 @@ if ruolo == "Match Analyst":
             with gc1: st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
             with gc2: st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
 
+        # Funzione interna per il salvataggio
         def esegui_salvataggio(fase):
             s = f"_{st.session_state.reset_counter}"
             giornata = st.session_state.get('g_key')
@@ -212,14 +214,16 @@ if ruolo == "Match Analyst":
             with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
-                img = Image.open("campo.jpg").resize((358, 283))
-                if "off_coords" in st.session_state:
-                    draw = ImageDraw.Draw(img); x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-                    draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
-                val = streamlit_image_coordinates(img, key=f"campetto_off{suffix}")
-                if val and (st.session_state.get("off_coords") != val):
-                    st.session_state["off_coords"] = val
-                    st.rerun()
+                if os.path.exists("campo.jpg"):
+                    img = Image.open("campo.jpg").resize((358, 283))
+                    if "off_coords" in st.session_state:
+                        draw = ImageDraw.Draw(img)
+                        x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
+                        draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
+                    val = streamlit_image_coordinates(img, key=f"campetto_off{suffix}")
+                    if val and (st.session_state.get("off_coords") != val):
+                        st.session_state["off_coords"] = val
+                        st.rerun()
             if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
 
         with tabs[2]:
@@ -234,14 +238,16 @@ if ruolo == "Match Analyst":
             with cd3: st.selectbox("Rifinitura", ["Seleziona", "Cross/trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "Altro"], key=f"def_rif{suffix}")
             with cd4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla riconquistata", "Altro"], key=f"def_esito{suffix}")
             if st.session_state.get(f"def_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
-                img = Image.open("campo.jpg").resize((358, 283))
-                if "def_tiro_coords" in st.session_state:
-                    draw = ImageDraw.Draw(img); x, y = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
-                    draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
-                val_d = streamlit_image_coordinates(img, key=f"campetto_def{suffix}")
-                if val_d and (st.session_state.get("def_tiro_coords") != val_d):
-                    st.session_state["def_tiro_coords"] = val_d
-                    st.rerun()
+                if os.path.exists("campo.jpg"):
+                    img = Image.open("campo.jpg").resize((358, 283))
+                    if "def_tiro_coords" in st.session_state:
+                        draw = ImageDraw.Draw(img)
+                        x, y = st.session_state["def_tiro_coords"]["x"], st.session_state["def_tiro_coords"]["y"]
+                        draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
+                    val_d = streamlit_image_coordinates(img, key=f"campetto_def{suffix}")
+                    if val_d and (st.session_state.get("def_tiro_coords") != val_d):
+                        st.session_state["def_tiro_coords"] = val_d
+                        st.rerun()
             if st.button("💾 Salva Azione Difensiva"): esegui_salvataggio("Azione Difensiva")
 
     else:
@@ -293,7 +299,7 @@ if ruolo == "Match Analyst":
 # =========================================================
 # LOGICA STAFF TECNICO (SOLO VISUALIZZAZIONE)
 # =========================================================
-else:
+elif ruolo == "Staff Tecnico":
     st.markdown("## 📊 DASHBOARD PERFORMANCE")
     st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Area Consultazione Staff</p>", unsafe_allow_html=True)
     
@@ -302,7 +308,6 @@ else:
     with t_squadra:
         st.markdown("### Report di Squadra (Looker Studio)")
         st.info("In questa sezione vengono visualizzati i dati collettivi caricati dall'analista.")
-        # Esempio per il futuro: st.components.v1.iframe("URL_LOOKER_STUDIO", height=800)
 
     with t_individuo:
         st.markdown("### Analisi Radar Comportamentale")
@@ -321,14 +326,32 @@ else:
                     st.warning(f"Nessun dato trovato per {p_sel}.")
                 else:
                     categorie = ['Resilienza', 'Comunicazione', 'Intensità', 'Accettazione', 'Leadership']
-                    valori = df_player[categorie].mean().tolist()
-                    media_squadra = df_ind[categorie].mean().tolist()
+                    # Calcolo media dei voti (già numerici nel DF)
+                    valori = [df_player[cat].mean() for cat in categorie]
+                    media_squadra = [df_ind[cat].mean() for cat in categorie]
 
-                    import plotly.graph_objects as go
                     fig = go.Figure()
-                    fig.add_trace(go.Scatterpolar(r=valori + [valori[0]], theta=categorie + [categorie[0]], fill='toself', name=f'Media {p_sel}', line=dict(color='#1f67b5')))
-                    fig.add_trace(go.Scatterpolar(r=media_squadra + [media_squadra[0]], theta=categorie + [categorie[0]], mode='lines', name='Media Squadra', line=dict(color='rgba(200, 200, 200, 0.5)', dash='dash')))
-                    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), showlegend=True, template="plotly_dark")
+                    fig.add_trace(go.Scatterpolar(
+                        r=valori + [valori[0]], 
+                        theta=categorie + [categorie[0]], 
+                        fill='toself', 
+                        name=f'Media {p_sel}', 
+                        line=dict(color='#1f67b5')
+                    ))
+                    fig.add_trace(go.Scatterpolar(
+                        r=media_squadra + [media_squadra[0]], 
+                        theta=categorie + [categorie[0]], 
+                        mode='lines', 
+                        name='Media Squadra', 
+                        line=dict(color='rgba(200, 200, 200, 0.5)', dash='dash')
+                    ))
+                    fig.update_layout(
+                        polar=dict(radialaxis=dict(visible=True, range=[0, 1])), 
+                        showlegend=True, 
+                        template="plotly_dark",
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)'
+                    )
                     st.plotly_chart(fig, use_container_width=True)
                     
                     st.button("🖨️ Stampa Report PDF (Browser)")
