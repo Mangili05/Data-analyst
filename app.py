@@ -8,76 +8,34 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
 
-import streamlit as st
-
 # --- CONFIGURAZIONE STILE CSS DEFINITIVA ---
 st.markdown("""
     <style>
-    /* 1. SFONDO GENERALE */
-    .stApp {
-        background-color: #1E3A8A !important;
+    /* Forza il colore del testo nei bottoni e nei controlli segmentati */
+    div.stButton > button, 
+    div[data-baseweb="segmented-control"] button {
+        color: #ffffff !important; /* Testo bianco */
+        background-color: #262730; /* Sfondo scuro per contrasto, personalizzabile */
+        border: 1px solid #4b4b4b;
     }
 
-    /* 2. TESTI STATICI (Titoli, Label, Markdown) */
-    h1, h2, h3, p, label, .stMarkdown, [data-testid="stWidgetLabel"] p {
+    /* Assicura che il testo rimanga visibile anche negli stati attivi/selezionati */
+    div[data-baseweb="segmented-control"] button[aria-checked="true"] {
         color: #ffffff !important;
-        font-weight: 500;
+        background-color: #1f67b5 !important; /* Blu per l'opzione selezionata */
     }
 
-    /* 3. CAMPI DI INPUT (PIN, Gol, Testo, Date) */
-    /* Fondo bianco, testo nero per massima leggibilità */
-    input[type="text"], input[type="number"], input[type="password"], .stDateInput div {
-        background-color: #ffffff !important;
-        color: #000000 !important;
+    /* Colore del testo nelle etichette dei radio button e checkbox */
+    .stMarkdown p, .stRadio label {
+        color: #ffffff !important;
     }
     
-    /* Forza colore nero per i numeri dentro i tasti + e - del number input */
-    [data-testid="stNumberInputStepUp"], [data-testid="stNumberInputStepDown"] {
-        background-color: #eeeeee !important;
-    }
-
-    /* 4. BOTTONI (Entra, Salva) */
-    /* Sfondo bianco, testo blu scuro */
-    .stButton > button {
-        background-color: #ffffff !important;
-        color: #1E3A8A !important;
-        border: 2px solid #ffffff !important;
-        font-weight: bold !important;
-        border-radius: 8px !important;
-    }
-    .stButton > button:hover {
-        background-color: #1E3A8A !important;
+    /* Forza visibilità scritte dentro i widget di input */
+    input {
         color: #ffffff !important;
-        border: 2px solid #ffffff !important;
     }
-
-    /* 5. SEGMENTED CONTROL (Squadra / Individuale) */
-    /* Fondo bianco per il contenitore, testo blu per le opzioni */
-    div[data-baseweb="segmented-control"] {
-        background-color: #ffffff !important;
-        border-radius: 8px;
-        padding: 2px;
-    }
-    div[data-baseweb="segmented-control"] button {
-        background-color: transparent !important;
-        color: #1E3A8A !important; /* Testo Blu quando NON selezionato */
-    }
-    div[data-baseweb="segmented-control"] button[aria-checked="true"] {
-        background-color: #1E3A8A !important; /* Fondo Blu quando selezionato */
-        color: #ffffff !important; /* Testo Bianco quando selezionato */
-        border-radius: 6px;
-    }
-
-    /* 6. SELECTBOX (Menu a tendina) */
-    div[data-baseweb="select"] > div {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-    }
-
-    /* Header e Menu pulizia */
-    header, footer { visibility: hidden; }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # --- CONNESSIONE GOOGLE SHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
