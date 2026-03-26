@@ -10,40 +10,39 @@ from streamlit_gsheets import GSheetsConnection
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
-# Sostituisci la parte iniziale del CSS con questa:
+# --- CONFIGURAZIONE STILE CSS ---
 st.markdown("""
     <style>
-    /* Sfondo generale con gradiente per profondità */
+    /* Sfondo dell'intera app */
     .stApp {
-        background: linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%);
+        background-color: #1E3A8A; 
     }
     
-    /* Card centrale della Landing Page */
-    .main-card {
-        background: rgba(255, 255, 255, 0.95);
-        padding: 3rem;
-        border-radius: 25px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+    /* Forza il colore bianco per TUTTI i testi */
+    h1, h2, h3, p, label, .stMarkdown {
+        color: white !important;
     }
 
-    /* Input e Selectbox più eleganti */
-    .stSelectbox div[data-baseweb="select"] {
-        border-radius: 10px;
+    /* Stile specifico per le scritte delle Selectbox (che a volte restano nere) */
+    .stSelectbox label p {
+        color: white !important;
     }
 
-    /* Bottoni con effetto hover */
+    /* Rende i testi dei bottoni leggibili */
     .stButton>button {
-        background: #1E3A8A;
+        width: 100%;
+        border-radius: 8px;
+        height: 3em;
+        background-color: #ffffff; /* Bottone bianco */
+        color: #1E3A8A !important; /* Testo blu scuro */
+        font-weight: bold;
         border: none;
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 1px;
     }
-    .stButton>button:hover {
-        background: #2563EB !important;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+    
+    /* Rimuove quel riquadro bianco fastidioso se presente come 'card' */
+    .main-card {
+        background-color: transparent !important;
+        box-shadow: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
