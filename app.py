@@ -10,81 +10,113 @@ from streamlit_gsheets import GSheetsConnection
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
-# --- CSS ESSENZIALE (Scritte bianche e Logo) ---
+# --- CONFIGURAZIONE STILE UNIFICATO (BIANCO SU BLU) ---
 st.markdown("""
     <style>
+    /* Sfondo dell'intera app */
     .stApp {
         background-color: #1E3A8A; 
     }
-    /* Logo posizionato in alto a destra */
-    .logo-container {
-        position: absolute;
-        top: -50px;
-        right: 0px;
+    
+    /* Logo in alto a destra */
+    .logo-top-right {
+        position: fixed;
+        top: 10px;
+        right: 20px;
+        z-index: 1000;
     }
-    /* Scritte bianche */
-    h1, h2, p, label, .stMarkdown {
+
+    /* Forza il colore bianco per tutti i testi principali */
+    h1, h2, h3, p, label, .stMarkdown, .stSelectbox label p {
         color: white !important;
     }
-    /* Bottoni puliti */
+
+    /* Rende i testi dentro i menu a tendina e input leggibili (scuri su bianco) */
+    .stSelectbox div[data-baseweb="select"], .stTextInput input {
+        color: #1E3A8A !important;
+    }
+
+    /* Bottoni bianchi con testo blu per risaltare */
     .stButton>button {
+        width: 100%;
+        border-radius: 8px;
+        height: 3em;
         background-color: white !important;
         color: #1E3A8A !important;
         font-weight: bold;
+        border: none;
     }
-    /* Rimuove i bordi bianchi indesiderati dai div */
-    div.stMarkdownContainer > div {
-        background-color: transparent !important;
-    }
+
+    /* Rimuove elementi grafici superflui */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-# --- LOGICA LOGO ---
-if os.path.exists("logo.png"):
-    with open("logo.png", "rb") as f:
-        data = base64.b64encode(f.read()).decode("utf-8")
-        st.markdown(f"""
-            <div class="logo-container">
-                <img src="data:image/png;base64,{data}" width="100">
-            </div>
-            """, unsafe_allow_html=True)
+# --- FUNZIONE PER IL LOGO ---
+def add_logo():
+    if os.path.exists("logo.png"):
+        with open("logo.png", "rb") as f:
+            data = base64.b64encode(f.read()).decode("utf-8")
+            st.markdown(
+                f'<div class="logo-top-right"><img src="data:image/png;base64,{data}" width="100"></div>',
+                unsafe_allow_html=True
+            )
 
-# --- LOGICA DI ACCESSO ---
+# --- CONNESSIONE GOOGLE SHEETS ---
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+# --- GESTIONE SESSION STATE ---
 if "autenticato" not in st.session_state:
     st.session_state.autenticato = False
+    st.session_state.profilo = None
+if "reset_counter" not in st.session_state:
+    st.session_state.reset_counter = 0
 
+def reset_campi():
+    st.session_state.reset_counter += 1
+    if 'off_coords' in st.session_state: del st.session_state['off_coords']
+    if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
+
+# --- DATI COMUNI ---
+squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
+lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
+
+# --- LANDING PAGE ---
 if not st.session_state.autenticato:
-    # Centriamo il contenuto come nella tua versione originale
+    add_logo() # Mostra il logo in alto a destra
+    
     _, col_main, _ = st.columns([1, 2, 1])
-
     with col_main:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("<h1 style='text-align: center;'>🏟️ HUB PERFORMANCE U16</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center;'>Benvenuto. Seleziona il tuo profilo per accedere ai dati.</p>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 80px;'></div>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center;'>⚽ HUB PERFORMANCE U16</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center;'>Area riservata Pro Palazzolo. Seleziona il tuo profilo.</p>", unsafe_allow_html=True)
         
-        ruolo_scelto = st.selectbox("Seleziona Profilo:", ["Seleziona...", "Match Analyst", "Staff Tecnico"])
+        st.markdown("<br>", unsafe_allow_html=True)
+        ruolo_scelto = st.selectbox("Chi sta accedendo?", ["Seleziona...", "Match Analyst", "Staff Tecnico"])
         
+        permesso_entrata = False
         if ruolo_scelto == "Match Analyst":
-            pass_analyst = st.text_input("Codice Accesso", type="password")
-            if st.button("ENTRA"):
-                if pass_analyst == "1234":
-                    st.session_state.autenticato = True
-                    st.session_state.profilo = "Match Analyst"
-                    st.rerun()
-                else:
-                    st.error("PIN Errato")
-        
+            password = st.text_input("Codice Accesso Analyst", type="password")
+            if password == "1234": 
+                permesso_entrata = True
+            elif password != "":
+                st.error("PIN Errato")
         elif ruolo_scelto == "Staff Tecnico":
-            if st.button("ENTRA"):
+            permesso_entrata = True
+
+        if st.button("ENTRA NELL'APP"):
+            if ruolo_scelto != "Seleziona..." and permesso_entrata:
                 st.session_state.autenticato = True
-                st.session_state.profilo = "Staff Tecnico"
+                st.session_state.profilo = ruolo_scelto
                 st.rerun()
     st.stop()
 
-# --- SIDEBAR (VISIBILE DOPO IL LOGIN) ---
+# --- SIDEBAR (DOPO LOGIN) ---
 st.sidebar.image("logo.png", width=120)
-st.sidebar.info(f"Profilo: {st.session_state.profilo}")
-if st.sidebar.button("Logout"):
+st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
+if st.sidebar.button("⬅️ LOGOUT"):
     st.session_state.autenticato = False
     st.rerun()
 
