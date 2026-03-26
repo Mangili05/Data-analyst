@@ -45,77 +45,103 @@ def reset_campi():
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
-# --- CSS PERSONALIZZATO ---
+# --- CSS PERSONALIZZATO PER LANDING PAGE E STILE PRO PALAZZOLO ---
 st.markdown("""
     <style>
+    /* Sfondo dell'intera app */
+    .stApp {
+        background-color: #1E3A8A; 
+    }
+    /* Nascondi header e menu inutili */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    .main { background-color: #0e1117; color: white; }
-    [data-testid="stStatusWidget"] { visibility: hidden; display: none; }
-    .logo-container { position: absolute; top: -35px; right: -80px; z-index: 999; }
-    .stButton button { width: 100%; border-radius: 8px; font-weight: bold; background-color: #1f67b5; color: white; }
-    div[data-testid="stSegmentedControl"] { display: flex; justify-content: center; margin-bottom: 20px; }
+    
+    /* Contenitore bianco centrale (Card) */
+    .main-card {
+        background-color: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0px 10px 30px rgba(0,0,0,0.3);
+        text-align: center;
+        color: #1E3A8A;
+    }
+    
+    /* Bottoni stile Pro Palazzolo */
+    .stButton>button {
+        width: 100%;
+        border-radius: 8px;
+        height: 3em;
+        background-color: #1E3A8A;
+        color: white;
+        font-weight: bold;
+    }
+    
+    /* Testi e labels neri dentro la card bianca */
+    .main-card h2, .main-card p, label {
+        color: #1E3A8A !important;
+    }
     </style>
     """, unsafe_allow_html=True)
-
-# --- LOGO NELLA SIDEBAR ---
-logo_path = "logo.png"
-if os.path.exists(logo_path):
-    st.sidebar.image(logo_path, width=150)
-
-# --- SELETTORE DI RUOLO (OPZIONE C) ---
-st.sidebar.title("ACCESSO AREA")
-ruolo = st.sidebar.radio("Seleziona il tuo profilo:", ["Staff Tecnico", "Match Analyst"])
-st.sidebar.divider()
 
 # --- DATI COMUNI ---
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
 
-# --- LOGICA DI ACCESSO ---
+# --- LOGICA DI ACCESSO (LANDING PAGE) ---
 if "autenticato" not in st.session_state:
     st.session_state.autenticato = False
     st.session_state.profilo = None
 
 if not st.session_state.autenticato:
-    # Creiamo uno spazio per centrare il riquadro
-    col_space1, col_main, col_space2 = st.columns([1, 2, 1])
+    # Centriamo la card usando le colonne
+    _, col_main, _ = st.columns([1, 2, 1])
 
     with col_main:
         st.markdown('<div class="main-card">', unsafe_allow_html=True)
-        st.image("https://www.propalazzolo.it/wp-content/uploads/2023/07/logo-pro-palazzolo.png", width=100) # Assicurati che il link al logo sia corretto
-        st.markdown("<h2 style='color: #1E3A8A;'>HUB PERFORMANCE U16</h2>", unsafe_allow_html=True)
+        
+        # Titolo e Logo
+        st.markdown("<h2>⚽ HUB PERFORMANCE U16</h2>", unsafe_allow_html=True)
+        st.markdown("<p>Benvenuto. Seleziona il tuo profilo per continuare.</p>", unsafe_allow_html=True)
         
         # Selezione Profilo
-        ruolo_scelto = st.selectbox("Chi sta accedendo?", ["Seleziona...", "Match Analyst", "Staff Tecnico"])
+        ruolo_scelto = st.selectbox("Chi sta accedendo?", ["Seleziona...", "Match Analyst", "Staff Tecnico"], label_visibility="collapsed")
         
-        accedi = False
+        permesso_entrata = False
         
         if ruolo_scelto == "Match Analyst":
-            codice = st.text_input("Inserisci Codice Accesso", type="password")
-            if codice == "1234": # <--- QUI IMPOSTI LA TUA PASSWORD
-                accedi = True
-            elif codice != "":
-                st.error("Codice errato")
+            st.markdown("<br>", unsafe_allow_html=True)
+            password = st.text_input("Codice Accesso Analyst", type="password", placeholder="Inserisci PIN")
+            if password == "1234": # <--- CAMBIA QUI LA TUA PASSWORD
+                permesso_entrata = True
+            elif password != "":
+                st.error("PIN Errato")
         
         elif ruolo_scelto == "Staff Tecnico":
-            # Per lo staff l'accesso è libero o puoi mettere un'altra password
-            accedi = True
+            permesso_entrata = True
 
         st.markdown("<br>", unsafe_allow_html=True)
         
-        if st.button("ENTRA"):
-            if accedi:
+        if st.button("ENTRA NELL'APP"):
+            if ruolo_scelto != "Seleziona..." and permesso_entrata:
                 st.session_state.autenticato = True
                 st.session_state.profilo = ruolo_scelto
                 st.rerun()
             else:
-                st.warning("Seleziona un profilo o inserisci il codice corretto.")
+                st.warning("Seleziona un profilo o verifica il codice.")
         
         st.markdown('</div>', unsafe_allow_html=True)
     
-    st.stop() # Blocca tutto il resto dell'app
+    st.stop() # Blocca l'app finché non si effettua l'accesso
+
+# --- SIDEBAR DI SERVIZIO (SOLO DOPO ACCESSO) ---
+st.sidebar.image("logo.png", width=150) # Assicurati di avere il file logo.png nella cartella del progetto
+st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
+if st.sidebar.button("⬅️ LOGOUT"):
+    st.session_state.autenticato = False
+    st.rerun()
+
+ruolo = st.session_state.profilo
 
 # =========================================================
 # LOGICA MATCH ANALYST (RACCOLTA + VISUALIZZAZIONE)
