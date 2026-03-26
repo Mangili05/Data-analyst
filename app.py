@@ -131,7 +131,7 @@ if not st.session_state.autenticato:
     with col_main:
         st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True) # Spazio opzionale per non sovrapporre il logo al titolo
         # Titolo centrale senza div bianchi
-        st.markdown("<h1 style='text-align: center;'>⚽ ANALISI DATI POST MATCH </h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center;'>⚽ ANALISI DATI </h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center;'>Benvenuto. Seleziona il tuo profilo per continuare.</p>", unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
