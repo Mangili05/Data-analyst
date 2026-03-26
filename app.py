@@ -8,71 +8,74 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
 
-# --- CONFIGURAZIONE PAGINA ---
-st.set_page_config(page_title="Football Data Analyst", layout="wide")
-
 import streamlit as st
-import pandas as pd
-# ... altri import ...
 
-# --- CONFIGURAZIONE STILE CSS UNIFICATO E COMPLETO ---
+# --- CONFIGURAZIONE STILE CSS DEFINITIVA ---
 st.markdown("""
     <style>
-    /* 1. Sfondo dell'intera app */
+    /* 1. SFONDO GENERALE */
     .stApp {
-        background-color: #1E3A8A; 
+        background-color: #1E3A8A !important;
+    }
+
+    /* 2. TESTI STATICI (Titoli, Label, Markdown) */
+    h1, h2, h3, p, label, .stMarkdown, [data-testid="stWidgetLabel"] p {
+        color: #ffffff !important;
+        font-weight: 500;
+    }
+
+    /* 3. CAMPI DI INPUT (PIN, Gol, Testo, Date) */
+    /* Fondo bianco, testo nero per massima leggibilità */
+    input[type="text"], input[type="number"], input[type="password"], .stDateInput div {
+        background-color: #ffffff !important;
+        color: #000000 !important;
     }
     
-    /* 2. Forza il colore bianco per TUTTI i testi statici */
-    h1, h2, h3, p, label, .stMarkdown, .stSelectbox label p {
-        color: white !important;
+    /* Forza colore nero per i numeri dentro i tasti + e - del number input */
+    [data-testid="stNumberInputStepUp"], [data-testid="stNumberInputStepDown"] {
+        background-color: #eeeeee !important;
     }
 
-    /* 3. LOGO IN ALTO A DESTRA */
-    .logo-top-right {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
+    /* 4. BOTTONI (Entra, Salva) */
+    /* Sfondo bianco, testo blu scuro */
+    .stButton > button {
+        background-color: #ffffff !important;
+        color: #1E3A8A !important;
+        border: 2px solid #ffffff !important;
+        font-weight: bold !important;
+        border-radius: 8px !important;
+    }
+    .stButton > button:hover {
+        background-color: #1E3A8A !important;
+        color: #ffffff !important;
+        border: 2px solid #ffffff !important;
     }
 
-    /* 4. BOTTONI (Landing Page e Salva): Sfondo Bianco, Testo Blu */
-    .stButton>button {
-        width: 100%;
+    /* 5. SEGMENTED CONTROL (Squadra / Individuale) */
+    /* Fondo bianco per il contenitore, testo blu per le opzioni */
+    div[data-baseweb="segmented-control"] {
+        background-color: #ffffff !important;
         border-radius: 8px;
-        height: 3em;
-        background-color: #ffffff !important; /* Sfondo Bianco */
-        color: #1E3A8A !important; /* Testo Blu Scuro */
-        font-weight: bold;
-        border: none;
+        padding: 2px;
     }
-    
-    /* 5. INPUT TEXT, NUMBER, DATE: Fondo Bianco, Testo Nero (per massima leggibilità) */
-    /* Risolve il problema del PIN invisibile e dei Gol */
-    .stTextInput input, .stNumberInput input, .stDateInput input {
-        background-color: #ffffff !important; /* Fondo Bianco */
-        color: #000000 !important; /* Testo Nero */
-        border-radius: 5px;
-    }
-
-    /* 6. CONTROLLO SEGMENTATO (Squadra/Individuale) */
-    /* Risolve il problema del testo invisibile su 'Individuale' */
     div[data-baseweb="segmented-control"] button {
-        background-color: #ffffff !important; /* Fondo Bianco per opzioni non scelte */
-        color: #1E3A8A !important; /* Testo Blu */
-        border: 1px solid #1E3A8A;
+        background-color: transparent !important;
+        color: #1E3A8A !important; /* Testo Blu quando NON selezionato */
     }
-    /* Stile per l'opzione SELEZIONATA */
     div[data-baseweb="segmented-control"] button[aria-checked="true"] {
-        background-color: #1E3A8A !important; /* Fondo Blu */
-        color: #ffffff !important; /* Testo Bianco */
+        background-color: #1E3A8A !important; /* Fondo Blu quando selezionato */
+        color: #ffffff !important; /* Testo Bianco quando selezionato */
+        border-radius: 6px;
     }
 
-    /* Pulizia Sidebar e Header */
-    [data-testid="stSidebar"] { background-color: #112244; }
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* 6. SELECTBOX (Menu a tendina) */
+    div[data-baseweb="select"] > div {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    /* Header e Menu pulizia */
+    header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
 
