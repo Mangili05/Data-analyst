@@ -10,7 +10,7 @@ from streamlit_gsheets import GSheetsConnection
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
-# --- CONFIGURAZIONE STILE CSS (PRO PALAZZOLO STYLE) ---
+# --- CONFIGURAZIONE STILE UNIFICATO (BIANCO SU BLU) ---
 st.markdown("""
     <style>
     /* Sfondo dell'intera app */
@@ -21,22 +21,22 @@ st.markdown("""
     /* Logo in alto a destra */
     .logo-top-right {
         position: fixed;
-        top: 20px;
+        top: 10px;
         right: 20px;
         z-index: 1000;
     }
 
-    /* Testi bianchi ovunque */
+    /* Forza il colore bianco per tutti i testi principali */
     h1, h2, h3, p, label, .stMarkdown, .stSelectbox label p {
         color: white !important;
     }
 
-    /* Input text e selectbox: testo nero dentro fondo bianco per leggibilità */
-    .stTextInput input, .stSelectbox div[data-baseweb="select"] {
+    /* Rende i testi dentro i menu a tendina e input leggibili (scuri su bianco) */
+    .stSelectbox div[data-baseweb="select"], .stTextInput input {
         color: #1E3A8A !important;
     }
 
-    /* Bottoni bianchi con testo blu */
+    /* Bottoni bianchi con testo blu per risaltare */
     .stButton>button {
         width: 100%;
         border-radius: 8px;
@@ -45,15 +45,14 @@ st.markdown("""
         color: #1E3A8A !important;
         font-weight: bold;
         border: none;
-        margin-top: 20px;
     }
-    
-    /* Nascondi elementi Streamlit inutili */
+
+    /* Rimuove elementi grafici superflui */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     </style>
-    """, unsafe_allow_html=True
+    """, unsafe_allow_html=True)
 
 # --- CONNESSIONE GOOGLE SHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
