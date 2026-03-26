@@ -8,6 +8,10 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
 
+# --- CONFIGURAZIONE PAGINA ---
+
+st.set_page_config(page_title="Football Data Analyst", layout="wide")
+
 # --- CONFIGURAZIONE STILE CSS DEFINITIVA ---
 st.markdown("""
     <style>
