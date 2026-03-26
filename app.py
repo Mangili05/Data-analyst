@@ -11,44 +11,24 @@ from streamlit_gsheets import GSheetsConnection
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
+import streamlit as st
+import pandas as pd
+# ... altri import ...
+
+# --- CONFIGURAZIONE STILE CSS UNIFICATO E COMPLETO ---
 st.markdown("""
     <style>
-    /* Forza il colore del testo nei bottoni e nei controlli segmentati */
-    div.stButton > button, 
-    div[data-baseweb="segmented-control"] button {
-        color: #ffffff !important; /* Testo bianco */
-        background-color: #262730; /* Sfondo scuro per contrasto, personalizzabile */
-        border: 1px solid #4b4b4b;
-    }
-
-    /* Assicura che il testo rimanga visibile anche negli stati attivi/selezionati */
-    div[data-baseweb="segmented-control"] button[aria-checked="true"] {
-        color: #ffffff !important;
-        background-color: #1f67b5 !important; /* Blu per l'opzione selezionata */
-    }
-
-    /* Colore del testo nelle etichette dei radio button e checkbox */
-    .stMarkdown p, .stRadio label {
-        color: #ffffff !important;
+    /* 1. Sfondo dell'intera app */
+    .stApp {
+        background-color: #1E3A8A; 
     }
     
-    /* Forza visibilità scritte dentro i widget di input */
-    input {
-        color: #ffffff !important;
+    /* 2. Forza il colore bianco per TUTTI i testi statici */
+    h1, h2, h3, p, label, .stMarkdown, .stSelectbox label p {
+        color: white !important;
     }
-    </style>
-""", unsafe_allow_html=True)
 
-# --- CONFIGURAZIONE STILE CSS (Unificato) ---
-st.markdown("""
-    <style>
-    .stApp { background-color: #1E3A8A; }
-    
-    /* Testi bianchi ovunque */
-    h1, h2, h3, p, label, .stMarkdown { color: white !important; }
-    .stSelectbox label p { color: white !important; }
-
-    /* Logo in alto a destra */
+    /* 3. LOGO IN ALTO A DESTRA */
     .logo-top-right {
         position: fixed;
         top: 20px;
@@ -56,21 +36,40 @@ st.markdown("""
         z-index: 1000;
     }
 
-    /* Bottoni bianchi (Landing Page) */
+    /* 4. BOTTONI (Landing Page e Salva): Sfondo Bianco, Testo Blu */
     .stButton>button {
         width: 100%;
         border-radius: 8px;
         height: 3em;
-        background-color: #ffffff;
-        color: #1E3A8A !important;
+        background-color: #ffffff !important; /* Sfondo Bianco */
+        color: #1E3A8A !important; /* Testo Blu Scuro */
         font-weight: bold;
         border: none;
     }
     
-    /* Pulizia Sidebar */
+    /* 5. INPUT TEXT, NUMBER, DATE: Fondo Bianco, Testo Nero (per massima leggibilità) */
+    /* Risolve il problema del PIN invisibile e dei Gol */
+    .stTextInput input, .stNumberInput input, .stDateInput input {
+        background-color: #ffffff !important; /* Fondo Bianco */
+        color: #000000 !important; /* Testo Nero */
+        border-radius: 5px;
+    }
+
+    /* 6. CONTROLLO SEGMENTATO (Squadra/Individuale) */
+    /* Risolve il problema del testo invisibile su 'Individuale' */
+    div[data-baseweb="segmented-control"] button {
+        background-color: #ffffff !important; /* Fondo Bianco per opzioni non scelte */
+        color: #1E3A8A !important; /* Testo Blu */
+        border: 1px solid #1E3A8A;
+    }
+    /* Stile per l'opzione SELEZIONATA */
+    div[data-baseweb="segmented-control"] button[aria-checked="true"] {
+        background-color: #1E3A8A !important; /* Fondo Blu */
+        color: #ffffff !important; /* Testo Bianco */
+    }
+
+    /* Pulizia Sidebar e Header */
     [data-testid="stSidebar"] { background-color: #112244; }
-    
-    /* Nascondi header Streamlit */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
