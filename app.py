@@ -8,6 +8,34 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
 
+st.markdown("""
+    <style>
+    /* Forza il colore del testo nei bottoni e nei controlli segmentati */
+    div.stButton > button, 
+    div[data-baseweb="segmented-control"] button {
+        color: #ffffff !important; /* Testo bianco */
+        background-color: #262730; /* Sfondo scuro per contrasto, personalizzabile */
+        border: 1px solid #4b4b4b;
+    }
+
+    /* Assicura che il testo rimanga visibile anche negli stati attivi/selezionati */
+    div[data-baseweb="segmented-control"] button[aria-checked="true"] {
+        color: #ffffff !important;
+        background-color: #1f67b5 !important; /* Blu per l'opzione selezionata */
+    }
+
+    /* Colore del testo nelle etichette dei radio button e checkbox */
+    .stMarkdown p, .stRadio label {
+        color: #ffffff !important;
+    }
+    
+    /* Forza visibilità scritte dentro i widget di input */
+    input {
+        color: #ffffff !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
