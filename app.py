@@ -14,40 +14,31 @@ st.set_page_config(page_title="Football Data Analyst", layout="wide")
 # --- CONFIGURAZIONE STILE CSS (Unificato) ---
 st.markdown("""
     <style>
-    .stApp { background-color: #1E3A8A; }
-    
-    /* Testi bianchi ovunque */
-    h1, h2, h3, p, label, .stMarkdown { color: white !important; }
-    .stSelectbox label p { color: white !important; }
-
-    /* Logo in alto a destra */
-    .logo-top-right {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
+    /* Forza il colore del testo nei bottoni e nei controlli segmentati */
+    div.stButton > button, 
+    div[data-baseweb="segmented-control"] button {
+        color: #ffffff !important; /* Testo bianco */
+        background-color: #262730; /* Sfondo scuro per contrasto, personalizzabile */
+        border: 1px solid #4b4b4b;
     }
 
-    /* Bottoni bianchi (Landing Page) */
-    .stButton>button {
-        width: 100%;
-        border-radius: 8px;
-        height: 3em;
-        background-color: #ffffff;
-        color: #1E3A8A !important;
-        font-weight: bold;
-        border: none;
+    /* Assicura che il testo rimanga visibile anche negli stati attivi/selezionati */
+    div[data-baseweb="segmented-control"] button[aria-checked="true"] {
+        color: #ffffff !important;
+        background-color: #1f67b5 !important; /* Blu per l'opzione selezionata */
+    }
+
+    /* Colore del testo nelle etichette dei radio button e checkbox */
+    .stMarkdown p, .stRadio label {
+        color: #ffffff !important;
     }
     
-    /* Pulizia Sidebar */
-    [data-testid="stSidebar"] { background-color: #112244; }
-    
-    /* Nascondi header Streamlit */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* Forza visibilità scritte dentro i widget di input */
+    input {
+        color: #ffffff !important;
+    }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # --- CONNESSIONE GOOGLE SHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
