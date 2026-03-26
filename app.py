@@ -12,7 +12,6 @@ from streamlit_gsheets import GSheetsConnection
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
 # --- CONFIGURAZIONE STILE CSS ---
-
 st.markdown("""
     <style>
     /* Forza il colore del testo nei bottoni e nei controlli segmentati */
