@@ -10,25 +10,40 @@ from streamlit_gsheets import GSheetsConnection
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
-# --- CONFIGURAZIONE STILE CSS (Colori Pro Palazzolo) ---
+# Sostituisci la parte iniziale del CSS con questa:
 st.markdown("""
     <style>
+    /* Sfondo generale con gradiente per profondità */
     .stApp {
-        background-color: #1E3A8A; /* Blu scuro/Azzurro carico */
+        background: linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%);
     }
+    
+    /* Card centrale della Landing Page */
     .main-card {
-        background-color: white;
-        padding: 40px;
-        border-radius: 15px;
-        box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
-        text-align: center;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 3rem;
+        border-radius: 25px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
+
+    /* Input e Selectbox più eleganti */
+    .stSelectbox div[data-baseweb="select"] {
+        border-radius: 10px;
+    }
+
+    /* Bottoni con effetto hover */
     .stButton>button {
-        width: 100%;
-        border-radius: 5px;
-        height: 3em;
-        background-color: #1E3A8A;
-        color: white;
+        background: #1E3A8A;
+        border: none;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .stButton>button:hover {
+        background: #2563EB !important;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
     }
     </style>
     """, unsafe_allow_html=True)
