@@ -108,25 +108,24 @@ if "autenticato" not in st.session_state:
     st.session_state.profilo = None
 
 if not st.session_state.autenticato:
-    # Centriamo la card usando le colonne
+    # Usiamo le colonne solo per centrare il contenuto
     _, col_main, _ = st.columns([1, 2, 1])
 
     with col_main:
-        st.markdown('<div class="main-card">', unsafe_allow_html=True)
+        # Titolo centrale senza div bianchi
+        st.markdown("<h1 style='text-align: center;'>⚽ HUB PERFORMANCE U16</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center;'>Benvenuto. Seleziona il tuo profilo per continuare.</p>", unsafe_allow_html=True)
         
-        # Titolo e Logo
-        st.markdown("<h2>⚽ HUB PERFORMANCE U16</h2>", unsafe_allow_html=True)
-        st.markdown("<p>Benvenuto. Seleziona il tuo profilo per continuare.</p>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        # Selezione Profilo
-        ruolo_scelto = st.selectbox("Chi sta accedendo?", ["Seleziona...", "Match Analyst", "Staff Tecnico"], label_visibility="collapsed")
+        # Selezione Profilo - La label è ora bianca grazie al CSS sopra
+        ruolo_scelto = st.selectbox("Chi sta accedendo?", ["Seleziona...", "Match Analyst", "Staff Tecnico"])
         
         permesso_entrata = False
         
         if ruolo_scelto == "Match Analyst":
-            st.markdown("<br>", unsafe_allow_html=True)
             password = st.text_input("Codice Accesso Analyst", type="password", placeholder="Inserisci PIN")
-            if password == "1234": # <--- CAMBIA QUI LA TUA PASSWORD
+            if password == "1234": 
                 permesso_entrata = True
             elif password != "":
                 st.error("PIN Errato")
@@ -143,10 +142,8 @@ if not st.session_state.autenticato:
                 st.rerun()
             else:
                 st.warning("Seleziona un profilo o verifica il codice.")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
     
-    st.stop() # Blocca l'app finché non si effettua l'accesso
+    st.stop()
 
 # --- SIDEBAR DI SERVIZIO (SOLO DOPO ACCESSO) ---
 st.sidebar.image("logo.png", width=150) # Assicurati di avere il file logo.png nella cartella del progetto
