@@ -10,162 +10,86 @@ from streamlit_gsheets import GSheetsConnection
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
-# --- CONFIGURAZIONE STILE UNIFICATO (BIANCO SU BLU) ---
+# --- CSS ESSENZIALE (Scritte bianche e Logo) ---
 st.markdown("""
     <style>
-    /* Sfondo dell'intera app */
     .stApp {
         background-color: #1E3A8A; 
     }
-    
-    /* Logo in alto a destra */
-    .logo-top-right {
-        position: fixed;
-        top: 10px;
-        right: 20px;
-        z-index: 1000;
+    /* Logo posizionato in alto a destra */
+    .logo-container {
+        position: absolute;
+        top: -50px;
+        right: 0px;
     }
-
-    /* Forza il colore bianco per tutti i testi principali */
-    h1, h2, h3, p, label, .stMarkdown, .stSelectbox label p {
+    /* Scritte bianche */
+    h1, h2, p, label, .stMarkdown {
         color: white !important;
     }
-
-    /* Rende i testi dentro i menu a tendina e input leggibili (scuri su bianco) */
-    .stSelectbox div[data-baseweb="select"], .stTextInput input {
-        color: #1E3A8A !important;
-    }
-
-    /* Bottoni bianchi con testo blu per risaltare */
+    /* Bottoni puliti */
     .stButton>button {
-        width: 100%;
-        border-radius: 8px;
-        height: 3em;
         background-color: white !important;
         color: #1E3A8A !important;
         font-weight: bold;
-        border: none;
     }
-
-    /* Rimuove elementi grafici superflui */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- CONNESSIONE GOOGLE SHEETS ---
-conn = st.connection("gsheets", type=GSheetsConnection)
-
-# --- GESTIONE COUNTER PER RESET ---
-if "reset_counter" not in st.session_state:
-    st.session_state.reset_counter = 0
-
-def reset_campi():
-    st.session_state.reset_counter += 1
-    if 'off_coords' in st.session_state: del st.session_state['off_coords']
-    if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
-
-# --- CSS PERSONALIZZATO PER LANDING PAGE E STILE PRO PALAZZOLO ---
-st.markdown("""
-    <style>
-    /* Sfondo dell'intera app */
-    .stApp {
-        background-color: #1E3A8A; 
-    }
-    /* Nascondi header e menu inutili */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Contenitore bianco centrale (Card) */
-    .main-card {
-        background-color: white;
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0px 10px 30px rgba(0,0,0,0.3);
-        text-align: center;
-        color: #1E3A8A;
-    }
-    
-    /* Bottoni stile Pro Palazzolo */
-    .stButton>button {
-        width: 100%;
-        border-radius: 8px;
-        height: 3em;
-        background-color: #1E3A8A;
-        color: white;
-        font-weight: bold;
-    }
-    
-    /* Testi e labels neri dentro la card bianca */
-    .main-card h2, .main-card p, label {
-        color: #1E3A8A !important;
+    /* Rimuove i bordi bianchi indesiderati dai div */
+    div.stMarkdownContainer > div {
+        background-color: transparent !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DATI COMUNI ---
-squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
-lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
+# --- LOGICA LOGO ---
+if os.path.exists("logo.png"):
+    with open("logo.png", "rb") as f:
+        data = base64.b64encode(f.read()).decode("utf-8")
+        st.markdown(f"""
+            <div class="logo-container">
+                <img src="data:image/png;base64,{data}" width="100">
+            </div>
+            """, unsafe_allow_html=True)
 
-# --- LOGICA DI ACCESSO (LANDING PAGE) ---
+# --- LOGICA DI ACCESSO ---
 if "autenticato" not in st.session_state:
     st.session_state.autenticato = False
-    st.session_state.profilo = None
 
 if not st.session_state.autenticato:
-    # 1. Inserimento Logo in alto a destra
-    if os.path.exists("logo.png"):
-        # Usiamo base64 per iniettare l'immagine direttamente nel CSS/HTML
-        import base64
-        with open("logo.png", "rb") as f:
-            data = base64.b64encode(f.read()).decode("utf-8")
-            st.markdown(
-                f'<div class="logo-top-right"><img src="data:image/png;base64,{data}" width="120"></div>',
-                unsafe_allow_html=True
-            )
-
-    # 2. Contenuto Centrale
+    # Centriamo il contenuto come nella tua versione originale
     _, col_main, _ = st.columns([1, 2, 1])
 
     with col_main:
-        st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True) # Spazio dal bordo alto
+        st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("<h1 style='text-align: center;'>🏟️ HUB PERFORMANCE U16</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; font-size: 1.2rem;'>Benvenuto. Seleziona il tuo profilo per accedere ai dati della Pro Palazzolo.</p>", unsafe_allow_html=True)
-        
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center;'>Benvenuto. Seleziona il tuo profilo per accedere ai dati.</p>", unsafe_allow_html=True)
         
         ruolo_scelto = st.selectbox("Seleziona Profilo:", ["Seleziona...", "Match Analyst", "Staff Tecnico"])
         
-        permesso_entrata = False
         if ruolo_scelto == "Match Analyst":
-            password = st.text_input("Inserisci PIN di sicurezza:", type="password")
-            if password == "1234":
-                permesso_entrata = True
-            elif password != "":
-                st.error("PIN non corretto")
+            pass_analyst = st.text_input("Codice Accesso", type="password")
+            if st.button("ENTRA"):
+                if pass_analyst == "1234":
+                    st.session_state.autenticato = True
+                    st.session_state.profilo = "Match Analyst"
+                    st.rerun()
+                else:
+                    st.error("PIN Errato")
+        
         elif ruolo_scelto == "Staff Tecnico":
-            permesso_entrata = True
-
-        if st.button("ACCEDI ALL'AREA RISERVATA"):
-            if ruolo_scelto != "Seleziona..." and permesso_entrata:
+            if st.button("ENTRA"):
                 st.session_state.autenticato = True
-                st.session_state.profilo = ruolo_scelto
+                st.session_state.profilo = "Staff Tecnico"
                 st.rerun()
-            else:
-                st.warning("Assicurati di aver selezionato un profilo e inserito il PIN corretto.")
-    
     st.stop()
 
-# --- SIDEBAR DI SERVIZIO (SOLO DOPO ACCESSO) ---
-st.sidebar.image("logo.png", width=150) # Assicurati di avere il file logo.png nella cartella del progetto
-st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
-if st.sidebar.button("⬅️ LOGOUT"):
+# --- SIDEBAR (VISIBILE DOPO IL LOGIN) ---
+st.sidebar.image("logo.png", width=120)
+st.sidebar.info(f"Profilo: {st.session_state.profilo}")
+if st.sidebar.button("Logout"):
     st.session_state.autenticato = False
     st.rerun()
 
-ruolo = st.session_state.profilo
+# Proseguimento normale del tuo codice...
+st.write("Benvenuto nell'area di lavoro.")
 
 # =========================================================
 # LOGICA MATCH ANALYST (RACCOLTA + VISUALIZZAZIONE)
