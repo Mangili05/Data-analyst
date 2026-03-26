@@ -10,6 +10,29 @@ from streamlit_gsheets import GSheetsConnection
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
+# --- CONFIGURAZIONE STILE CSS (Colori Pro Palazzolo) ---
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #1E3A8A; /* Blu scuro/Azzurro carico */
+    }
+    .main-card {
+        background-color: white;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
+        text-align: center;
+    }
+    .stButton>button {
+        width: 100%;
+        border-radius: 5px;
+        height: 3em;
+        background-color: #1E3A8A;
+        color: white;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # --- CONNESSIONE GOOGLE SHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -50,45 +73,49 @@ st.sidebar.divider()
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
 
-# --- LOGICA DI ACCESSO (LANDING PAGE) ---
+# --- LOGICA DI ACCESSO ---
 if "autenticato" not in st.session_state:
     st.session_state.autenticato = False
     st.session_state.profilo = None
 
 if not st.session_state.autenticato:
-    # Questa è la pagina che compare APPENA apri l'app
-    st.markdown("## 🏟️ BENVENUTO NELL'HUB PRO PALAZZOLO")
-    st.markdown("### Seleziona il tuo profilo per accedere ai dati:")
+    # Creiamo uno spazio per centrare il riquadro
+    col_space1, col_main, col_space2 = st.columns([1, 2, 1])
+
+    with col_main:
+        st.markdown('<div class="main-card">', unsafe_allow_html=True)
+        st.image("https://www.propalazzolo.it/wp-content/uploads/2023/07/logo-pro-palazzolo.png", width=100) # Assicurati che il link al logo sia corretto
+        st.markdown("<h2 style='color: #1E3A8A;'>HUB PERFORMANCE U16</h2>", unsafe_allow_html=True)
+        
+        # Selezione Profilo
+        ruolo_scelto = st.selectbox("Chi sta accedendo?", ["Seleziona...", "Match Analyst", "Staff Tecnico"])
+        
+        accedi = False
+        
+        if ruolo_scelto == "Match Analyst":
+            codice = st.text_input("Inserisci Codice Accesso", type="password")
+            if codice == "1234": # <--- QUI IMPOSTI LA TUA PASSWORD
+                accedi = True
+            elif codice != "":
+                st.error("Codice errato")
+        
+        elif ruolo_scelto == "Staff Tecnico":
+            # Per lo staff l'accesso è libero o puoi mettere un'altra password
+            accedi = True
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        if st.button("ENTRA"):
+            if accedi:
+                st.session_state.autenticato = True
+                st.session_state.profilo = ruolo_scelto
+                st.rerun()
+            else:
+                st.warning("Seleziona un profilo o inserisci il codice corretto.")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.info("### 👤 STAFF TECNICO")
-        st.write("Accesso in sola consultazione ai report e ai radar della squadra.")
-        if st.button("ACCEDI COME STAFF"):
-            st.session_state.autenticato = True
-            st.session_state.profilo = "Staff Tecnico"
-            st.rerun()
-
-    with col2:
-        st.success("### 🛠️ MATCH ANALYST")
-        st.write("Accesso completo: inserimento dati, gestione database e analisi.")
-        if st.button("ACCEDI COME ANALYST"):
-            st.session_state.autenticato = True
-            st.session_state.profilo = "Match Analyst"
-            st.rerun()
-    
-    st.stop() # Blocca l'esecuzione qui, non mostra altro finché non cliccano
-
-# Se siamo qui, l'utente è autenticato. 
-# Creiamo un tasto nella sidebar per tornare indietro (Logout)
-if st.sidebar.button("⬅️ CAMBIA PROFILO"):
-    st.session_state.autenticato = False
-    st.session_state.profilo = None
-    st.rerun()
-
-# Recuperiamo il ruolo scelto per far funzionare il resto del codice
-ruolo = st.session_state.profilo
-st.sidebar.write(f"Connesso come: **{ruolo}**")
+    st.stop() # Blocca tutto il resto dell'app
 
 # =========================================================
 # LOGICA MATCH ANALYST (RACCOLTA + VISUALIZZAZIONE)
