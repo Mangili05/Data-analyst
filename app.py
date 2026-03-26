@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import base64
+import plotly.graph_objects as go
 from datetime import datetime
 from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
