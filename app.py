@@ -10,7 +10,7 @@ from streamlit_gsheets import GSheetsConnection
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
-# --- CONFIGURAZIONE STILE UNIFICATO (BIANCO SU BLU) ---
+# --- CONFIGURAZIONE STILE CSS ---
 st.markdown("""
     <style>
     /* Sfondo dell'intera app */
@@ -18,59 +18,39 @@ st.markdown("""
         background-color: #1E3A8A; 
     }
     
-    /* Logo in alto a destra */
-    .logo-top-right {
-        position: fixed;
-        top: 10px;
-        right: 20px;
-        z-index: 1000;
-    }
-
-    /* Forza il colore bianco per tutti i testi principali */
-    h1, h2, h3, p, label, .stMarkdown, .stSelectbox label p {
+    /* Forza il colore bianco per TUTTI i testi */
+    h1, h2, h3, p, label, .stMarkdown {
         color: white !important;
     }
 
-    /* Rende i testi dentro i menu a tendina e input leggibili (scuri su bianco) */
-    .stSelectbox div[data-baseweb="select"], .stTextInput input {
-        color: #1E3A8A !important;
+    /* Stile specifico per le scritte delle Selectbox (che a volte restano nere) */
+    .stSelectbox label p {
+        color: white !important;
     }
 
-    /* Bottoni bianchi con testo blu per risaltare */
+    /* Rende i testi dei bottoni leggibili */
     .stButton>button {
         width: 100%;
         border-radius: 8px;
         height: 3em;
-        background-color: white !important;
-        color: #1E3A8A !important;
+        background-color: #ffffff; /* Bottone bianco */
+        color: #1E3A8A !important; /* Testo blu scuro */
         font-weight: bold;
         border: none;
     }
-
-    /* Rimuove elementi grafici superflui */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    
+    /* Rimuove quel riquadro bianco fastidioso se presente come 'card' */
+    .main-card {
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }
     </style>
     """, unsafe_allow_html=True)
-
-# --- FUNZIONE PER IL LOGO ---
-def add_logo():
-    if os.path.exists("logo.png"):
-        with open("logo.png", "rb") as f:
-            data = base64.b64encode(f.read()).decode("utf-8")
-            st.markdown(
-                f'<div class="logo-top-right"><img src="data:image/png;base64,{data}" width="100"></div>',
-                unsafe_allow_html=True
-            )
 
 # --- CONNESSIONE GOOGLE SHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# --- GESTIONE SESSION STATE ---
-if "autenticato" not in st.session_state:
-    st.session_state.autenticato = False
-    st.session_state.profilo = None
+# --- GESTIONE COUNTER PER RESET ---
 if "reset_counter" not in st.session_state:
     st.session_state.reset_counter = 0
 
@@ -79,39 +59,101 @@ def reset_campi():
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
+# --- CSS PERSONALIZZATO PER LANDING PAGE E STILE PRO PALAZZOLO ---
+st.markdown("""
+    <style>
+    /* Sfondo dell'intera app */
+    .stApp {
+        background-color: #1E3A8A; 
+    }
+    /* Nascondi header e menu inutili */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Contenitore bianco centrale (Card) */
+    .main-card {
+        background-color: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0px 10px 30px rgba(0,0,0,0.3);
+        text-align: center;
+        color: #1E3A8A;
+    }
+    
+    /* Bottoni stile Pro Palazzolo */
+    .stButton>button {
+        width: 100%;
+        border-radius: 8px;
+        height: 3em;
+        background-color: #1E3A8A;
+        color: white;
+        font-weight: bold;
+    }
+    
+    /* Testi e labels neri dentro la card bianca */
+    .main-card h2, .main-card p, label {
+        color: #1E3A8A !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # --- DATI COMUNI ---
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
 
-# --- LANDING PAGE ---
+# --- LOGICA DI ACCESSO (LANDING PAGE) ---
+if "autenticato" not in st.session_state:
+    st.session_state.autenticato = False
+    st.session_state.profilo = None
+
 if not st.session_state.autenticato:
-    add_logo() # Mostra il logo in alto a destra
-    
+    # Usiamo le colonne solo per centrare il contenuto
     _, col_main, _ = st.columns([1, 2, 1])
+
     with col_main:
-        st.markdown("<div style='margin-top: 80px;'></div>", unsafe_allow_html=True)
+        # Titolo centrale senza div bianchi
         st.markdown("<h1 style='text-align: center;'>⚽ HUB PERFORMANCE U16</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center;'>Area riservata Pro Palazzolo. Seleziona il tuo profilo.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center;'>Benvenuto. Seleziona il tuo profilo per continuare.</p>", unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Selezione Profilo - La label è ora bianca grazie al CSS sopra
         ruolo_scelto = st.selectbox("Chi sta accedendo?", ["Seleziona...", "Match Analyst", "Staff Tecnico"])
         
         permesso_entrata = False
+        
         if ruolo_scelto == "Match Analyst":
-            password = st.text_input("Codice Accesso Analyst", type="password")
+            password = st.text_input("Codice Accesso Analyst", type="password", placeholder="Inserisci PIN")
             if password == "1234": 
                 permesso_entrata = True
             elif password != "":
                 st.error("PIN Errato")
+        
         elif ruolo_scelto == "Staff Tecnico":
             permesso_entrata = True
 
+        st.markdown("<br>", unsafe_allow_html=True)
+        
         if st.button("ENTRA NELL'APP"):
             if ruolo_scelto != "Seleziona..." and permesso_entrata:
                 st.session_state.autenticato = True
                 st.session_state.profilo = ruolo_scelto
                 st.rerun()
+            else:
+                st.warning("Seleziona un profilo o verifica il codice.")
+    
     st.stop()
+
+# --- SIDEBAR DI SERVIZIO (SOLO DOPO ACCESSO) ---
+st.sidebar.image("logo.png", width=150) # Assicurati di avere il file logo.png nella cartella del progetto
+st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
+if st.sidebar.button("⬅️ LOGOUT"):
+    st.session_state.autenticato = False
+    st.rerun()
+
+ruolo = st.session_state.profilo
+
 
 # --- SIDEBAR (DOPO LOGIN) ---
 st.sidebar.image("logo.png", width=120)
