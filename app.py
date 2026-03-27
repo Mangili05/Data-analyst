@@ -185,27 +185,17 @@ if ruolo == "Match Analyst":
                 elif fase == "Azione Offensiva":
                     nome_foglio = "Offensiva"
                     cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
-                    
                     coords = st.session_state.get(f"off_coords_temp{s}")
-                    
-                    # Convertiamo i pixel (400x300) in scala 0-100 per Plotly
-                    if coords:
-                        # X: 0-400 -> 0-100
-                        norm_x = (coords['x'] / 400) * 100
-                        # Y: Nel click lo 0 è in alto. Nel nostro grafico Plotly lo 0 è il centrocampo (Y=30)
-                        # Facciamo una conversione che porti il fondo (300px) a 100 e l'inizio (0px) a 30
-                        norm_y = 100 - (coords['y'] / 300) * 70
-                    else:
-                        norm_x, norm_y = "", ""
                     
                     record = {
                         "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
                         "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
                         "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'),
                         "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), 
-                        "Coord_X": norm_x, 
-                        "Coord_Y": norm_y
+                        "Coord_X": coords['x'] if coords else "", 
+                        "Coord_Y": coords['y'] if coords else ""
                     }
+                    
                 elif fase == "Azione Difensiva":
                     nome_foglio = "Difensiva"
                     cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
@@ -261,46 +251,92 @@ if ruolo == "Match Analyst":
             co3, co4 = st.columns(2)
             with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
             with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
-            # --- LOGICA CAMPETTO CLICCABILE (VERSIONE ROBUSTA) ---
+            # --- SEZIONE CAMPETTO PROFESSIONALE E CLICCABILE (OFFENSIVA) ---
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
                 
                 st.markdown("#### 🎯 Clicca sul punto del tiro")
 
-                # --- GENERAZIONE IMMAGINE CAMPO "AL VOLO" ---
-                from PIL import Image, ImageDraw
+                import plotly.graph_objects as go
+                import numpy as np
 
-                # Creiamo un'immagine verde (base del campo)
-                # Usiamo 400x300 come dimensione fissa per semplicità di calcolo
-                w, h = 400, 300
-                img_pitch = Image.new('RGB', (w, h), "#228B22")
-                draw = ImageDraw.Draw(img_pitch)
-
-                # Disegniamo le linee (proporzionate ai 400x300)
-                # Area Grande
-                draw.rectangle([80, 230, 320, 300], outline="white", width=3)
-                # Area Piccola
-                draw.rectangle([140, 275, 260, 300], outline="white", width=3)
-                # Lunetta Area
-                draw.arc([140, 210, 260, 250], 180, 0, fill="white", width=3)
-                # Porta (linea scura)
-                draw.line([170, 298, 230, 298], fill="#333333", width=5)
-
-                # Se l'utente ha già cliccato, disegniamo il pallino rosso nell'anteprima
+                # Chiave per salvare le coordinate nel session_state
                 coord_key = f"off_coords_temp{suffix}"
-                if st.session_state.get(coord_key):
-                    px_x = st.session_state[coord_key]['x']
-                    px_y = st.session_state[coord_key]['y']
-                    r = 5
-                    draw.ellipse([px_x-r, px_y-r, px_x+r, px_y+r], fill="red", outline="white")
+                if coord_key not in st.session_state:
+                    st.session_state[coord_key] = None
 
-                # Mostriamo l'immagine e catturiamo il click
-                # Nota: streamlit_image_coordinates restituisce pixel (0-400, 0-300)
-                pos = streamlit_image_coordinates(img_pitch, key=f"click_pitch_{suffix}")
+                fig_input_off = go.Figure()
+                
+                # Colori professionali (come nello Staff)
+                pitch_green = "#228B22"
+                line_white = "#ffffff"
+                y_start = 30 # Trequarti compatta
 
-                if pos and (st.session_state.get(coord_key) != pos):
-                    st.session_state[coord_key] = pos
-                    st.rerun()
+                # 1. TRACCIA DATI INVISIBILE (Il segreto per catturare il click ovunque)
+                # Creiamo una griglia 50x50 di punti trasparenti per coprire tutto il campo
+                grid_x, grid_y = np.meshgrid(np.linspace(0, 100, 50), np.linspace(y_start, 100, 50))
+                fig_input_off.add_trace(go.Scatter(
+                    x=grid_x.flatten(), 
+                    y=grid_y.flatten(),
+                    mode='markers',
+                    marker=dict(opacity=0), # Invisibile
+                    hoverinfo='none',
+                    showlegend=False
+                ))
+
+                # 2. DISEGNO DEL CAMPO PROFESSIONALE (Shapes)
+                # Rettangolo principale
+                fig_input_off.add_shape(type="rect", x0=0, y0=y_start, x1=100, y1=100, line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
+                # Area Grande
+                fig_input_off.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3)) 
+                # Area Piccola
+                fig_input_off.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3)) 
+                # Dischetto
+                fig_input_off.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white)) 
+                # Lunetta area di rigore
+                fig_input_off.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3))
+                # Lunetta centrocampo
+                fig_input_off.add_shape(type="path", path=f"M 37 {y_start} C 40 {y_start+8}, 60 {y_start+8}, 63 {y_start}", line=dict(color=line_white, width=3))
+                # Porta
+                fig_input_off.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd")
+
+                # 3. DISEGNO DEL PUNTO ROSSO (Se l'utente ha già cliccato)
+                if st.session_state[coord_key] is not None:
+                    curr = st.session_state[coord_key]
+                    fig_input_off.add_trace(go.Scatter(
+                        x=[curr['x']], 
+                        y=[curr['y']], 
+                        mode='markers', 
+                        marker=dict(size=18, color='red', symbol='circle', line=dict(width=2, color='white')),
+                        showlegend=False,
+                        hoverinfo='none'
+                    ))
+
+                # 4. CONFIGURAZIONE LAYOUT (Fisso e non zoomabile)
+                fig_input_off.update_layout(
+                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-2, 102], fixedrange=True),
+                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[y_start-2, 105], fixedrange=True),
+                    yaxis_scaleanchor="x",
+                    yaxis_scaleratio=1,
+                    margin=dict(l=0, r=0, t=0, b=0),
+                    height=600, # Altezza generosa
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    clickmode='event+select', # Fondamentale per catturare il click
+                    dragmode=False # Disabilita lo zoom rettangolare fastidioso
+                )
+
+                # Visualizzazione del grafico e cattura dell'evento select
+                # config={'displayModeBar': False} nasconde la barra degli strumenti di plotly per pulizia
+                event_data = st.plotly_chart(fig_input_off, use_container_width=True, config={'displayModeBar': False}, on_select="rerun")
+
+                # 5. GESTIONE DEL CLICK
+                # Plotly on_select restituisce i dati del punto cliccato nella griglia invisibile
+                if event_data and "selection" in event_data and event_data["selection"]["points"]:
+                    point = event_data["selection"]["points"][0]
+                    # Salviamo le coordinate 0-100 pure
+                    st.session_state[coord_key] = {'x': point['x'], 'y': point['y']}
+                    st.rerun() # Ricarica per mostrare il punto rosso
 
             if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
 
