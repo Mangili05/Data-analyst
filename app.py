@@ -335,7 +335,7 @@ elif ruolo == "Staff Tecnico":
     t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
 
     with t_squadra:
-    st.markdown("### 🏟️ Mappa Tiri e Goal (Collettiva)")
+        st.markdown("### 🏟️ Mappa Tiri e Goal (Collettiva)")
     
     try:
         # Import necessari
