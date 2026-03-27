@@ -263,49 +263,32 @@ if ruolo == "Match Analyst":
             with co2:
                 st.text_input("Fine", placeholder="min:sec", key=f"off_fi{suffix}")
                 st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
-                co3, co4 = st.columns(2)
-            with co3:
-                st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
-            with co4:
-                st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
-                
-            es_off_val = st.session_state.get(f"off_esito{suffix}")
-            if es_off_val in ["Gol", "Tiro in porta", "Tiro fuori"]:
+            co3, co4 = st.columns(2)
+            with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
+            with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
+            
+            if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
-                st.write("🎯 **Posizione Conclusione**")
-                img_path = "campo.jpg"
-                if os.path.exists(img_path):
-                    img = Image.open(img_path)
-            
-                # Dimensioni reali dell'immagine ritagliata
-                larghezza_reale = 358
-                altezza_reale = 283
-            
-                # Visualizziamo l'immagine alla sua dimensione naturale o leggermente scalata
-                # Usiamo 358 per vederla 1:1, così i pixel nel database sono gli stessi dell'immagine
-                img_res = img.resize((larghezza_reale, altezza_reale)) 
-            
-            if "off_coords" in st.session_state:
-                draw = ImageDraw.Draw(img_res)
-                x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-                draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
-            
-            # Mostriamo l'immagine senza forzare larghezze diverse
-            val = streamlit_image_coordinates(img_res, key=f"campetto_off{suffix}")
-            
-            if val and (st.session_state.get("off_coords") != val):
-                st.session_state["off_coords"] = val
-                st.rerun()
-    
-    if st.button("💾 Salva Azione Offensiva"):
-        ini_o = st.session_state.get(f"off_in{suffix}", "")
-        fin_o = st.session_state.get(f"off_fi{suffix}", "")
-        if len(ini_o) < 5 or len(fin_o) < 5:
-            st.error("⚠️ Errore: Inserire il formato mm:ss (es. 04:10)")
-        else:
-            esegui_salvataggio("Azione Offensiva")
+                
+                st.markdown("#### 🎯 Clicca sul punto del tiro")
+                
+                from streamlit_image_coordinates import streamlit_image_coordinates
 
+                # Mostriamo l'immagine campo.jpg
+                # Usiamo width=600 per renderla grande e cliccabile facilmente
+                value = streamlit_image_coordinates(
+                    "campo.jpg", 
+                    key=f"off_coords_click_{suffix}",
+                    width=600
+                )
 
+                # Salviamo il click nel session_state per la funzione esegui_salvataggio
+                if value:
+                    st.session_state[f"off_coords_temp{suffix}"] = value
+                    st.success(f"Punto registrato correttamente!")
+
+            if st.button("💾 Salva Azione Offensiva"):
+                esegui_salvataggio("Azione Offensiva")
 
         with tabs[2]:
             cd1, cd2 = st.columns(2)
