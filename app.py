@@ -184,19 +184,11 @@ if ruolo == "Match Analyst":
                 # --- Modifica dentro esegui_salvataggio per Offensiva ---
                 elif fase == "Azione Offensiva":
                     nome_foglio = "Offensiva"
-                    # Recuperiamo il valore dal click
+                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
+                    
+                    # Recuperiamo le coordinate temporanee (che sono già 0-100!)
                     coords = st.session_state.get(f"off_coords_temp{s}")
                     
-                    # Ipotizziamo che la tua immagine campo.jpg sia larga 600 e alta 400
-                    # Normalizziamo a 0-100 per il grafico finale
-                    if coords:
-                        # ESEMPIO: se l'immagine è 600px -> (x/600)*100
-                        # Sostituisci 600 e 400 con le dimensioni REALI della tua immagine campo.jpg
-                        c_x = round((coords['x'] / 600) * 100, 1)
-                        c_y = round((coords['y'] / 400) * 100, 1)
-                    else:
-                        c_x, c_y = "", ""
-
                     record = {
                         "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, 
                         "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
@@ -205,8 +197,8 @@ if ruolo == "Match Analyst":
                         "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), 
                         "Esito finale": st.session_state.get(f'off_esito{s}'),
                         "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), 
-                        "Coord_X": c_x, 
-                        "Coord_Y": c_y
+                        "Coord_X": coords['x'] if coords else "", 
+                        "Coord_Y": coords['y'] if coords else "" # Salviamo i valori puri!
                     }
                     
                 elif fase == "Azione Difensiva":
@@ -266,27 +258,84 @@ if ruolo == "Match Analyst":
             with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
+                
+                # --- NUOVA SEZIONE CAMPETTO PROFESSIONALE E CLICCABILE ---
                 st.markdown("#### 🎯 Clicca sul punto del tiro")
 
-                from streamlit_image_coordinates import streamlit_image_coordinates
-                
-                # Usiamo l'immagine che avevi (campo.jpg) o una versione fissa.
-                # Se non l'hai, carichiamola o assicurati che sia nella cartella.
-                # Dimensioni standard ipotizzate: 600x400
-                if os.path.exists("campo.jpg"):
-                    # Mostriamo l'immagine e catturiamo i pixel
-                    value = streamlit_image_coordinates("campo.jpg", key=f"off_click_{suffix}")
-                    
-                    if value:
-                        # Salviamo i pixel nel session_state
-                        st.session_state[f"off_coords_temp{suffix}"] = value
-                        # Disegniamo un feedback testuale per conferma
-                        st.success(f"Punto selezionato! (X: {value['x']}, Y: {value['y']})")
-                else:
-                    st.error("File 'campo.jpg' non trovato. Caricalo nella cartella del progetto.")
+                import plotly.graph_objects as go
+                import numpy as np
 
-            if st.button("💾 Salva Azione Offensiva"):
-                esegui_salvataggio("Azione Offensiva")
+                coord_key = f"off_coords_temp{suffix}"
+                # Inizializziamo lo stato se vuoto
+                if coord_key not in st.session_state: st.session_state[coord_key] = None
+
+                fig_input_off = go.Figure()
+                p_green = "#228B22"; l_white = "#ffffff"; y_start = 30 # Trequarti compatta
+
+                # 1. TRACCIA INVISIBILE (Il segreto per catturare il click ovunque)
+                # Creiamo una griglia 50x50 di punti trasparenti che copre tutto il campo tattico
+                grid_x, grid_y = np.meshgrid(np.linspace(0, 100, 50), np.linspace(y_start, 100, 50))
+                fig_input_off.add_trace(go.Scatter(
+                    x=grid_x.flatten(), 
+                    y=grid_y.flatten(),
+                    mode='markers',
+                    marker=dict(opacity=0), # Totalmente invisibile
+                    hoverinfo='none',
+                    showlegend=False
+                ))
+
+                # 2. DISEGNO CAMPO PROFESSIONALE (Shapes)
+                # Layer="below" assicura che il punto rosso stia SOPRA le linee
+                fig_input_off.add_shape(type="rect", x0=0, y0=y_start, x1=100, y1=100, line=dict(color=l_white, width=3), fillcolor=p_green, layer="below")
+                fig_input_off.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=l_white, width=3), layer="below") 
+                fig_input_off.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=l_white, width=3), layer="below") 
+                fig_input_off.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=l_white, line=dict(color=l_white), layer="below") 
+                fig_input_off.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=l_white, width=3), layer="below")
+                fig_input_off.add_shape(type="path", path=f"M 37 {y_start} C 40 {y_start+8}, 60 {y_start+8}, 63 {y_start}", line=dict(color=l_white, width=3), layer="below")
+                fig_input_off.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd", layer="below")
+
+                # 3. MOSTRA IL PUNTINO ROSSO (Feedback visivo)
+                curr = st.session_state[coord_key]
+                if curr is not None:
+                    fig_input_off.add_trace(go.Scatter(
+                        x=[curr['x']], 
+                        y=[curr['y']], 
+                        mode='markers', 
+                        marker=dict(size=18, color='red', symbol='circle', line=dict(width=2, color='white')),
+                        showlegend=False,
+                        hoverinfo='none'
+                    ))
+
+                # 4. CONFIGURAZIONE LAYOUT (Grande, fisso e pulito)
+                fig_input_off.update_layout(
+                    # Range stretto 0-100 per precisione
+                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-2, 102], fixedrange=True),
+                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[y_start-2, 105], fixedrange=True),
+                    yaxis_scaleanchor="x", # Mantiene proporzioni reali
+                    yaxis_scaleratio=1,
+                    margin=dict(l=0, r=0, t=0, b=0), # Rimuove margini bianchi
+                    height=600, # ALTEZZA GRANDE, come da tua richiesta
+                    paper_bgcolor='rgba(0,0,0,0)', # Sfondo trasparente
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    clickmode='event+select', # Abilita la cattura dei click sulla griglia
+                    dragmode=False # Disabilita lo zoom rettangolare fastidioso
+                )
+
+                # Visualizzazione e cattura evento
+                event_data = st.plotly_chart(fig_input_off, use_container_width=True, config={'displayModeBar': False}, on_select="rerun")
+
+                # 5. CATTURA IL CLICK
+                if event_data and "selection" in event_data and event_data["selection"]["points"]:
+                    point = event_data["selection"]["points"][0]
+                    # Salviamo direttamente le coordinate 0-100 pure della griglia
+                    new_coords = {'x': point['x'], 'y': point['y']}
+                    
+                    # Se il punto è diverso, aggiorniamo e ricarichiamo per mostrare il pallino
+                    if st.session_state[coord_key] != new_coords:
+                        st.session_state[coord_key] = new_coords
+                        st.rerun()
+
+            if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
 
         with tabs[2]:
             cd1, cd2 = st.columns(2)
