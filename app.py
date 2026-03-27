@@ -335,8 +335,83 @@ elif ruolo == "Staff Tecnico":
     t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
 
     with t_squadra:
-        st.markdown("### Report di Squadra (Looker Studio)")
-        st.info("In questa sezione vengono visualizzati i dati collettivi caricati dall'analista.")
+        st.markdown("### 🏟️ Mappa Tiri e Goal")
+        
+        try:
+            # 1. Caricamento dati dal foglio "Offensiva"
+            df_off = conn.read(worksheet="Offensiva", ttl=0)
+            
+            # Pulizia: teniamo solo le righe che hanno coordinate X e Y valide
+            df_shots = df_off.dropna(subset=['Coord_X', 'Coord_Y'])
+            df_shots = df_shots[df_shots['Coord_X'] != ""]
+
+            if df_shots.empty:
+                st.info("Nessun tiro registrato nel database per questa sessione.")
+            else:
+                import plotly.graph_objects as go
+                import base64
+
+                # Creazione figura
+                fig_map = go.Figure()
+
+                # 2. Configurazione icone/simboli per esito
+                # 'circle' = Gol, 'circle-x' = Fuori, 'diamond' = In porta
+                esiti_config = {
+                    "Gol": {"color": "#FFD700", "symbol": "circle", "name": "⚽ Gol", "size": 18},
+                    "Tiro in porta": {"color": "#00FF00", "symbol": "diamond", "name": "✅ In Porta", "size": 14},
+                    "Tiro fuori": {"color": "#FF0000", "symbol": "x", "name": "❌ Fuori", "size": 14}
+                }
+
+                for esito, stile in esiti_config.items():
+                    mask = df_shots['Esito finale'] == esito
+                    df_filtered = df_shots[mask]
+                    
+                    if not df_filtered.empty:
+                        fig_map.add_trace(go.Scatter(
+                            x=df_filtered['Coord_X'],
+                            y=df_filtered['Coord_Y'],
+                            mode='markers',
+                            name=stile['name'],
+                            marker=dict(
+                                size=stile['size'],
+                                color=stile['color'],
+                                symbol=stile['symbol'],
+                                line=dict(width=2, color='white')
+                            ),
+                            text=df_filtered['Giocatore'],
+                            hoverinfo='text+name'
+                        ))
+
+                # 3. Caricamento immagine campo come sfondo
+                try:
+                    with open("campo.jpg", "rb") as f:
+                        img_data = base64.b64encode(f.read()).decode("utf-8")
+                    
+                    fig_map.update_layout(
+                        images=[dict(
+                            source=f"data:image/jpg;base64,{img_data}",
+                            xref="x", yref="y",
+                            x=0, y=0,
+                            sizex=358, sizey=283,
+                            sizing="stretch",
+                            layer="below"
+                        )],
+                        xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[0, 358]),
+                        yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[283, 0]),
+                        margin=dict(l=10, r=10, t=40, b=10),
+                        height=500,
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        showlegend=True,
+                        legend=dict(font=dict(color="white"), orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                    )
+                    st.plotly_chart(fig_map, use_container_width=True)
+                except FileNotFoundError:
+                    st.warning("Immagine 'campo.jpg' non trovata. Carica il file per vedere lo sfondo.")
+                    st.plotly_chart(fig_map, use_container_width=True)
+
+        except Exception as e:
+            st.error(f"Errore nel caricamento della mappa collettiva: {e}")
 
     with t_individuo:
         st.markdown("### Analisi Radar Comportamentale")
@@ -349,39 +424,40 @@ elif ruolo == "Staff Tecnico":
             try:
                 df_ind = conn.read(worksheet="Individuale", ttl=0)
                 df_player = df_ind[df_ind['Calciatore'] == p_sel]
-                if g_sel != "Tutte le giornate": df_player = df_player[df_player['Giornata'] == g_sel]
+                if g_sel != "Tutte le giornate": 
+                    df_player = df_player[df_player['Giornata'] == g_sel]
                 
                 if df_player.empty:
                     st.warning(f"Nessun dato trovato per {p_sel}.")
                 else:
+                    import plotly.graph_objects as go # Assicuriamoci che sia importato
                     categorie = ['Resilienza', 'Comunicazione', 'Intensità', 'Accettazione', 'Leadership']
-                    # Calcolo media dei voti (già numerici nel DF)
                     valori = [df_player[cat].mean() for cat in categorie]
                     media_squadra = [df_ind[cat].mean() for cat in categorie]
 
-                    fig = go.Figure()
-                    fig.add_trace(go.Scatterpolar(
+                    fig_radar = go.Figure()
+                    fig_radar.add_trace(go.Scatterpolar(
                         r=valori + [valori[0]], 
                         theta=categorie + [categorie[0]], 
                         fill='toself', 
                         name=f'Media {p_sel}', 
                         line=dict(color='#1f67b5')
                     ))
-                    fig.add_trace(go.Scatterpolar(
+                    fig_radar.add_trace(go.Scatterpolar(
                         r=media_squadra + [media_squadra[0]], 
                         theta=categorie + [categorie[0]], 
                         mode='lines', 
                         name='Media Squadra', 
                         line=dict(color='rgba(200, 200, 200, 0.5)', dash='dash')
                     ))
-                    fig.update_layout(
+                    fig_radar.update_layout(
                         polar=dict(radialaxis=dict(visible=True, range=[0, 1])), 
                         showlegend=True, 
                         template="plotly_dark",
                         paper_bgcolor='rgba(0,0,0,0)',
                         plot_bgcolor='rgba(0,0,0,0)'
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig_radar, use_container_width=True)
                     
                     st.button("🖨️ Stampa Report PDF (Browser)")
             except Exception as e:
