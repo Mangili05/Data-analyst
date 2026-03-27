@@ -335,99 +335,83 @@ elif ruolo == "Staff Tecnico":
     t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
 
     with t_squadra:
-    st.markdown("### 🏟️ Mappa Tiri e Goal (Collettiva)")
-    
-    try:
-        # 1. Caricamento dati e PIL Image per le proporzioni
-        from PIL import Image
-        import base64
-        import plotly.graph_objects as go
-
-        df_off = conn.read(worksheet="Offensiva", ttl=0)
+        st.markdown("### 🏟️ Mappa Tiri e Goal (Collettiva)")
         
-        # Pulizia dati: teniamo solo le righe che hanno coordinate X e Y valide
-        # Assicuriamoci che Coord_X e Y siano numeriche
-        df_off['Coord_X'] = pd.to_numeric(df_off['Coord_X'], errors='coerce')
-        df_off['Coord_Y'] = pd.to_numeric(df_off['Coord_Y'], errors='coerce')
-        df_shots = df_off.dropna(subset=['Coord_X', 'Coord_Y'])
+        try:
+            # Import necessari localmente o all'inizio del file
+            from PIL import Image
+            import base64
+            import plotly.graph_objects as go
+            import os
 
-        # --- GESTIONE PROPORZIONALE DELL'IMMAGINE ---
-        if not os.path.exists("campo.jpg"):
-            st.error("File 'campo.jpg' non trovato. Impossibile generare la mappa.")
-            st.stop()
-
-        img_pil = Image.open("campo.jpg")
-        img_width, img_height = img_pil.size # Otteniamo le dimensioni reali
-
-        # 2. Configurazione e Iniezione Immagine come Sfondo
-        with open("campo.jpg", "rb") as f:
-            img_data = base64.b64encode(f.read()).decode("utf-8")
-
-        # Creazione figura Plotly
-        fig_map = go.Figure()
-
-        # Definiamo i filtri e lo stile per ogni esito
-        # Usiamo marker più leggibili
-        esiti_config = {
-            "Gol": {"color": "#FFD700", "symbol": "circle", "name": "⚽ Gol", "size": 18},
-            "Tiro in porta": {"color": "#00FF00", "symbol": "diamond", "name": "✅ In Porta", "size": 14},
-            "Tiro fuori": {"color": "#FF0000", "symbol": "x", "name": "❌ Fuori", "size": 14}
-        }
-
-        # 3. Plot dei Punti (Scattering)
-        for esito, stile in esiti_config.items():
-            mask = df_shots['Esito finale'] == esito
-            df_filtered = df_shots[mask]
+            # 1. Caricamento dati
+            df_off = conn.read(worksheet="Offensiva", ttl=0)
             
-            if not df_filtered.empty:
-                fig_map.add_trace(go.Scatter(
-                    # Nota: X e Y sono state normalizzate nell'inserimento (0-100 o 0-358?)
-                    # Dobbiamo assicurarci che siano scalate sulla larghezza/altezza reale
-                    # Supponendo che i dati grezzi siano 0-100, li scaliamo:
-                    x=df_filtered['Coord_X'], # * (img_width / 100) se normalizzate
-                    y=df_filtered['Coord_Y'], # * (img_height / 100) se normalizzate
-                    mode='markers',
-                    name=stile['name'],
-                    marker=dict(
-                        size=stile['size'],
-                        color=stile['color'],
-                        symbol=stile['symbol'],
-                        line=dict(width=2, color='white')
-                    ),
-                    text=df_filtered['Giocatore'], # Nome al passaggio del mouse
-                    hoverinfo='text+name'
-                ))
+            # Conversione pulita delle coordinate
+            df_off['Coord_X'] = pd.to_numeric(df_off['Coord_X'], errors='coerce')
+            df_off['Coord_Y'] = pd.to_numeric(df_off['Coord_Y'], errors='coerce')
+            df_shots = df_off.dropna(subset=['Coord_X', 'Coord_Y'])
 
-        # 4. Update Layout (Centratura e Proporzioni)
-        fig_map.update_layout(
-            images=[dict(
-                source=f"data:image/jpg;base64,{img_data}",
-                xref="x", yref="y",
-                x=0, y=0,
-                sizex=img_width, sizey=img_height, # Usiamo dimensioni REALI
-                sizing="stretch",
-                layer="below"
-            )],
-            # Impostiamo i range degli assi sulle dimensioni reali dell'immagine
-            #xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[0, img_width]),
-            #yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[img_height, 0]), # Y invertita per il calcio
-            
-            # --- CORREZIONE PROPORZIONI ---
-            # Se le coordinate nell'inserimento erano 0-358 e 0-283, 
-            # e img_width/height sono diversi, dobbiamo scalare i punti o gli assi.
-            # Supponendo che Coord_X e Coord_Y nel DB siano già scalate su 0-img_width/height:
-            xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[0, img_width]),
-            yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[img_height, 0]),
+            # 2. Gestione Immagine e Proporzioni
+            if not os.path.exists("campo.jpg"):
+                st.error("File 'campo.jpg' non trovato.")
+            else:
+                img_pil = Image.open("campo.jpg")
+                img_width, img_height = img_pil.size
 
-            margin=dict(l=10, r=10, t=40, b=10),
-            height=600, # Aumentiamo l'altezza per farla respirare
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            showlegend=True,
-            legend=dict(font=dict(color="white"), orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
+                with open("campo.jpg", "rb") as f:
+                    img_data = base64.b64encode(f.read()).decode("utf-8")
 
-        st.plotly_chart(fig_map, use_container_width=True)
+                fig_map = go.Figure()
 
-    except Exception as e:
-        st.error(f"Errore nella generazione della mappa collettiva: {e}")
+                # 3. Configurazione Esiti
+                esiti_config = {
+                    "Gol": {"color": "#FFD700", "symbol": "circle", "name": "⚽ Gol", "size": 18},
+                    "Tiro in porta": {"color": "#00FF00", "symbol": "diamond", "name": "✅ In Porta", "size": 14},
+                    "Tiro fuori": {"color": "#FF0000", "symbol": "x", "name": "❌ Fuori", "size": 14}
+                }
+
+                for esito, stile in esiti_config.items():
+                    mask = df_shots['Esito finale'] == esito
+                    df_filtered = df_shots[mask]
+                    
+                    if not df_filtered.empty:
+                        fig_map.add_trace(go.Scatter(
+                            x=df_filtered['Coord_X'],
+                            y=df_filtered['Coord_Y'],
+                            mode='markers',
+                            name=stile['name'],
+                            marker=dict(
+                                size=stile['size'],
+                                color=stile['color'],
+                                symbol=stile['symbol'],
+                                line=dict(width=2, color='white')
+                            ),
+                            text=df_filtered['Giocatore'],
+                            hoverinfo='text+name'
+                        ))
+
+                # 4. Update Layout con proporzioni reali
+                fig_map.update_layout(
+                    images=[dict(
+                        source=f"data:image/jpg;base64,{img_data}",
+                        xref="x", yref="y",
+                        x=0, y=0,
+                        sizex=img_width, sizey=img_height,
+                        sizing="stretch",
+                        layer="below"
+                    )],
+                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[0, img_width]),
+                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[img_height, 0]),
+                    margin=dict(l=10, r=10, t=40, b=10),
+                    height=550, # Altezza fissa per bilanciare la larghezza
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    showlegend=True,
+                    legend=dict(font=dict(color="white"), orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
+
+                st.plotly_chart(fig_map, use_container_width=True)
+
+        except Exception as e:
+            st.error(f"Errore nella generazione della mappa: {e}")
