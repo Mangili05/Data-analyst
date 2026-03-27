@@ -82,7 +82,7 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- GESTIONE COUNTER PER RESET ---
 if "reset_counter" not in st.session_state:
-    st.session_state.reset_counter = 0
+  st.session_state.reset_counter = 0
 
 def reset_campi():
     st.session_state.reset_counter += 1
