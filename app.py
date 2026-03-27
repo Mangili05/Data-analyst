@@ -181,24 +181,21 @@ if ruolo == "Match Analyst":
                         "Inizio": st.session_state.get(f't_in{s}'), "Fine": st.session_state.get(f't_fi{s}'),
                         "Tipologia": st.session_state.get(f'tipo_rad{s}'), "Modalità": st.session_state.get(f'mod_rad{s}'), "Esito finale": st.session_state.get(f'esito_rad{s}')
                     }
+                # --- Modifica dentro esegui_salvataggio per Offensiva ---
                 elif fase == "Azione Offensiva":
                     nome_foglio = "Offensiva"
                     cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
-                    # --- Modifica dentro elif fase == "Azione Offensiva": ---
-                    coords = st.session_state.get('off_coords')
-                    # Trasformiamo i pixel (su base 358x283) in scala 0-100
-                    c_x = (coords['x'] / 358) * 100 if coords else ""
-                    c_y = (coords['y'] / 283) * 100 if coords else ""
-
+                    
+                    # Recuperiamo le coordinate temporanee salvate nel session_state del campetto
+                    coords = st.session_state.get(f"off_coords_temp{s}")
+                    
                     record = {
-                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, 
-                        "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
-                        "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), 
-                        "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
-                        "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), 
-                        "Esito finale": st.session_state.get(f'off_esito{s}'),
+                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
+                        "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
+                        "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'),
                         "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), 
-                        "Coord_X": c_x, "Coord_Y": c_y # <--- Usiamo i valori normalizzati
+                        "Coord_X": coords['x'] if coords else "", 
+                        "Coord_Y": coords['y'] if coords else "" # <--- Salviamo i valori 0-100 puri!
                     }
                 elif fase == "Azione Difensiva":
                     nome_foglio = "Difensiva"
@@ -255,18 +252,52 @@ if ruolo == "Match Analyst":
             co3, co4 = st.columns(2)
             with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
             with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
+            # --- NUOVA LOGICA CAMPETTO GENERATO (OFFENSIVA) ---
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
-                if os.path.exists("campo.jpg"):
-                    img = Image.open("campo.jpg").resize((358, 283))
-                    if "off_coords" in st.session_state:
-                        draw = ImageDraw.Draw(img)
-                        x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-                        draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
-                    val = streamlit_image_coordinates(img, key=f"campetto_off{suffix}")
-                    if val and (st.session_state.get("off_coords") != val):
-                        st.session_state["off_coords"] = val
-                        st.rerun()
+                
+                st.markdown("#### 🎯 Clicca sul punto del tiro")
+                
+                import plotly.graph_objects as go
+
+                # Disegniamo il campo IDENTICO a quello dello Staff
+                fig_input_off = go.Figure()
+                p_green = "#228B22"; l_white = "#ffffff"
+                y_start = 30 # Versione compatta trequarti
+
+                # Shapes del campo
+                fig_input_off.add_shape(type="rect", x0=0, y0=y_start, x1=100, y1=100, line=dict(color=l_white, width=3), fillcolor=p_green, layer="below")
+                fig_input_off.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=l_white, width=3)) 
+                fig_input_off.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=l_white, width=3)) 
+                fig_input_off.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=l_white, line=dict(color=l_white)) 
+                fig_input_off.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=l_white, width=3))
+                fig_input_off.add_shape(type="path", path=f"M 37 {y_start} C 40 {y_start+8}, 60 {y_start+8}, 63 {y_start}", line=dict(color=l_white, width=3))
+                fig_input_off.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd")
+
+                # Se c'è già una coordinata salvata, mostriamo un marker rosso temporaneo
+                if f"off_coords_temp{suffix}" in st.session_state:
+                    c = st.session_state[f"off_coords_temp{suffix}"]
+                    fig_input_off.add_trace(go.Scatter(x=[c['x']], y=[c['y']], mode='markers', marker=dict(size=14, color='red', symbol='cross'), showlegend=False))
+
+                fig_input_off.update_layout(
+                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-5, 105]),
+                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[y_start-2, 105]),
+                    yaxis_scaleanchor="x", yaxis_scaleratio=1,
+                    margin=dict(l=0, r=0, t=0, b=0), height=500,
+                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                    clickmode='event+select' # Abilita la cattura del click
+                )
+
+                # Visualizzazione con cattura dell'evento click (on_select)
+                selected_data = st.plotly_chart(fig_input_off, use_container_width=True, config={'displayModeBar': False}, on_select="rerun")
+
+                # Gestione del click: salviamo le coordinate 0-100 grezze
+                if selected_data and selected_data.get("points"):
+                    point = selected_data["points"][0]
+                    # Plotly ci dà direttamente le coordinate sull'asse (0-100), non i pixel!
+                    st.session_state[f"off_coords_temp{suffix}"] = {'x': point['x'], 'y': point['y']}
+                    st.toast(f"📍 Punto registrato: X={point['x']:.1f}, Y={point['y']:.1f}")
+
             if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
 
         with tabs[2]:
