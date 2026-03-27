@@ -252,22 +252,15 @@ if ruolo == "Match Analyst":
             co3, co4 = st.columns(2)
             with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
             with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
-            # --- LOGICA CAMPETTO FISSO E CLICCABILE (OFFENSIVA) ---
+            # --- LOGICA CAMPETTO CLICCABILE (VERSIONE ROBUSTA) ---
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
                 
                 st.markdown("#### 🎯 Clicca sul punto del tiro")
 
-                # CSS per il cursore e per evitare selezioni testuali fastidiose
-                st.markdown("""
-                    <style>
-                    .js-plotly-plot .plotly .cursor-crosshair { cursor: crosshair !important; }
-                    </style>
-                """, unsafe_allow_html=True)
-
                 import plotly.graph_objects as go
+                import numpy as np
 
-                # Inizializziamo la coordinata nel session_state se non esiste
                 coord_key = f"off_coords_temp{suffix}"
                 if coord_key not in st.session_state:
                     st.session_state[coord_key] = None
@@ -275,7 +268,18 @@ if ruolo == "Match Analyst":
                 fig_input_off = go.Figure()
                 p_green = "#228B22"; l_white = "#ffffff"; y_start = 30 
 
-                # 1. DISEGNO CAMPO
+                # 1. TRACCIA INVISIBILE (Necessaria per catturare il click ovunque)
+                # Creiamo una griglia fitta di punti invisibili
+                grid_x, grid_y = np.meshgrid(np.linspace(0, 100, 25), np.linspace(y_start, 100, 25))
+                fig_input_off.add_trace(go.Scatter(
+                    x=grid_x.flatten(), y=grid_y.flatten(),
+                    mode='markers',
+                    marker=dict(opacity=0), # Invisibile
+                    hoverinfo='none',
+                    showlegend=False
+                ))
+
+                # 2. DISEGNO CAMPO (Shapes)
                 fig_input_off.add_shape(type="rect", x0=0, y0=y_start, x1=100, y1=100, line=dict(color=l_white, width=3), fillcolor=p_green, layer="below")
                 fig_input_off.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=l_white, width=3)) 
                 fig_input_off.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=l_white, width=3)) 
@@ -284,40 +288,34 @@ if ruolo == "Match Analyst":
                 fig_input_off.add_shape(type="path", path=f"M 37 {y_start} C 40 {y_start+8}, 60 {y_start+8}, 63 {y_start}", line=dict(color=l_white, width=3))
                 fig_input_off.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd")
 
-                # 2. MOSTRA IL PUNTINO ROSSO SE ESISTE UNA COORDINATA
+                # 3. MOSTRA IL PUNTINO ROSSO
                 if st.session_state[coord_key] is not None:
                     curr = st.session_state[coord_key]
                     fig_input_off.add_trace(go.Scatter(
-                        x=[curr['x']], 
-                        y=[curr['y']], 
+                        x=[curr['x']], y=[curr['y']], 
                         mode='markers', 
-                        marker=dict(size=16, color='red', symbol='circle', line=dict(width=2, color='white')),
-                        showlegend=False,
-                        hoverinfo='none'
+                        marker=dict(size=18, color='red', symbol='circle', line=dict(width=2, color='white')),
+                        showlegend=False, hoverinfo='none'
                     ))
 
                 fig_input_off.update_layout(
-                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-5, 105], fixedrange=True),
-                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[y_start-5, 105], fixedrange=True),
+                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-2, 102], fixedrange=True),
+                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[y_start-2, 105], fixedrange=True),
                     yaxis_scaleanchor="x", yaxis_scaleratio=1,
                     margin=dict(l=0, r=0, t=0, b=0), height=550,
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                    dragmode=False,
+                    dragmode='select', # Importante per abilitare la selezione
                     clickmode='event+select'
                 )
 
                 # Visualizzazione
                 event_data = st.plotly_chart(fig_input_off, use_container_width=True, config={'displayModeBar': False}, on_select="rerun")
 
-                # 3. CATTURA IL PUNTO E AGGIORNA LO STATO
+                # 4. CATTURA IL CLICK
                 if event_data and "selection" in event_data and event_data["selection"]["points"]:
                     point = event_data["selection"]["points"][0]
-                    new_coords = {'x': point['x'], 'y': point['y']}
-                    
-                    # Se il punto è diverso da quello salvato, aggiorna e ricarica per mostrare il pallino
-                    if st.session_state[coord_key] != new_coords:
-                        st.session_state[coord_key] = new_coords
-                        st.rerun()
+                    st.session_state[coord_key] = {'x': point['x'], 'y': point['y']}
+                    st.rerun()
 
             if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
 
