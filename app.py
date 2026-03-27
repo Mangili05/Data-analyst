@@ -252,20 +252,26 @@ if ruolo == "Match Analyst":
             co3, co4 = st.columns(2)
             with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
             with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
-            # --- NUOVA LOGICA CAMPETTO GENERATO (OFFENSIVA) ---
+            # --- LOGICA CAMPETTO FISSO E CLICCABILE (OFFENSIVA) ---
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
                 
                 st.markdown("#### 🎯 Clicca sul punto del tiro")
                 
+                # CSS per forzare il puntatore del mouse sul grafico
+                st.markdown("""
+                    <style>
+                    .js-plotly-plot .plotly .cursor-crosshair { cursor: crosshair !important; }
+                    .main .element-container iframe { pointer-events: all !important; }
+                    </style>
+                """, unsafe_allow_html=True)
+
                 import plotly.graph_objects as go
 
-                # Disegniamo il campo IDENTICO a quello dello Staff
                 fig_input_off = go.Figure()
-                p_green = "#228B22"; l_white = "#ffffff"
-                y_start = 30 # Versione compatta trequarti
+                p_green = "#228B22"; l_white = "#ffffff"; y_start = 30 
 
-                # Shapes del campo
+                # 1. DISEGNO CAMPO (Shapes)
                 fig_input_off.add_shape(type="rect", x0=0, y0=y_start, x1=100, y1=100, line=dict(color=l_white, width=3), fillcolor=p_green, layer="below")
                 fig_input_off.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=l_white, width=3)) 
                 fig_input_off.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=l_white, width=3)) 
@@ -274,29 +280,42 @@ if ruolo == "Match Analyst":
                 fig_input_off.add_shape(type="path", path=f"M 37 {y_start} C 40 {y_start+8}, 60 {y_start+8}, 63 {y_start}", line=dict(color=l_white, width=3))
                 fig_input_off.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd")
 
-                # Se c'è già una coordinata salvata, mostriamo un marker rosso temporaneo
-                if f"off_coords_temp{suffix}" in st.session_state:
-                    c = st.session_state[f"off_coords_temp{suffix}"]
-                    fig_input_off.add_trace(go.Scatter(x=[c['x']], y=[c['y']], mode='markers', marker=dict(size=14, color='red', symbol='cross'), showlegend=False))
+                # 2. GESTIONE PUNTINO ROSSO (Marker)
+                # Se l'utente ha cliccato, aggiungiamo il marker sul grafico
+                coords_temp = st.session_state.get(f"off_coords_temp{suffix}")
+                if coords_temp:
+                    fig_input_off.add_trace(go.Scatter(
+                        x=[coords_temp['x']], 
+                        y=[coords_temp['y']], 
+                        mode='markers', 
+                        marker=dict(size=15, color='red', symbol='circle', line=dict(width=2, color='white')),
+                        showlegend=False
+                    ))
 
+                # 3. CONFIGURAZIONE LAYOUT (Blocco totale movimento)
                 fig_input_off.update_layout(
-                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-5, 105]),
-                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[y_start-2, 105]),
+                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-2, 102], fixedrange=True),
+                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[y_start-2, 105], fixedrange=True),
                     yaxis_scaleanchor="x", yaxis_scaleratio=1,
-                    margin=dict(l=0, r=0, t=0, b=0), height=500,
+                    margin=dict(l=0, r=0, t=0, b=0), height=550,
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                    clickmode='event+select' # Abilita la cattura del click
+                    clickmode='event+select',
+                    dragmode=False # Disabilita il trascinamento/zoom predefinito
                 )
 
-                # Visualizzazione con cattura dell'evento click (on_select)
+                # Visualizzazione con gestione evento click
+                # config={'staticPlot': False} permette il click ma con le restrizioni di layout sopra
                 selected_data = st.plotly_chart(fig_input_off, use_container_width=True, config={'displayModeBar': False}, on_select="rerun")
 
-                # Gestione del click: salviamo le coordinate 0-100 grezze
-                if selected_data and selected_data.get("points"):
+                # 4. SALVATAGGIO COORDINATE AL CLICK
+                if selected_data and "points" in selected_data and len(selected_data["points"]) > 0:
                     point = selected_data["points"][0]
-                    # Plotly ci dà direttamente le coordinate sull'asse (0-100), non i pixel!
-                    st.session_state[f"off_coords_temp{suffix}"] = {'x': point['x'], 'y': point['y']}
-                    st.toast(f"📍 Punto registrato: X={point['x']:.1f}, Y={point['y']:.1f}")
+                    new_coords = {'x': point['x'], 'y': point['y']}
+                    
+                    # Evita il rerun infinito se le coordinate non cambiano
+                    if coords_temp != new_coords:
+                        st.session_state[f"off_coords_temp{suffix}"] = new_coords
+                        st.rerun()
 
             if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
 
