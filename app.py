@@ -85,9 +85,9 @@ if "reset_counter" not in st.session_state:
   st.session_state.reset_counter = 0
 
 def reset_campi():
-    st.session_state.reset_counter += 1
-    if 'off_coords' in st.session_state: del st.session_state['off_coords']
-    if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
+  st.session_state.reset_counter += 1
+   if 'off_coords' in st.session_state: del st.session_state['off_coords']
+   if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
 # --- DATI COMUNI ---
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
@@ -95,8 +95,8 @@ lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bos
 
 # --- LOGICA DI ACCESSO ---
 if "autenticato" not in st.session_state:
-    st.session_state.autenticato = False
-    st.session_state.profilo = None
+  st.session_state.autenticato = False
+  st.session_state.profilo = None
 
 if not st.session_state.autenticato:
     # Logo in alto a destra solo nella landing
