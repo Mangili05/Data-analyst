@@ -335,90 +335,63 @@ elif ruolo == "Staff Tecnico":
     t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
 
     with t_squadra:
-        st.markdown("### 🏟️ Mappa Tiri e Goal (Collettiva)")
-    
-    try:
-        # Import necessari
-        from PIL import Image
-        import plotly.graph_objects as go
-        import base64
-        import os
-
-        # 1. Caricamento dati e PIL Image per le proporzioni
-        df_off = conn.read(worksheet="Offensiva", ttl=0)
+        st.subheader("1️⃣ SEZIONE: COSTRUZIONI")
         
-        # Pulizia dati: teniamo solo le righe che hanno coordinate X e Y valide
-        # Assicuriamoci che Coord_X e Y siano numeriche
-        df_off['Coord_X'] = pd.to_numeric(df_off['Coord_X'], errors='coerce')
-        df_off['Coord_Y'] = pd.to_numeric(df_off['Coord_Y'], errors='coerce')
-        df_shots = df_off.dropna(subset=['Coord_X', 'Coord_Y'])
-
-        # --- GESTIONE PROPORZIONALE DELL'IMMAGINE ---
-        if not os.path.exists("campo.jpg"):
-            st.error("File 'campo.jpg' non trovato. Impossibile generare la mappa.")
-            st.stop()
-
-        img_pil = Image.open("campo.jpg")
-        img_width, img_height = img_pil.size # Otteniamo le dimensioni reali
-
-        # 2. Configurazione e Iniezione Immagine come Sfondo
-        with open("campo.jpg", "rb") as f:
-            img_data = base64.b64encode(f.read()).decode("utf-8")
-
-        # Creazione figura Plotly
-        fig_map = go.Figure()
-
-        # Definiamo i filtri e lo stile per ogni esito
-        esiti_config = {
-            "Gol": {"color": "#FFD700", "symbol": "circle", "name": "⚽ Gol", "size": 18},
-            "Tiro in porta": {"color": "#00FF00", "symbol": "diamond", "name": "✅ In Porta", "size": 14},
-            "Tiro fuori": {"color": "#FF0000", "symbol": "x", "name": "❌ Fuori", "size": 14}
-        }
-
-        # 3. Plot dei Punti (Scattering)
-        for esito, stile in esiti_config.items():
-            mask = df_shots['Esito finale'] == esito
-            df_filtered = df_shots[mask]
+        try:
+            # 1. Caricamento dati dal foglio "Costruzione"
+            df_cost = conn.read(worksheet="Costruzione", ttl=0)
             
-            if not df_filtered.empty:
-                fig_map.add_trace(go.Scatter(
-                    x=df_filtered['Coord_X'], 
-                    y=df_filtered['Coord_Y'], 
-                    mode='markers',
-                    name=stile['name'],
-                    marker=dict(
-                        size=stile['size'],
-                        color=stile['color'],
-                        symbol=stile['symbol'],
-                        line=dict(width=2, color='white')
-                    ),
-                    text=df_filtered['Giocatore'], # Nome al passaggio del mouse
-                    hoverinfo='text+name'
-                ))
+            if df_cost.empty:
+                st.warning("Nessun dato di costruzione disponibile.")
+            else:
+                import plotly.express as px
 
-        # 4. Update Layout (Centratura e Proporzioni)
-        # Il segreto è usare scalex/scaley basate sulle dimensioni REALI
-        fig_map.update_layout(
-            images=[dict(
-                source=f"data:image/jpg;base64,{img_data}",
-                xref="x", yref="y",
-                x=0, y=0,
-                sizex=img_width, sizey=img_height, # Usiamo dimensioni REALI
-                sizing="stretch",
-                layer="below"
-                # opacity=0.8 # Opzionale: rende i marker più visibili
-            )],
-            xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[0, img_width]),
-            yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[img_height, 0]), # Y invertita per il calcio
-            margin=dict(l=10, r=10, t=40, b=10),
-            height=600, # Aumentiamo l'altezza per farla respirare
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            showlegend=True,
-            legend=dict(font=dict(color="white"), orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
+                # --- FILTRO GIORNATA (opzionale, se vuoi filtrare per match) ---
+                g_filtro = st.selectbox("Seleziona Partita", ["Tutte"] + sorted(df_cost['Giornata'].unique().tolist()), key="f_giornata_cost")
+                if g_filtro != "Tutte":
+                    df_cost = df_cost[df_cost['Giornata'] == g_filtro]
 
-        st.plotly_chart(fig_map, use_container_width=True)
+                # --- 1. GRAFICO A TORTA: ESITO GENERALE ---
+                st.markdown("#### Efficacia Generale Costruzioni")
+                fig_pie = px.pie(df_cost, names='Esito finale', 
+                                 color='Esito finale',
+                                 color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
+                                 hole=0.4)
+                fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+                st.plotly_chart(fig_pie, use_container_width=True)
 
-    except Exception as e:
-        st.error(f"Errore nella generazione della mappa collettiva: {e}")
+                st.divider()
+
+                # --- 2. GRAFICO A BARRE RAGGRUPPATE CON FILTRO TIPOLOGIA ---
+                st.markdown("#### Efficacia per Modalità")
+                tipo_filtro = st.radio("Filtra per Tipologia:", ["Totale", "Statica", "Dinamica"], horizontal=True, key="f_tipo_cost")
+                
+                df_bar_data = df_cost.copy()
+                if tipo_filtro != "Totale":
+                    df_bar_data = df_bar_data[df_bar_data['Tipologia'] == tipo_filtro]
+
+                # Raggruppamento dati per Modalità ed Esito
+                df_grouped = df_bar_data.groupby(['Modalità', 'Esito finale']).size().reset_index(name='Conteggio')
+                
+                fig_bar = px.bar(df_grouped, x='Modalità', y='Conteggio', color='Esito finale',
+                                 barmode='group',
+                                 color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
+                                 category_orders={"Modalità": ["Bassa", "Manovrata", "Diretta"]})
+                
+                fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+                st.plotly_chart(fig_bar, use_container_width=True)
+
+                st.divider()
+
+                # --- 3. GRAFICO A BARRE SOVRAPPOSTE: STATICA VS DINAMICA ---
+                st.markdown("#### Confronto Ritmo: Statica vs Dinamica")
+                df_stacked = df_cost.groupby(['Tipologia', 'Esito finale']).size().reset_index(name='Conteggio')
+                
+                fig_stacked = px.bar(df_stacked, x='Tipologia', y='Conteggio', color='Esito finale',
+                                     color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'})
+                
+                fig_stacked.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+                st.plotly_chart(fig_stacked, use_container_width=True)
+
+        except Exception as e:
+            st.error(f"Errore nel caricamento grafici costruzioni: {e}")
