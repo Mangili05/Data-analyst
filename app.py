@@ -274,18 +274,55 @@ if ruolo == "Match Analyst":
                 
                 from streamlit_image_coordinates import streamlit_image_coordinates
 
-                # Mostriamo l'immagine campo.jpg
-                # Usiamo width=600 per renderla grande e cliccabile facilmente
-                value = streamlit_image_coordinates(
-                    "campo.jpg", 
-                    key=f"off_coords_click_{suffix}",
-                    width=600
+                # 1. Definizione dimensioni e container per il marker
+                img_width = 600
+                coord_key = f"off_coords_temp{suffix}"
+
+                # Container CSS per posizionare il punto rosso sopra l'immagine
+                st.markdown(
+                    """
+                    <style>
+                    .img-container { position: relative; display: inline-block; }
+                    .marker {
+                        position: absolute;
+                        width: 12px;
+                        height: 12px;
+                        background-color: red;
+                        border: 2px solid white;
+                        border-radius: 50%;
+                        transform: translate(-50%, -50%);
+                        pointer-events: none;
+                        z-index: 100;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True
                 )
 
-                # Salviamo il click nel session_state per la funzione esegui_salvataggio
-                if value:
-                    st.session_state[f"off_coords_temp{suffix}"] = value
-                    st.success(f"Punto registrato correttamente!")
+                # 2. Visualizzazione immagine e cattura click
+                # Creiamo un contenitore per il marker
+                with st.container():
+                    value = streamlit_image_coordinates(
+                        "campo.jpg", 
+                        key=f"off_coords_click_{suffix}",
+                        width=img_width
+                    )
+
+                    # Se c'è un click, lo salviamo
+                    if value:
+                        st.session_state[coord_key] = value
+
+                    # 3. MOSTRA IL MARKER ROSSO SOPRA L'IMMAGINE
+                    if st.session_state.get(coord_key):
+                        coords = st.session_state[coord_key]
+                        # Calcoliamo la posizione del marker rispetto all'immagine
+                        # (Questo HTML "galleggia" sopra grazie al CSS sopra definito)
+                        st.markdown(
+                            f'<div style="position: relative;">'
+                            f'<div class="marker" style="left: {coords["x"]}px; top: {coords["y"] - img_width*0.79}px;"></div>'
+                            f'</div>', 
+                            unsafe_allow_html=True
+                        )
+                        # Nota: l'offset negativo (top) serve a riportare il div del marker sopra l'immagine appena disegnata
 
             if st.button("💾 Salva Azione Offensiva"):
                 esegui_salvataggio("Azione Offensiva")
