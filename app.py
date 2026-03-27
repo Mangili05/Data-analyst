@@ -365,11 +365,11 @@ if ruolo == "Match Analyst":
                     st.error(f"Errore nel salvataggio: {e}")
 
 # --- QUI DEVE ESSERE ALLINEATO AL BORDO SINISTRO (o al livello del tuo IF iniziale) ---
-    elif ruolo == "Staff Tecnico":
-        st.markdown("## 📊 DASHBOARD PERFORMANCE")
-        st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Area Consultazione Staff</p>", unsafe_allow_html=True)
+elif ruolo == "Staff Tecnico":
+    st.markdown("## 📊 DASHBOARD PERFORMANCE")
+    st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Area Consultazione Staff</p>", unsafe_allow_html=True)
     
-        t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
+    t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
 
     with t_squadra:
         st.subheader("1️⃣ SEZIONE: COSTRUZIONI")
