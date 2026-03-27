@@ -325,7 +325,7 @@ if ruolo == "Match Analyst":
                 except Exception as e: st.error(f"❌ Errore: {e}")
 
 # =========================================================
-# LOGICA STAFF TECNICO
+# LOGICA STAFF TECNICO (SOLO VISUALIZZAZIONE)
 # =========================================================
 elif ruolo == "Staff Tecnico":
     st.markdown("## 📊 DASHBOARD PERFORMANCE")
@@ -334,12 +334,17 @@ elif ruolo == "Staff Tecnico":
     t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
 
     with t_squadra:
+        # ---------------------------------------------------------
+        # 1️⃣ SEZIONE: COSTRUZIONI
+        # ---------------------------------------------------------
         st.subheader("1️⃣ SEZIONE: COSTRUZIONI")
         try:
             df_cost = conn.read(worksheet="Costruzione", ttl=0)
             if df_cost.empty:
                 st.warning("Nessun dato di costruzione disponibile.")
             else:
+                import plotly.express as px
+                
                 g_filtro = st.selectbox("Seleziona Partita (Costruzione)", ["Tutte"] + sorted(df_cost['Giornata'].unique().tolist()), key="f_giornata_cost")
                 if g_filtro != "Tutte":
                     df_cost = df_cost[df_cost['Giornata'] == g_filtro]
@@ -363,32 +368,69 @@ elif ruolo == "Staff Tecnico":
                 fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
                 st.plotly_chart(fig_bar, use_container_width=True)
 
+                st.markdown("#### Confronto Ritmo: Statica vs Dinamica")
+                df_stacked = df_cost.groupby(['Tipologia', 'Esito finale']).size().reset_index(name='Conteggio')
+                fig_stacked = px.bar(df_stacked, x='Tipologia', y='Conteggio', color='Esito finale',
+                                     color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'})
+                fig_stacked.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+                st.plotly_chart(fig_stacked, use_container_width=True)
+
         except Exception as e:
             st.error(f"Errore Sezione Costruzioni: {e}")
 
         st.divider()
+
+        # ---------------------------------------------------------
+        # 2️⃣ SEZIONE: AZIONI OFFENSIVE
+        # ---------------------------------------------------------
         st.subheader("2️⃣ SEZIONE: AZIONI OFFENSIVE")
         try:
             df_off = conn.read(worksheet="Offensiva", ttl=0)
             if df_off.empty:
                 st.warning("Nessun dato offensivo disponibile.")
             else:
+                import plotly.graph_objects as go
+
+                # --- FILTRO GIORNATA ---
                 g_off_filtro = st.selectbox("Seleziona Partita (Offensiva)", ["Tutte"] + sorted(df_off['Giornata'].unique().tolist()), key="f_giornata_off")
                 df_off_filt = df_off.copy()
                 if g_off_filtro != "Tutte":
                     df_off_filt = df_off_filt[df_off_filt['Giornata'] == g_off_filtro]
 
+                # --- 1. MAPPA DEI TIRI DINAMICA (VERSIONE COMPATTA) ---
                 st.markdown("#### 🏟️ Mappa dei Tiri")
+                
+                campo_visuale_height = 680 
                 fig_pitch = go.Figure()
-                pitch_green, line_white = "#228B22", "#ffffff"
+                
+                pitch_green = "#228B22" 
+                line_white = "#ffffff"
+
+                # NOTA: Ora il campo "reale" parte da Y=30 per eliminare il vuoto a centrocampo
                 y_inizio = 30 
 
-                fig_pitch.add_shape(type="rect", x0=0, y0=y_inizio, x1=100, y1=100, line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
+                # 1. Rettangolo principale (Metà campo "tagliata")
+                fig_pitch.add_shape(type="rect", x0=0, y0=y_inizio, x1=100, y1=100, 
+                                    line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
+                
+                # 2. Area Grande (Y da 83.5 a 100)
                 fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3)) 
+                
+                # 3. Area Piccola
                 fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3)) 
+                
+                # 4. Dischetto
                 fig_pitch.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white)) 
+                
+                # 5. Lunetta area di rigore
                 fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3))
-                fig_pitch.add_shape(type="path", path=f"M 37 {y_inizio} C 40 {y_inizio+8}, 60 {y_inizio+8}, 63 {y_inizio}", line=dict(color=line_white, width=3))
+                
+                # 6. Lunetta centrocampo (posizionata ora su Y = y_inizio)
+                # Abbiamo alzato la lunetta per farla apparire subito all'inizio del rettangolo
+                fig_pitch.add_shape(type="path", path=f"M 37 {y_inizio} C 40 {y_inizio+8}, 60 {y_inizio+8}, 63 {y_inizio}", 
+                                    line=dict(color=line_white, width=3))
+
+                # 7. Porta
                 fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd")
 
                 esiti_map = {"Gol": "#FFD700", "Tiro in porta": "#00FF00", "Tiro fuori": "#FF0000"}
@@ -397,17 +439,76 @@ elif ruolo == "Staff Tecnico":
                 for esito, color in esiti_map.items():
                     df_e = df_off_filt[df_off_filt['Esito finale'] == esito]
                     if not df_e.empty:
-                        fig_pitch.add_trace(go.Scatter(x=df_e['Coord_X'], y=df_e['Coord_Y'], mode='markers', name=esito,
-                                            marker=dict(size=16, color=color, symbol=symbols[esito], line=dict(width=1.5, color="white")),
-                                            text=df_e['Giocatore'], hoverinfo='text+name'))
+                        fig_pitch.add_trace(go.Scatter(
+                            x=df_e['Coord_X'], 
+                            y=df_e['Coord_Y'], 
+                            mode='markers', 
+                            name=esito,
+                            marker=dict(size=16, color=color, symbol=symbols[esito], line=dict(width=1.5, color="white")),
+                            text=df_e['Giocatore'], 
+                            hoverinfo='text+name'
+                        ))
+                
+                # --- AGGIUSTAMENTO LAYOUT ---
+                fig_pitch.update_layout(
+                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 101]), 
+                    # Impostiamo il range della Y da 28 a 103 per centrare la vista sulla trequarti
+                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[28, 103]), 
+                    
+                    yaxis_scaleanchor="x",
+                    yaxis_scaleratio=1,
+                    margin=dict(l=0, r=0, t=10, b=0),
+                    height=campo_visuale_height, 
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    showlegend=True,
+                    legend=dict(
+                        font=dict(color="white", size=14), 
+                        orientation="v",
+                        bgcolor='rgba(0,0,0,0.5)',
+                        yanchor="bottom", y=0.02,
+                        xanchor="right", x=0.98
+                    )
+                )
+                
+                # Visualizzazione a tutta larghezza
+                st.plotly_chart(fig_pitch, use_container_width=True, config={'displayModeBar': False})
 
-                fig_pitch.update_layout(xaxis=dict(showgrid=False, visible=False, range=[-1, 101]), yaxis=dict(showgrid=False, visible=False, range=[28, 103]),
-                                        margin=dict(l=0, r=0, t=10, b=0), height=600, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', showlegend=True)
-                st.plotly_chart(fig_pitch, use_container_width=True)
+                col_off1, col_off2 = st.columns(2)
+
+                with col_off1:
+                    # --- 2. CANALI DI SVILUPPO (Barre Orizzontali) ---
+                    st.markdown("#### Canali di Sviluppo")
+                    df_canali = df_off_filt.groupby('Canale').size().reset_index(name='Conteggio')
+                    fig_canali = px.bar(df_canali, y='Canale', x='Conteggio', orientation='h',
+                                        color_discrete_sequence=['#1f67b5'])
+                    fig_canali.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+                    st.plotly_chart(fig_canali, use_container_width=True)
+
+                with col_off2:
+                    # --- 3. EFFICACIA RIFINITURA (Funnel) ---
+                    st.markdown("#### Efficacia Rifinitura")
+                    df_rif = df_off_filt.groupby(['Rifinitura', 'Esito finale']).size().reset_index(name='Conteggio')
+                    fig_rif = px.funnel(df_rif, x='Conteggio', y='Rifinitura', color='Esito finale',
+                                        color_discrete_map={'Gol': '#FFD700', 'Tiro in porta': '#00FF00', 'Tiro fuori': '#FF0000'})
+                    fig_rif.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+                    st.plotly_chart(fig_rif, use_container_width=True)
+
+                # --- 4. CLASSIFICA MARCATORI / TIRATORI ---
+                st.markdown("#### Performance Individuale (Tiri e Gol)")
+                df_players = df_off_filt.groupby(['Giocatore', 'Esito finale']).size().reset_index(name='Tiri')
+                fig_players = px.bar(df_players, x='Giocatore', y='Tiri', color='Esito finale',
+                                     color_discrete_map={'Gol': '#FFD700', 'Tiro in porta': '#00FF00', 'Tiro fuori': '#FF0000'},
+                                     barmode='stack')
+                fig_players.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+                st.plotly_chart(fig_players, use_container_width=True)
 
         except Exception as e:
             st.error(f"Errore Sezione Offensiva: {e}")
 
+    # ---------------------------------------------------------
+    # TAB PROFILO CALCIATORE (Invariata)
+    # ---------------------------------------------------------
     with t_individuo:
         st.markdown("### Analisi Radar Comportamentale")
         c_rep1, c_rep2 = st.columns(2)
@@ -423,6 +524,7 @@ elif ruolo == "Staff Tecnico":
                 if df_player.empty:
                     st.warning(f"Nessun dato trovato per {p_sel}.")
                 else:
+                    import plotly.graph_objects as go
                     categorie = ['Resilienza', 'Comunicazione', 'Intensità', 'Accettazione', 'Leadership']
                     valori = [df_player[cat].mean() for cat in categorie]
                     media_squadra = [df_ind[cat].mean() for cat in categorie]
@@ -430,7 +532,9 @@ elif ruolo == "Staff Tecnico":
                     fig_radar = go.Figure()
                     fig_radar.add_trace(go.Scatterpolar(r=valori + [valori[0]], theta=categorie + [categorie[0]], fill='toself', name=f'Media {p_sel}', line=dict(color='#1f67b5')))
                     fig_radar.add_trace(go.Scatterpolar(r=media_squadra + [media_squadra[0]], theta=categorie + [categorie[0]], mode='lines', name='Media Squadra', line=dict(color='rgba(200, 200, 200, 0.5)', dash='dash')))
-                    fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
+                    fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
                     st.plotly_chart(fig_radar, use_container_width=True)
+                    st.button("🖨️ Stampa Report PDF (Browser)")
             except Exception as e:
-                st.error(f"Errore Radar: {e}")
+                st.error(f"Errore caricamento radar: {e}")
+
