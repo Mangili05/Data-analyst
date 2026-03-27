@@ -86,8 +86,7 @@ if "reset_counter" not in st.session_state:
 
 def reset_campi():
     st.session_state.reset_counter += 1
-    # Chiavi allineate per il reset
-    if 'off_coords_temp' in st.session_state: del st.session_state['off_coords_temp']
+    if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
 # --- DATI COMUNI ---
@@ -142,10 +141,12 @@ if ruolo == "Match Analyst":
     st.markdown("## 🛠️ CONSOLE MATCH ANALYST")
     st.markdown("<p style='color: #8b949e;'>Inserimento dati e gestione database</p>", unsafe_allow_html=True)
 
+    # Nota: segmented_control è disponibile nelle versioni recenti di Streamlit
     scelta_analisi = st.segmented_control("MODALITÀ INSERIMENTO", ["Squadra", "Individuale"], default="Squadra")
     st.divider()
 
     if scelta_analisi == "Squadra":
+        # --- PARTE SQUADRA ---
         with st.expander("ℹ️ Informazioni partita", expanded=True):
             c1, c2 = st.columns(2)
             with c1: st.selectbox("Giornata", ["Seleziona giornata"] + list(range(1, 31)), key="g_key")
@@ -157,6 +158,7 @@ if ruolo == "Match Analyst":
             with gc1: st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
             with gc2: st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
 
+        # Funzione interna per il salvataggio
         def esegui_salvataggio(fase):
             s = f"_{st.session_state.reset_counter}"
             giornata = st.session_state.get('g_key')
@@ -179,55 +181,25 @@ if ruolo == "Match Analyst":
                         "Inizio": st.session_state.get(f't_in{s}'), "Fine": st.session_state.get(f't_fi{s}'),
                         "Tipologia": st.session_state.get(f'tipo_rad{s}'), "Modalità": st.session_state.get(f'mod_rad{s}'), "Esito finale": st.session_state.get(f'esito_rad{s}')
                     }
-                
-                # --- 1️⃣ CORREZIONE MATEMATICA SALVATAGGIO OFFENSIVA (0-100) ---
                 elif fase == "Azione Offensiva":
                     nome_foglio = "Offensiva"
                     cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
-                    
-                    # Recuperiamo il click grezzo (X,Y pixel basati su width=700)
-                    coords = st.session_state.get(f"off_coords_temp{s}")
-                    
-                    if coords:
-                        # Proiettiamo i pixel (basati su width=700) sulla scala 0-100 calibrata
-                        # La tua immagine campo.jpg ha proporzioni 358x283.
-                        # X: (pixel_x / 700) * 100
-                        norm_x = (coords['x'] / 700) * 100
-                        
-                        # Y: Invertiamo (1-y) e scagliamo sulla trequarti (da 30 a 100)
-                        # Altezza proporzionale a width=700 è 553px
-                        percentuale_y = 1 - (coords['y'] / 553)
-                        norm_y = 30 + (percentuale_y * 70) 
-                        
-                        c_x, c_y = round(norm_x, 2), round(norm_y, 2)
-                    else:
-                        c_x, c_y = "", ""
-
+                    coords = st.session_state.get('off_coords')
                     record = {
-                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, 
-                        "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
-                        "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), 
-                        "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
-                        "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), 
-                        "Esito finale": st.session_state.get(f'off_esito{s}'),
-                        "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), 
-                        "Coord_X": c_x, "Coord_Y": c_y # Salviamo i valori 0-100 calibrati
+                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
+                        "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
+                        "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'),
+                        "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
                     }
-                    
                 elif fase == "Azione Difensiva":
                     nome_foglio = "Difensiva"
                     cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
                     coords = st.session_state.get('def_tiro_coords')
-                    c_x_def = (coords['x'] / 358) * 100 if coords else ""
-                    c_y_def = (coords['y'] / 283) * 100 if coords else ""
                     record = {
-                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, 
-                        "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
-                        "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'), 
-                        "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'),
-                        "Canale": st.session_state.get(f'def_canale_sviluppo{s}'), "Rifinitura": st.session_state.get(f'def_rif{s}'), 
-                        "Esito finale": st.session_state.get(f'def_esito{s}'),
-                        "Coord_X": c_x_def, "Coord_Y": c_y_def
+                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
+                        "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'), "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'),
+                        "Canale": st.session_state.get(f'def_canale_sviluppo{s}'), "Rifinitura": st.session_state.get(f'def_rif{s}'), "Esito finale": st.session_state.get(f'def_esito{s}'),
+                        "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
                     }
 
                 st.cache_data.clear()
@@ -258,7 +230,6 @@ if ruolo == "Match Analyst":
             with c_dx: st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
             if st.button("💾 Salva Costruzione"): esegui_salvataggio("Costruzione dal Basso")
 
-        # --- 2️⃣ CORREZIONE VISUALE TABS[1] (IMMAGINE + CSS MARKER PERFETTO) ---
         with tabs[1]:
             co1, co2 = st.columns(2)
             with co1:
@@ -270,66 +241,19 @@ if ruolo == "Match Analyst":
             co3, co4 = st.columns(2)
             with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
             with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
-            
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
-                
-                st.markdown("#### 🎯 Clicca sul punto del tiro (Campo Offensivo)")
-                
-                from streamlit_image_coordinates import streamlit_image_coordinates
-
-                # Configurazione fissa per avere precisione millimetrica
-                img_display_width = 700 
-                coord_key_temp = f"off_coords_temp{suffix}"
-
-                # CSS nativo per posizionare il marker rosso SOPRA l'immagine nel punto esatto
-                st.markdown(
-                    """
-                    <style>
-                    .map-container { position: relative; display: inline-block; cursor: crosshair; }
-                    .map-marker {
-                        position: absolute;
-                        width: 14px; height: 14px;
-                        background-color: red;
-                        border: 2px solid white;
-                        border-radius: 50%;
-                        transform: translate(-50%, -50%); /* Centra perfettamente il cerchio sul pixel cliccato */
-                        pointer-events: none; /* Il click passa attraverso il marker */
-                        z-index: 999;
-                        box-shadow: 0 0 5px rgba(0,0,0,0.5);
-                    }
-                    </style>
-                    """, unsafe_allow_html=True
-                )
-
-                # Usiamo un container HTML per incapsulare immagine e marker
-                st.markdown('<div class="map-container">', unsafe_allow_html=True)
-                
-                # Mostriamo l'immagine e catturiamo il click
-                value = streamlit_image_coordinates(
-                    "campo.jpg", 
-                    key=f"off_coords_click_{suffix}",
-                    width=img_display_width
-                )
-
-                # Se c'è un click, aggiorniamo il session state temporaneo
-                if value and st.session_state.get(coord_key_temp) != value:
-                    st.session_state[coord_key_temp] = value
-                    st.rerun() # Ricarica per disegnare il marker rosso
-
-                # Disegniamo il marker rosso se esiste la coordinata
-                coords = st.session_state.get(coord_key_temp)
-                if coords:
-                    # Inseriamo il div del marker con posizionamento dinamico
-                    st.markdown(
-                        f'<div class="map-marker" style="left: {coords["x"]}px; top: {coords["y"]}px;"></div>', 
-                        unsafe_allow_html=True
-                    )
-                    
-                st.markdown('</div>', unsafe_allow_html=True) # Chiudiamo map-container
-
-            if st.button("💾 Salva Azione Offensiva"):
-                esegui_salvataggio("Azione Offensiva")
+                if os.path.exists("campo.jpg"):
+                    img = Image.open("campo.jpg").resize((358, 283))
+                    if "off_coords" in st.session_state:
+                        draw = ImageDraw.Draw(img)
+                        x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
+                        draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
+                    val = streamlit_image_coordinates(img, key=f"campetto_off{suffix}")
+                    if val and (st.session_state.get("off_coords") != val):
+                        st.session_state["off_coords"] = val
+                        st.rerun()
+            if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
 
         with tabs[2]:
             cd1, cd2 = st.columns(2)
@@ -365,7 +289,37 @@ if ruolo == "Match Analyst":
         with ci1: g_ind = st.selectbox("Giornata", ["Seleziona"] + list(range(1, 31)), key="g_ind_key")
         with ci2: t_ind = st.text_input("Minuto", placeholder="mm:ss", key=f"t_ind{suffix_ind}")
         with ci3: p_ind = st.selectbox("Calciatore", lista_calciatori, key=f"p_ind{suffix_ind}")
-                   conn.update(worksheet="Individuale", data=df_finale)
+        
+        st.divider()
+        mappa_voti = {"N.D.": None, "🟢 Verde": 1.0, "🟡 Giallo": 0.5, "🔴 Rosso": 0.0}
+        opts = list(mappa_voti.keys())
+        
+        col_ind1, col_ind2 = st.columns(2)
+        with col_ind1:
+            v_res = st.radio("Resilienza all'Errore", opts, index=0, horizontal=True, key=f"v_res{suffix_ind}")
+            v_com = st.radio("Comunicazione Proattiva", opts, index=0, horizontal=True, key=f"v_com{suffix_ind}")
+            v_int = st.radio("Intensità Mentale", opts, index=0, horizontal=True, key=f"v_int{suffix_ind}")
+        with col_ind2:
+            v_acc = st.radio("Accettazione delle Scelte", opts, index=0, horizontal=True, key=f"v_acc{suffix_ind}")
+            v_lea = st.radio("Leadership / Spirito di Sacrificio", opts, index=0, horizontal=True, key=f"v_lea{suffix_ind}")
+        
+        note_txt = st.text_area("Note Tecnico/Comportamentali", placeholder="Inserisci osservazioni specifiche...", key=f"note{suffix_ind}")
+        
+        if st.button("💾 Salva Analisi Individuale"):
+            if g_ind == "Seleziona" or p_ind == "Seleziona" or len(t_ind) < 5:
+                st.error("⚠️ Compila tutti i campi correttamente.")
+            else:
+                try:
+                    voti_validi = [mappa_voti[st.session_state[f"v_res{suffix_ind}"]], mappa_voti[st.session_state[f"v_com{suffix_ind}"]], mappa_voti[st.session_state[f"v_int{suffix_ind}"]], mappa_voti[st.session_state[f"v_acc{suffix_ind}"]], mappa_voti[st.session_state[f"v_lea{suffix_ind}"]]]
+                    voti_filtrati = [v for v in voti_validi if v is not None]
+                    totale_punti = sum(voti_filtrati) if voti_filtrati else 0
+                    rec_ind = {"Giornata": g_ind, "Minuto": t_ind, "Calciatore": p_ind, "Resilienza": mappa_voti[st.session_state[f"v_res{suffix_ind}"]], "Comunicazione": mappa_voti[st.session_state[f"v_com{suffix_ind}"]], "Intensità": mappa_voti[st.session_state[f"v_int{suffix_ind}"]], "Accettazione": mappa_voti[st.session_state[f"v_acc{suffix_ind}"]], "Leadership": mappa_voti[st.session_state[f"v_lea{suffix_ind}"]], "Totale": totale_punti, "Note": note_txt}
+                    df_ordine = ["Giornata", "Minuto", "Calciatore", "Resilienza", "Comunicazione", "Intensità", "Accettazione", "Leadership", "Totale", "Note"]
+                    df_nuovo = pd.DataFrame([rec_ind]).reindex(columns=df_ordine)
+                    st.cache_data.clear()
+                    df_esistente = conn.read(worksheet="Individuale", ttl=0)
+                    df_finale = pd.concat([df_esistente, df_nuovo], ignore_index=True)
+                    conn.update(worksheet="Individuale", data=df_finale)
                     st.session_state["mostra_toast"] = f"✅ Analisi di {p_ind} salvata!"
                     st.session_state.reset_ind += 1
                     st.rerun()
@@ -526,8 +480,8 @@ elif ruolo == "Staff Tecnico":
                 with col_off1:
                     # --- 2. CANALI DI SVILUPPO (Barre Orizzontali) ---
                     st.markdown("#### Canali di Sviluppo")
-                    df_canali = df_off_filt.groupby('Canale').size().reset_index(name='Conteggio')
-                    fig_canali = px.bar(df_canali, y='Canale', x='Conteggio', orientation='h',
+                    df_canali = df_off_filt.groupby('Sviluppo').size().reset_index(name='Conteggio')
+                    fig_canali = px.bar(df_canali, y='Sviluppo', x='Conteggio', orientation='h',
                                         color_discrete_sequence=['#1f67b5'])
                     fig_canali.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
                     st.plotly_chart(fig_canali, use_container_width=True)
@@ -535,12 +489,20 @@ elif ruolo == "Staff Tecnico":
                 with col_off2:
                     # --- 3. EFFICACIA RIFINITURA (Funnel) ---
                     st.markdown("#### Efficacia Rifinitura")
-                    # Corretto groupby per colonne reali
-                    df_rif = df_off_filt.groupby(['Rifinitura', 'Esito finale']).size().reset_index(name='Conteggio')
-                    fig_rif = px.funnel(df_rif, x='Conteggio', y='Rifinitura', color='Esito finale',
+                    df_rif = df_off_filt.groupby(['Tipologia rifinitura', 'Esito finale']).size().reset_index(name='Conteggio')
+                    fig_rif = px.funnel(df_rif, x='Conteggio', y='Tipologia rifinitura', color='Esito finale',
                                         color_discrete_map={'Gol': '#FFD700', 'Tiro in porta': '#00FF00', 'Tiro fuori': '#FF0000'})
                     fig_rif.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
                     st.plotly_chart(fig_rif, use_container_width=True)
+
+                # --- 4. CLASSIFICA MARCATORI / TIRATORI ---
+                st.markdown("#### Performance Individuale (Tiri e Gol)")
+                df_players = df_off_filt.groupby(['Giocatore', 'Esito finale']).size().reset_index(name='Tiri')
+                fig_players = px.bar(df_players, x='Giocatore', y='Tiri', color='Esito finale',
+                                     color_discrete_map={'Gol': '#FFD700', 'Tiro in porta': '#00FF00', 'Tiro fuori': '#FF0000'},
+                                     barmode='stack')
+                fig_players.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+                st.plotly_chart(fig_players, use_container_width=True)
 
         except Exception as e:
             st.error(f"Errore Sezione Offensiva: {e}")
@@ -559,15 +521,20 @@ elif ruolo == "Staff Tecnico":
                 df_ind = conn.read(worksheet="Individuale", ttl=0)
                 df_player = df_ind[df_ind['Calciatore'] == p_sel]
                 if g_sel != "Tutte le giornate": df_player = df_player[df_player['Giornata'] == g_sel]
-                        
-                categorie = ['Resilienza', 'Comunicazione', 'Intensità', 'Accettazione', 'Leadership']
-                valori = [df_player[cat].mean() for cat in categorie]
-                media_squadra = [df_ind[cat].mean() for cat in categorie]
+                
+                if df_player.empty:
+                    st.warning(f"Nessun dato trovato per {p_sel}.")
+                else:
+                    import plotly.graph_objects as go
+                    categorie = ['Resilienza', 'Comunicazione', 'Intensità', 'Accettazione', 'Leadership']
+                    valori = [df_player[cat].mean() for cat in categorie]
+                    media_squadra = [df_ind[cat].mean() for cat in categorie]
 
-                fig_radar = go.Figure()
-                fig_radar.add_trace(go.Scatterpolar(r=valori + [valori[0]], theta=categorie + [categorie[0]], fill='toself', name=f'Media {p_sel}', line=dict(color='#1f67b5')))
-                fig_radar.add_trace(go.Scatterpolar(r=media_squadra + [media_squadra[0]], theta=categorie + [categorie[0]], mode='lines', name='Media Squadra', line=dict(color='rgba(200, 200, 200, 0.5)', dash='dash')))
-                fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                st.plotly_chart(fig_radar, use_container_width=True)
-                
-            except Exception as e: st.error(f"Errore: {e}")
+                    fig_radar = go.Figure()
+                    fig_radar.add_trace(go.Scatterpolar(r=valori + [valori[0]], theta=categorie + [categorie[0]], fill='toself', name=f'Media {p_sel}', line=dict(color='#1f67b5')))
+                    fig_radar.add_trace(go.Scatterpolar(r=media_squadra + [media_squadra[0]], theta=categorie + [categorie[0]], mode='lines', name='Media Squadra', line=dict(color='rgba(200, 200, 200, 0.5)', dash='dash')))
+                    fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                    st.plotly_chart(fig_radar, use_container_width=True)
+                    st.button("🖨️ Stampa Report PDF (Browser)")
+            except Exception as e:
+ 
