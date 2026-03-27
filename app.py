@@ -266,33 +266,20 @@ if ruolo == "Match Analyst":
             co3, co4 = st.columns(2)
             with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
             with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
-            
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
-                
-                st.markdown("#### 🎯 Clicca sul punto del tiro")
-                
-                from streamlit_image_coordinates import streamlit_image_coordinates
+                if os.path.exists("campo.jpg"):
+                    img = Image.open("campo.jpg").resize((358, 283))
+                    if "off_coords" in st.session_state:
+                        draw = ImageDraw.Draw(img)
+                        x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
+                        draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
+                    val = streamlit_image_coordinates(img, key=f"campetto_off{suffix}")
+                    if val and (st.session_state.get("off_coords") != val):
+                        st.session_state["off_coords"] = val
+                        st.rerun()
+            if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
 
-                # Chiave temporanea per le coordinate
-                coord_key = f"off_coords_temp{suffix}"
-
-                # Visualizzazione dell'immagine campo.jpg
-                # width=600 la rende bella grande a video
-                pos = streamlit_image_coordinates(
-                    "campo.jpg",
-                    key=f"off_click_{suffix}",
-                    width=600,
-                )
-
-                # Se clicchi, salviamo la posizione e mostriamo un feedback visivo
-                if pos:
-                    st.session_state[coord_key] = pos
-                    # Disegniamo un piccolo indicatore per farti capire che il click è preso
-                    st.markdown(f"✅ **Punto registrato!**")
-
-            if st.button("💾 Salva Azione Offensiva"): 
-                esegui_salvataggio("Azione Offensiva")
 
         with tabs[2]:
             cd1, cd2 = st.columns(2)
