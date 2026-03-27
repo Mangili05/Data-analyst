@@ -184,22 +184,36 @@ if ruolo == "Match Analyst":
                 elif fase == "Azione Offensiva":
                     nome_foglio = "Offensiva"
                     cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
+                    # --- Modifica dentro elif fase == "Azione Offensiva": ---
                     coords = st.session_state.get('off_coords')
+                    # Trasformiamo i pixel (su base 358x283) in scala 0-100
+                    c_x = (coords['x'] / 358) * 100 if coords else ""
+                    c_y = (coords['y'] / 283) * 100 if coords else ""
+
                     record = {
-                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
-                        "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
-                        "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'),
-                        "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
+                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, 
+                        "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
+                        "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), 
+                        "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
+                        "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), 
+                        "Esito finale": st.session_state.get(f'off_esito{s}'),
+                        "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), 
+                        "Coord_X": c_x, "Coord_Y": c_y # <--- Usiamo i valori normalizzati
                     }
                 elif fase == "Azione Difensiva":
                     nome_foglio = "Difensiva"
                     cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
                     coords = st.session_state.get('def_tiro_coords')
+                    c_x_def = (coords['x'] / 358) * 100 if coords else ""
+                    c_y_def = (coords['y'] / 283) * 100 if coords else ""
                     record = {
-                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
-                        "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'), "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'),
-                        "Canale": st.session_state.get(f'def_canale_sviluppo{s}'), "Rifinitura": st.session_state.get(f'def_rif{s}'), "Esito finale": st.session_state.get(f'def_esito{s}'),
-                        "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
+                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, 
+                        "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
+                        "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'), 
+                        "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'),
+                        "Canale": st.session_state.get(f'def_canale_sviluppo{s}'), "Rifinitura": st.session_state.get(f'def_rif{s}'), 
+                        "Esito finale": st.session_state.get(f'def_esito{s}'),
+                        "Coord_X": c_x_def, "Coord_Y": c_y_def # <--- Usiamo i valori normalizzati
                     }
 
                 st.cache_data.clear()
@@ -480,8 +494,8 @@ elif ruolo == "Staff Tecnico":
                 with col_off1:
                     # --- 2. CANALI DI SVILUPPO (Barre Orizzontali) ---
                     st.markdown("#### Canali di Sviluppo")
-                    df_canali = df_off_filt.groupby('Sviluppo').size().reset_index(name='Conteggio')
-                    fig_canali = px.bar(df_canali, y='Sviluppo', x='Conteggio', orientation='h',
+                    df_canali = df_off_filt.groupby('Canale').size().reset_index(name='Conteggio')
+                    fig_canali = px.bar(df_canali, y='Canale', x='Conteggio', orientation='h',
                                         color_discrete_sequence=['#1f67b5'])
                     fig_canali.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
                     st.plotly_chart(fig_canali, use_container_width=True)
@@ -489,8 +503,8 @@ elif ruolo == "Staff Tecnico":
                 with col_off2:
                     # --- 3. EFFICACIA RIFINITURA (Funnel) ---
                     st.markdown("#### Efficacia Rifinitura")
-                    df_rif = df_off_filt.groupby(['Tipologia rifinitura', 'Esito finale']).size().reset_index(name='Conteggio')
-                    fig_rif = px.funnel(df_rif, x='Conteggio', y='Tipologia rifinitura', color='Esito finale',
+                    df_rif = df_off_filt.groupby(['Rifinitura', 'Esito finale']).size().reset_index(name='Conteggio')
+                    fig_rif = px.funnel(df_rif, x='Conteggio', y='Rifinitura', color='Esito finale',
                                         color_discrete_map={'Gol': '#FFD700', 'Tiro in porta': '#00FF00', 'Tiro fuori': '#FF0000'})
                     fig_rif.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
                     st.plotly_chart(fig_rif, use_container_width=True)
