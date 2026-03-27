@@ -421,11 +421,9 @@ else:
                         st.table(df_player[['Data', 'Contesto', 'Note']].sort_index(ascending=False))
 
             except Exception as e:
-                st.error(f"Errore caricamento Dashboard: {e}")
+                st.error(f"Errore nel salvataggio: {e}")
 
-# =========================================================
-# LOGICA STAFF TECNICO (SOLO VISUALIZZAZIONE)
-# =========================================================
+# --- QUI DEVE ESSERE ALLINEATO AL BORDO SINISTRO (o al livello del tuo IF iniziale) ---
 elif ruolo == "Staff Tecnico":
     st.markdown("## 📊 DASHBOARD PERFORMANCE")
     st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Area Consultazione Staff</p>", unsafe_allow_html=True)
@@ -433,9 +431,6 @@ elif ruolo == "Staff Tecnico":
     t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
 
     with t_squadra:
-        # ---------------------------------------------------------
-        # 1️⃣ SEZIONE: COSTRUZIONI
-        # ---------------------------------------------------------
         st.subheader("1️⃣ SEZIONE: COSTRUZIONI")
         try:
             df_cost = conn.read(worksheet="Costruzione", ttl=0)
@@ -605,9 +600,6 @@ elif ruolo == "Staff Tecnico":
     # TAB PROFILO CALCIATORE
     # ---------------------------------------------------------
     with t_individuo:
-        # =========================================================
-        # AGGIORNAMENTO DASHBOARD STAFF (Visualizzazione Radar 6 Assi)
-        # =========================================================
         st.markdown("### 🎯 Analisi Proiettiva Serie D")
         p_sel = st.selectbox("Seleziona Calciatore per Report", lista_calciatori, key="p_radar_staff")
 
@@ -620,17 +612,14 @@ elif ruolo == "Staff Tecnico":
                     st.warning(f"Nessun dato storico per {p_sel}.")
                 else:
                     import pandas as pd
-                    # Calcoliamo le medie ignorando gli zeri
                     df_calc = df_player.replace(0, pd.NA)
                     
                     categorie = ['Intensità', 'Attenzione', 'Atteggiamento', 'Scelte', 'Leadership', 'Resilienza']
                     valori = [df_calc[cat].mean() for cat in categorie]
-                    # Riempiamo eventuali NaN rimasti
                     valori = [v if pd.notna(v) else 0 for v in valori]
 
+                    # Generazione Grafico Radar
                     fig_radar = go.Figure()
-                    
-                    # Radar del Giocatore
                     fig_radar.add_trace(go.Scatterpolar(
                         r=valori + [valori[0]],
                         theta=categorie + [categorie[0]],
