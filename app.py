@@ -398,30 +398,40 @@ elif ruolo == "Staff Tecnico":
                 if g_off_filtro != "Tutte":
                     df_off_filt = df_off_filt[df_off_filt['Giornata'] == g_off_filtro]
 
-                # --- 1. MAPPA DEI TIRI DINAMICA (MASSIMA GRANDEZZA GRAFICA) ---
+                # --- 1. MAPPA DEI TIRI DINAMICA (VERSIONE COMPATTA) ---
                 st.markdown("#### 🏟️ Mappa dei Tiri")
                 
-                # Aumentiamo l'altezza fissa per dare più spazio verticale
-                campo_visuale_height = 680 # Era 570
+                campo_visuale_height = 680 
                 fig_pitch = go.Figure()
                 
                 pitch_green = "#228B22" 
                 line_white = "#ffffff"
 
-                # disegno del campo (invariato)
-                # Rettangolo principale (Metà campo)
-                fig_pitch.add_shape(type="rect", x0=0, y0=0, x1=100, y1=100, line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
-                # Area Grande
+                # NOTA: Ora il campo "reale" parte da Y=30 per eliminare il vuoto a centrocampo
+                y_inizio = 30 
+
+                # 1. Rettangolo principale (Metà campo "tagliata")
+                fig_pitch.add_shape(type="rect", x0=0, y0=y_inizio, x1=100, y1=100, 
+                                    line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
+                
+                # 2. Area Grande (Y da 83.5 a 100)
                 fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3)) 
-                # Area Piccola
+                
+                # 3. Area Piccola
                 fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3)) 
-                # Dischetto
+                
+                # 4. Dischetto
                 fig_pitch.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white)) 
-                # Lunetta area di rigore
+                
+                # 5. Lunetta area di rigore
                 fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3))
-                # Lunetta centrocampo (per metà campo offensiva)
-                fig_pitch.add_shape(type="path", path="M 37 0 C 40 8, 60 8, 63 0", line=dict(color=line_white, width=3))
-                # Porta (esterna)
+                
+                # 6. Lunetta centrocampo (posizionata ora su Y = y_inizio)
+                # Abbiamo alzato la lunetta per farla apparire subito all'inizio del rettangolo
+                fig_pitch.add_shape(type="path", path=f"M 37 {y_inizio} C 40 {y_inizio+8}, 60 {y_inizio+8}, 63 {y_inizio}", 
+                                    line=dict(color=line_white, width=3))
+
+                # 7. Porta
                 fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd")
 
                 esiti_map = {"Gol": "#FFD700", "Tiro in porta": "#00FF00", "Tiro fuori": "#FF0000"}
@@ -440,33 +450,25 @@ elif ruolo == "Staff Tecnico":
                             hoverinfo='text+name'
                         ))
                 
-                # --- AGGIUSTAMENTO LAYOUT PER DIMENSIONI MASSIME ---
+                # --- AGGIUSTAMENTO LAYOUT ---
                 fig_pitch.update_layout(
-                    # Nascondiamo assi e griglia, ma impostiamo il range 0-100 preciso
                     xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 101]), 
-                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 103]), 
+                    # Impostiamo il range della Y da 28 a 103 per centrare la vista sulla trequarti
+                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[28, 103]), 
                     
-                    # Forza le proporzioni 1:1 tra X e Y (il campo non si schiaccia)
                     yaxis_scaleanchor="x",
                     yaxis_scaleratio=1,
-                    
-                    # Rimuoviamo TUTTI i margini esterni per far occupare tutto lo spazio al campo
-                    margin=dict(l=0, r=0, t=10, b=0), # 10px t per staccare un po' dal titolo
-                    
-                    # Impostiamo l'altezza generosa del contenitore Plotly
+                    margin=dict(l=0, r=0, t=10, b=0),
                     height=campo_visuale_height, 
-                    
-                    paper_bgcolor='rgba(0,0,0,0)', # Sfondo trasparente
+                    paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    
                     showlegend=True,
-                    # Spostiamo la legenda DENTRO il campo in un angolo vuoto (es. in basso a dx)
                     legend=dict(
                         font=dict(color="white", size=14), 
-                        orientation="v", # Legenda verticale per stare nell'angolo
-                        bgcolor='rgba(0,0,0,0.5)', # Sfondo semi-trasparente per leggibilità
-                        yanchor="bottom", y=0.02, # Quasi a fondo campo
-                        xanchor="right", x=0.98    # Quasi a bordo destro
+                        orientation="v",
+                        bgcolor='rgba(0,0,0,0.5)',
+                        yanchor="bottom", y=0.02,
+                        xanchor="right", x=0.98
                     )
                 )
                 
