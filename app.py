@@ -424,55 +424,54 @@ else:
                 st.error(f"Errore nel salvataggio: {e}")
 
 # --- QUI DEVE ESSERE ALLINEATO AL BORDO SINISTRO (o al livello del tuo IF iniziale) ---
-elif ruolo == "Staff Tecnico":
-    st.markdown("## 📊 DASHBOARD PERFORMANCE")
-    st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Area Consultazione Staff</p>", unsafe_allow_html=True)
+        elif ruolo == "Staff Tecnico":
+            st.markdown("## 📊 DASHBOARD PERFORMANCE")
+            st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Area Consultazione Staff</p>", unsafe_allow_html=True)
     
-    t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
+            t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
 
-    with t_squadra:
-        st.subheader("1️⃣ SEZIONE: COSTRUZIONI")
-        try:
-            df_cost = conn.read(worksheet="Costruzione", ttl=0)
-            if df_cost.empty:
-                st.warning("Nessun dato di costruzione disponibile.")
-            else:
-                import plotly.express as px
+        with t_squadra:
+            st.subheader("1️⃣ SEZIONE: COSTRUZIONI")
+            try:
+                df_cost = conn.read(worksheet="Costruzione", ttl=0)
+                if df_cost.empty:
+                    st.warning("Nessun dato di costruzione disponibile.")
+                else:
+                    import plotly.express as px
                 
-                g_filtro = st.selectbox("Seleziona Partita (Costruzione)", ["Tutte"] + sorted(df_cost['Giornata'].unique().tolist()), key="f_giornata_cost")
-                if g_filtro != "Tutte":
-                    df_cost = df_cost[df_cost['Giornata'] == g_filtro]
+                    g_filtro = st.selectbox("Seleziona Partita (Costruzione)", ["Tutte"] + sorted(df_cost['Giornata'].unique().tolist()), key="f_giornata_cost")
+                    if g_filtro != "Tutte":
+                        df_cost = df_cost[df_cost['Giornata'] == g_filtro]
 
-                st.markdown("#### Efficacia Generale Costruzioni")
-                fig_pie = px.pie(df_cost, names='Esito finale', color='Esito finale',
-                                 color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'}, hole=0.4)
-                fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
-                st.plotly_chart(fig_pie, use_container_width=True)
+                    st.markdown("#### Efficacia Generale Costruzioni")
+                    fig_pie = px.pie(df_cost, names='Esito finale', color='Esito finale',
+                                     color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'}, hole=0.4)
+                    fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+                    st.plotly_chart(fig_pie, use_container_width=True)
+                    st.markdown("#### Efficacia per Modalità")
+                    tipo_filtro = st.radio("Filtra per Tipologia:", ["Totale", "Statica", "Dinamica"], horizontal=True, key="f_tipo_cost")
+                    df_bar_data = df_cost.copy()
+                    if tipo_filtro != "Totale":
+                        df_bar_data = df_bar_data[df_bar_data['Tipologia'] == tipo_filtro]
+    
+                    df_grouped = df_bar_data.groupby(['Modalità', 'Esito finale']).size().reset_index(name='Conteggio')
+                    fig_bar = px.bar(df_grouped, x='Modalità', y='Conteggio', color='Esito finale', barmode='group',
+                                     color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
+                                     category_orders={"Modalità": ["Bassa", "Manovrata", "Diretta"]})
+                    fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+                    st.plotly_chart(fig_bar, use_container_width=True)
+    
+                    st.markdown("#### Confronto Ritmo: Statica vs Dinamica")
+                    df_stacked = df_cost.groupby(['Tipologia', 'Esito finale']).size().reset_index(name='Conteggio')
+                    fig_stacked = px.bar(df_stacked, x='Tipologia', y='Conteggio', color='Esito finale',
+                                         color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'})
+                    fig_stacked.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+                    st.plotly_chart(fig_stacked, use_container_width=True)
 
-                st.markdown("#### Efficacia per Modalità")
-                tipo_filtro = st.radio("Filtra per Tipologia:", ["Totale", "Statica", "Dinamica"], horizontal=True, key="f_tipo_cost")
-                df_bar_data = df_cost.copy()
-                if tipo_filtro != "Totale":
-                    df_bar_data = df_bar_data[df_bar_data['Tipologia'] == tipo_filtro]
+            except Exception as e:
+                st.error(f"Errore Sezione Costruzioni: {e}")
 
-                df_grouped = df_bar_data.groupby(['Modalità', 'Esito finale']).size().reset_index(name='Conteggio')
-                fig_bar = px.bar(df_grouped, x='Modalità', y='Conteggio', color='Esito finale', barmode='group',
-                                 color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
-                                 category_orders={"Modalità": ["Bassa", "Manovrata", "Diretta"]})
-                fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
-                st.plotly_chart(fig_bar, use_container_width=True)
-
-                st.markdown("#### Confronto Ritmo: Statica vs Dinamica")
-                df_stacked = df_cost.groupby(['Tipologia', 'Esito finale']).size().reset_index(name='Conteggio')
-                fig_stacked = px.bar(df_stacked, x='Tipologia', y='Conteggio', color='Esito finale',
-                                     color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'})
-                fig_stacked.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
-                st.plotly_chart(fig_stacked, use_container_width=True)
-
-        except Exception as e:
-            st.error(f"Errore Sezione Costruzioni: {e}")
-
-        st.divider()
+            st.divider()
 
         # ---------------------------------------------------------
         # 2️⃣ SEZIONE: AZIONI OFFENSIVE
