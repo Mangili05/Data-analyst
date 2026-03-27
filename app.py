@@ -184,16 +184,29 @@ if ruolo == "Match Analyst":
                 # --- Modifica dentro esegui_salvataggio per Offensiva ---
                 elif fase == "Azione Offensiva":
                     nome_foglio = "Offensiva"
-                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
+                    # Recuperiamo il valore dal click
                     coords = st.session_state.get(f"off_coords_temp{s}")
                     
+                    # Ipotizziamo che la tua immagine campo.jpg sia larga 600 e alta 400
+                    # Normalizziamo a 0-100 per il grafico finale
+                    if coords:
+                        # ESEMPIO: se l'immagine è 600px -> (x/600)*100
+                        # Sostituisci 600 e 400 con le dimensioni REALI della tua immagine campo.jpg
+                        c_x = round((coords['x'] / 600) * 100, 1)
+                        c_y = round((coords['y'] / 400) * 100, 1)
+                    else:
+                        c_x, c_y = "", ""
+
                     record = {
-                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
-                        "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
-                        "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'),
+                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, 
+                        "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
+                        "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), 
+                        "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
+                        "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), 
+                        "Esito finale": st.session_state.get(f'off_esito{s}'),
                         "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), 
-                        "Coord_X": coords['x'] if coords else "", 
-                        "Coord_Y": coords['y'] if coords else ""
+                        "Coord_X": c_x, 
+                        "Coord_Y": c_y
                     }
                     
                 elif fase == "Azione Difensiva":
@@ -251,61 +264,29 @@ if ruolo == "Match Analyst":
             co3, co4 = st.columns(2)
             with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
             with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
-            # --- SEZIONE CAMPETTO PROFESSIONALE E CLICCABILE (VERSIONE CALIBRATA) ---
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
                 st.markdown("#### 🎯 Clicca sul punto del tiro")
 
-                import plotly.graph_objects as go
+                from streamlit_image_coordinates import streamlit_image_coordinates
+                
+                # Usiamo l'immagine che avevi (campo.jpg) o una versione fissa.
+                # Se non l'hai, carichiamola o assicurati che sia nella cartella.
+                # Dimensioni standard ipotizzate: 600x400
+                if os.path.exists("campo.jpg"):
+                    # Mostriamo l'immagine e catturiamo i pixel
+                    value = streamlit_image_coordinates("campo.jpg", key=f"off_click_{suffix}")
+                    
+                    if value:
+                        # Salviamo i pixel nel session_state
+                        st.session_state[f"off_coords_temp{suffix}"] = value
+                        # Disegniamo un feedback testuale per conferma
+                        st.success(f"Punto selezionato! (X: {value['x']}, Y: {value['y']})")
+                else:
+                    st.error("File 'campo.jpg' non trovato. Caricalo nella cartella del progetto.")
 
-                coord_key = f"off_coords_temp{suffix}"
-                if coord_key not in st.session_state:
-                    st.session_state[coord_key] = None
-
-                fig_input_off = go.Figure()
-                p_green = "#228B22"; l_white = "#ffffff"; y_start = 30 
-
-                # 1. DISEGNO DEL CAMPO (Layer BELOW per non interferire con i click)
-                fig_input_off.add_shape(type="rect", x0=0, y0=y_start, x1=100, y1=100, line=dict(color=l_white, width=3), fillcolor=p_green, layer="below")
-                fig_input_off.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=l_white, width=3), layer="below") 
-                fig_input_off.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=l_white, width=3), layer="below") 
-                fig_input_off.add_shape(type="circle", x0=49.4, y0=88.7, x1=50.6, y1=89.9, fillcolor=l_white, line=dict(color=l_white), layer="below") 
-                fig_input_off.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=l_white, width=3), layer="below")
-                fig_input_off.add_shape(type="path", path=f"M 37 {y_start} C 40 {y_start+8}, 60 {y_start+8}, 63 {y_start}", line=dict(color=l_white, width=3), layer="below")
-                fig_input_off.add_shape(type="rect", x0=42, y0=100, x1=58, y1=101.5, line=dict(color="#333333", width=4), fillcolor="#dddddd", layer="below")
-
-                # 2. IL PUNTO ROSSO (Viene disegnato solo se esiste la coordinata)
-                if st.session_state[coord_key] is not None:
-                    curr = st.session_state[coord_key]
-                    fig_input_off.add_trace(go.Scatter(
-                        x=[curr['x']], y=[curr['y']], 
-                        mode='markers', 
-                        marker=dict(size=10, color='red', symbol='circle', line=dict(width=1, color='white')),
-                        showlegend=False, hoverinfo='none'
-                    ))
-
-                # 3. LAYOUT SENZA GRIGLIA (Stop ai refresh inutili)
-                fig_input_off.update_layout(
-                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 101], fixedrange=True),
-                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[y_start-1, 103], fixedrange=True),
-                    yaxis_scaleanchor="x", yaxis_scaleratio=1,
-                    margin=dict(l=10, r=10, t=10, b=10), height=500,
-                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                    clickmode='event', # Cattura solo il click secco, non il passaggio
-                    dragmode=False
-                )
-
-                # Visualizzazione: usiamo "on_click" se disponibile o gestiamo il ritorno del chart
-                # IMPORTANTE: Rimuoviamo on_select="rerun" che causava il loop
-                res = st.plotly_chart(fig_input_off, use_container_width=True, config={'displayModeBar': False}, on_select="rerun")
-
-                # Gestione click (senza griglia invisibile Plotly risponde comunque alle coordinate dell'area)
-                if res and "selection" in res and res["selection"]["points"]:
-                    new_p = res["selection"]["points"][0]
-                    st.session_state[coord_key] = {'x': new_p['x'], 'y': new_p['y']}
-                    st.rerun()
-
-            if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
+            if st.button("💾 Salva Azione Offensiva"):
+                esegui_salvataggio("Azione Offensiva")
 
         with tabs[2]:
             cd1, cd2 = st.columns(2)
