@@ -398,42 +398,35 @@ elif ruolo == "Staff Tecnico":
                 if g_off_filtro != "Tutte":
                     df_off_filt = df_off_filt[df_off_filt['Giornata'] == g_off_filtro]
 
-                # --- 1. MAPPA DEI TIRI DINAMICA (Con Semicerchio di Centrocampo) ---
+                # --- 1. MAPPA DEI TIRI DINAMICA (MASSIMA GRANDEZZA GRAFICA) ---
                 st.markdown("#### 🏟️ Mappa dei Tiri")
                 
-                campo_height = 520 
+                # Aumentiamo l'altezza fissa per dare più spazio verticale
+                campo_visuale_height = 680 # Era 570
                 fig_pitch = go.Figure()
                 
                 pitch_green = "#228B22" 
                 line_white = "#ffffff"
 
-                # 1. Rettangolo principale (Metà campo)
+                # disegno del campo (invariato)
+                # Rettangolo principale (Metà campo)
                 fig_pitch.add_shape(type="rect", x0=0, y0=0, x1=100, y1=100, line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
-                
-                # 2. Area Grande
+                # Area Grande
                 fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3)) 
-                
-                # 3. Area Piccola
+                # Area Piccola
                 fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3)) 
-                
-                # 4. Dischetto Rigore
+                # Dischetto
                 fig_pitch.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white)) 
-                
-                # 5. Lunetta Area di Rigore
+                # Lunetta area di rigore
                 fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3))
-
-                # 6. SEMICERCHIO DI METÀ CAMPO (Aggiunto qui)
-                # Crea un arco che parte da x=40, sale verso y=7 e torna a x=60
+                # Lunetta centrocampo (per metà campo offensiva)
                 fig_pitch.add_shape(type="path", path="M 37 0 C 40 8, 60 8, 63 0", line=dict(color=line_white, width=3))
-
-                # 7. Porta (esterna)
+                # Porta (esterna)
                 fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd")
 
-                # Icone e colori per gli esiti
                 esiti_map = {"Gol": "#FFD700", "Tiro in porta": "#00FF00", "Tiro fuori": "#FF0000"}
                 symbols = {"Gol": "circle", "Tiro in porta": "diamond", "Tiro fuori": "x"}
                 
-                # Plot dei punti (Assicurati che Coord_X e Y siano 0-100 nel DB)
                 for esito, color in esiti_map.items():
                     df_e = df_off_filt[df_off_filt['Esito finale'] == esito]
                     if not df_e.empty:
@@ -442,41 +435,43 @@ elif ruolo == "Staff Tecnico":
                             y=df_e['Coord_Y'], 
                             mode='markers', 
                             name=esito,
-                            marker=dict(size=14, color=color, symbol=symbols[esito], line=dict(width=1.5, color="white")),
+                            marker=dict(size=16, color=color, symbol=symbols[esito], line=dict(width=1.5, color="white")),
                             text=df_e['Giocatore'], 
                             hoverinfo='text+name'
                         ))
                 
-                # --- AGGIUSTAMENTO LAYOUT PER CAMPO GRANDE ---
+                # --- AGGIUSTAMENTO LAYOUT PER DIMENSIONI MASSIME ---
                 fig_pitch.update_layout(
                     # Nascondiamo assi e griglia, ma impostiamo il range 0-100 preciso
                     xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 101]), 
-                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 103]), # Leggero margine per la porta
+                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 103]), 
                     
                     # Forza le proporzioni 1:1 tra X e Y (il campo non si schiaccia)
                     yaxis_scaleanchor="x",
                     yaxis_scaleratio=1,
                     
-                    # Rimuoviamo TUTTI i margini per far occupare tutto lo spazio al campo
-                    margin=dict(l=0, r=0, t=0, b=0),
+                    # Rimuoviamo TUTTI i margini esterni per far occupare tutto lo spazio al campo
+                    margin=dict(l=0, r=0, t=10, b=0), # 10px t per staccare un po' dal titolo
                     
-                    # Impostiamo un'altezza generosa del contenitore Plotly
-                    height=campo_height + 50, # 50px extra per la legenda sotto
+                    # Impostiamo l'altezza generosa del contenitore Plotly
+                    height=campo_visuale_height, 
                     
                     paper_bgcolor='rgba(0,0,0,0)', # Sfondo trasparente
                     plot_bgcolor='rgba(0,0,0,0)',
                     
                     showlegend=True,
+                    # Spostiamo la legenda DENTRO il campo in un angolo vuoto (es. in basso a dx)
                     legend=dict(
-                        font=dict(color="white"), 
-                        orientation="h", # Legenda orizzontale
-                        yanchor="bottom", y=-0.1, # Posizionata SOTTO il campo
-                        xanchor="center", x=0.5
+                        font=dict(color="white", size=14), 
+                        orientation="v", # Legenda verticale per stare nell'angolo
+                        bgcolor='rgba(0,0,0,0.5)', # Sfondo semi-trasparente per leggibilità
+                        yanchor="bottom", y=0.02, # Quasi a fondo campo
+                        xanchor="right", x=0.98    # Quasi a bordo destro
                     )
                 )
                 
                 # Visualizzazione a tutta larghezza
-                st.plotly_chart(fig_pitch, use_container_width=True, config={'displayModeBar': False}) # Nascondiamo la barra strumenti plotly per pulizia
+                st.plotly_chart(fig_pitch, use_container_width=True, config={'displayModeBar': False})
 
                 col_off1, col_off2 = st.columns(2)
 
