@@ -525,7 +525,6 @@ elif ruolo == "Staff Tecnico":
                 fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3))
                 
                 # 6. Lunetta centrocampo (posizionata ora su Y = y_inizio)
-                # Abbiamo alzato la lunetta per farla apparire subito all'inizio del rettangolo
                 fig_pitch.add_shape(type="path", path=f"M 37 {y_inizio} C 40 {y_inizio+8}, 60 {y_inizio+8}, 63 {y_inizio}", 
                                     line=dict(color=line_white, width=3))
 
@@ -551,9 +550,7 @@ elif ruolo == "Staff Tecnico":
                 # --- AGGIUSTAMENTO LAYOUT ---
                 fig_pitch.update_layout(
                     xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 101]), 
-                    # Impostiamo il range della Y da 28 a 103 per centrare la vista sulla trequarti
                     yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[28, 103]), 
-                    
                     yaxis_scaleanchor="x",
                     yaxis_scaleratio=1,
                     margin=dict(l=0, r=0, t=10, b=0),
@@ -570,7 +567,6 @@ elif ruolo == "Staff Tecnico":
                     )
                 )
                 
-                # Visualizzazione a tutta larghezza
                 st.plotly_chart(fig_pitch, use_container_width=True, config={'displayModeBar': False})
 
                 col_off1, col_off2 = st.columns(2)
@@ -606,14 +602,12 @@ elif ruolo == "Staff Tecnico":
             st.error(f"Errore Sezione Offensiva: {e}")
 
     # ---------------------------------------------------------
-    # TAB PROFILO CALCIATORE (Invariata)
+    # TAB PROFILO CALCIATORE
     # ---------------------------------------------------------
     with t_individuo:
         # =========================================================
-# AGGIORNAMENTO DASHBOARD STAFF (Visualizzazione Radar 6 Assi)
-# =========================================================
-# All'interno di: with t_individuo:
-        
+        # AGGIORNAMENTO DASHBOARD STAFF (Visualizzazione Radar 6 Assi)
+        # =========================================================
         st.markdown("### 🎯 Analisi Proiettiva Serie D")
         p_sel = st.selectbox("Seleziona Calciatore per Report", lista_calciatori, key="p_radar_staff")
 
@@ -625,13 +619,13 @@ elif ruolo == "Staff Tecnico":
                 if df_player.empty:
                     st.warning(f"Nessun dato storico per {p_sel}.")
                 else:
-                    # Calcoliamo le medie ignorando gli zeri (perché Allenamento e Partita caricano solo 3 KPI alla volta)
-                    # Sostituiamo gli 0 con NaN per fare la media corretta
+                    import pandas as pd
+                    # Calcoliamo le medie ignorando gli zeri
                     df_calc = df_player.replace(0, pd.NA)
                     
                     categorie = ['Intensità', 'Attenzione', 'Atteggiamento', 'Scelte', 'Leadership', 'Resilienza']
                     valori = [df_calc[cat].mean() for cat in categorie]
-                    # Riempiamo eventuali NaN rimasti (se un ragazzo non è mai stato valutato in partita ad esempio)
+                    # Riempiamo eventuali NaN rimasti
                     valori = [v if pd.notna(v) else 0 for v in valori]
 
                     fig_radar = go.Figure()
@@ -645,7 +639,7 @@ elif ruolo == "Staff Tecnico":
                         line=dict(color='#FFD700', width=3)
                     ))
 
-                    # Target Serie D (Parametro ideale fissato a 4 per tutti i KPI)
+                    # Target Serie D
                     target_seried = [4, 4, 4, 4, 4, 4]
                     fig_radar.add_trace(go.Scatterpolar(
                         r=target_seried + [target_seried[0]],
