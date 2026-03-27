@@ -335,75 +335,53 @@ elif ruolo == "Staff Tecnico":
     t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
 
     with t_squadra:
-        st.markdown("### 🏟️ Mappa Tiri Dinamica (Generata in Python)")
+        st.markdown("### 🏟️ Mappa Tiri e Goal (Collettiva)")
     
     try:
+        # Import necessari
+        from PIL import Image
         import plotly.graph_objects as go
+        import base64
+        import os
 
-        # 1. Caricamento e Pulizia Dati
+        # 1. Caricamento dati e PIL Image per le proporzioni
         df_off = conn.read(worksheet="Offensiva", ttl=0)
         
-        # Convertiamo in numerico e rimuoviamo i missing
+        # Pulizia dati: teniamo solo le righe che hanno coordinate X e Y valide
+        # Assicuriamoci che Coord_X e Y siano numeriche
         df_off['Coord_X'] = pd.to_numeric(df_off['Coord_X'], errors='coerce')
         df_off['Coord_Y'] = pd.to_numeric(df_off['Coord_Y'], errors='coerce')
         df_shots = df_off.dropna(subset=['Coord_X', 'Coord_Y'])
 
-        # Se usi segmented_control per filtrare per partita, fallo qui
-        # df_shots = df_shots[df_shots['Giornata'] == giornata_selezionata]
+        # --- GESTIONE PROPORZIONALE DELL'IMMAGINE ---
+        if not os.path.exists("campo.jpg"):
+            st.error("File 'campo.jpg' non trovato. Impossibile generare la mappa.")
+            st.stop()
 
-        # Creazione Figura Plotly
-        fig_pitch = go.Figure()
+        img_pil = Image.open("campo.jpg")
+        img_width, img_height = img_pil.size # Otteniamo le dimensioni reali
 
-        # =========================================================
-        # 2. DISEGNO DEL CAMPO (Coordinate 0-100)
-        # Sfondo verde, linee bianche
-        # =========================================================
-        
-        # Colore del campo e delle linee
-        pitch_color = "#228B22" # Forest Green
-        line_color = "#ffffff"   # Bianco
+        # 2. Configurazione e Iniezione Immagine come Sfondo
+        with open("campo.jpg", "rb") as f:
+            img_data = base64.b64encode(f.read()).decode("utf-8")
 
-        # Rettangolo principale (Metà campo)
-        # X: 0 (sinistra) a 100 (destra)
-        # Y: 0 (linea di metà campo) a 100 (linea di porta)
-        fig_pitch.add_shape(type="rect", x0=0, y0=0, x1=100, y1=100, line=dict(color=line_color, width=3), fillcolor=pitch_color, layer="below")
+        # Creazione figura Plotly
+        fig_map = go.Figure()
 
-        # Area di Rigore
-        # Grande: Larga 60% (da 20 a 80), Profonda 16.5% (da 83.5 a 100)
-        fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_color, width=3), fillcolor=pitch_color, layer="below")
-
-        # Area di Porta (Area piccola)
-        # Larga 30% (da 35 a 65), Profonda 5.5% (da 94.5 a 100)
-        fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_color, width=3), fillcolor=pitch_color, layer="below")
-
-        # La Porta (esterna alla linea)
-        fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd", layer="below")
-
-        # Dischetto del Rigore (Punto a 11m -> 11% dalla porta)
-        fig_pitch.add_shape(type="circle", x0=49.5, y0=88.5, x1=50.5, y1=89.5, line=dict(color=line_color), fillcolor=line_color)
-
-        # Lunetta dell'Area di Rigore (Arco)
-        fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_color, width=3), fillcolor=pitch_color, layer="below")
-
-        # Cerchio di Centrocampo (Arco inferiore)
-        fig_pitch.add_shape(type="path", path="M 40 0 C 42 7, 58 7, 60 0", line=dict(color=line_color, width=3), fillcolor=pitch_color, layer="below")
-
-
-        # =========================================================
-        # 3. PLOT DEI PUNTI (TIRI)
-        # =========================================================
+        # Definiamo i filtri e lo stile per ogni esito
         esiti_config = {
             "Gol": {"color": "#FFD700", "symbol": "circle", "name": "⚽ Gol", "size": 18},
             "Tiro in porta": {"color": "#00FF00", "symbol": "diamond", "name": "✅ In Porta", "size": 14},
             "Tiro fuori": {"color": "#FF0000", "symbol": "x", "name": "❌ Fuori", "size": 14}
         }
 
+        # 3. Plot dei Punti (Scattering)
         for esito, stile in esiti_config.items():
             mask = df_shots['Esito finale'] == esito
             df_filtered = df_shots[mask]
             
             if not df_filtered.empty:
-                fig_pitch.add_trace(go.Scatter(
+                fig_map.add_trace(go.Scatter(
                     x=df_filtered['Coord_X'], 
                     y=df_filtered['Coord_Y'], 
                     mode='markers',
@@ -414,32 +392,33 @@ elif ruolo == "Staff Tecnico":
                         symbol=stile['symbol'],
                         line=dict(width=2, color='white')
                     ),
-                    text=df_filtered['Giocatore'],
+                    text=df_filtered['Giocatore'], # Nome al passaggio del mouse
                     hoverinfo='text+name'
                 ))
 
-        # =========================================================
-        # 4. LAYOUT E PROPORZIONI (Aspect Ratio fissa)
-        # =========================================================
-        fig_pitch.update_layout(
-            # Nascondiamo assi e griglia
-            xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-5, 105]), # Un po' di margine ai lati
-            yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-5, 105]),
-            
-            # --- IL SEGRETO PER LE PROPORZIONI CORRETTE ---
-            # Forziamo il grafico ad essere un quadrato perfetto (1:1) o rettangolo fisso
-            yaxis_scaleanchor="x", # Y si adatta a X
-            yaxis_scaleratio=1,    # Rapporto 1:1
-            
-            margin=dict(l=10, r=10, t=50, b=10),
-            height=650, # Altezza generosa
+        # 4. Update Layout (Centratura e Proporzioni)
+        # Il segreto è usare scalex/scaley basate sulle dimensioni REALI
+        fig_map.update_layout(
+            images=[dict(
+                source=f"data:image/jpg;base64,{img_data}",
+                xref="x", yref="y",
+                x=0, y=0,
+                sizex=img_width, sizey=img_height, # Usiamo dimensioni REALI
+                sizing="stretch",
+                layer="below"
+                # opacity=0.8 # Opzionale: rende i marker più visibili
+            )],
+            xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[0, img_width]),
+            yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[img_height, 0]), # Y invertita per il calcio
+            margin=dict(l=10, r=10, t=40, b=10),
+            height=600, # Aumentiamo l'altezza per farla respirare
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             showlegend=True,
             legend=dict(font=dict(color="white"), orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
 
-        st.plotly_chart(fig_pitch, use_container_width=True)
+        st.plotly_chart(fig_map, use_container_width=True)
 
     except Exception as e:
-        st.error(f"Errore nella generazione della mappa dinamica: {e}")
+        st.error(f"Errore nella generazione della mappa collettiva: {e}")
