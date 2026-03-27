@@ -241,15 +241,17 @@ if ruolo == "Match Analyst":
             with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
-                if os.path.exists("campo.jpg"):
-                    img = Image.open("campo.jpg").resize((358, 283))
-                    if "off_coords" in st.session_state:
-                        draw = ImageDraw.Draw(img)
-                        x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-                        draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
-                    val = streamlit_image_coordinates(img, key=f"campetto_off{suffix}")
-                    if val and (st.session_state.get("off_coords") != val):
-                        st.session_state["off_coords"] = val
+                if f"off_coords{suffix}" in st.session_state:
+        draw = ImageDraw.Draw(img)
+        coords = st.session_state[f"off_coords{suffix}"]
+        draw.ellipse([coords['x']-3, coords['y']-3, coords['x']+3, coords['y']+3], fill="red", outline="white")
+    
+    # Cattura le coordinate
+    val = streamlit_image_coordinates(img, key=f"campetto_off{suffix}")
+    
+    # Aggiorna senza forzare il rerun immediato se non necessario
+    if val:
+        st.session_state[f"off_coords{suffix}"] = val
                         st.rerun()
             if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
 
