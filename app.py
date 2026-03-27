@@ -278,51 +278,150 @@ if ruolo == "Match Analyst":
                         st.rerun()
             if st.button("💾 Salva Azione Difensiva"): esegui_salvataggio("Azione Difensiva")
 
-    else:
-        # --- PARTE INDIVIDUALE ---
-        st.markdown("### 👤 VALUTAZIONE INDIVIDUALE")
-        if "reset_ind" not in st.session_state: st.session_state.reset_ind = 0
-        suffix_ind = f"_ind_{st.session_state.reset_ind}"
+    # =========================================================
+# NUOVA LOGICA: ANALISI INDIVIDUALE (Sostituire la precedente)
+# =========================================================
+else:
+    st.markdown("### 👤 MONITORAGGIO ATTITUDINALE PROIETTIVO")
+    st.info("Focus su 3/4 ragazzi per sessione - Obiettivo: Valutazione Proiezione Serie D")
+    
+    if "reset_ind" not in st.session_state: st.session_state.reset_ind = 0
+    suffix_ind = f"_ind_{st.session_state.reset_ind}"
 
-        ci1, ci2, ci3 = st.columns([1, 1, 2])
-        with ci1: g_ind = st.selectbox("Giornata", ["Seleziona"] + list(range(1, 31)), key="g_ind_key")
-        with ci2: t_ind = st.text_input("Minuto", placeholder="mm:ss", key=f"t_ind{suffix_ind}")
-        with ci3: p_ind = st.selectbox("Calciatore", lista_calciatori, key=f"p_ind{suffix_ind}")
+    # 1. SETUP SESSIONE
+    ci1, ci2, ci3 = st.columns([1, 1, 2])
+    with ci1: 
+        tipo_sessione = st.radio("Contesto", ["Allenamento", "Partita (VEO)"], horizontal=True, key=f"tipo_sess{suffix_ind}")
+    with ci2: 
+        data_sess = st.date_input("Data Osservazione", key=f"date_sess{suffix_ind}")
+    with ci3: 
+        ragazzi_focus = st.multiselect("Ragazzi in Focus (max 4)", lista_calciatori[1:], max_selections=4, key=f"focus_players{suffix_ind}")
+
+    st.divider()
+
+    if not ragazzi_focus:
+        st.warning("Seleziona almeno un ragazzo per iniziare la valutazione.")
+    else:
+        # Contenitore per i dati da salvare
+        dati_da_salvare = []
         
-        st.divider()
-        mappa_voti = {"N.D.": None, "🟢 Verde": 1.0, "🟡 Giallo": 0.5, "🔴 Rosso": 0.0}
-        opts = list(mappa_voti.keys())
+        # Generazione dinamica delle schede valutazione
+        for p_name in ragazzi_focus:
+            with st.expander(f"Valutazione: {p_name}", expanded=True):
+                col_kpi, col_note = st.columns([2, 1])
+                
+                with col_kpi:
+                    if "Allenamento" in tipo_sessione:
+                        st.markdown("**KPI Settimanali (Predisposizione)**")
+                        k1 = st.slider(f"Intensità", 1, 5, 3, key=f"k1_{p_name}{suffix_ind}", help="Dà l'anima o cammina?")
+                        k2 = st.slider(f"Attenzione", 1, 5, 3, key=f"k2_{p_name}{suffix_ind}", help="Ricettività alle istruzioni del Mister")
+                        k3 = st.slider(f"Atteggiamento", 1, 5, 3, key=f"k3_{p_name}{suffix_ind}", help="Reazione emotiva (es. incita i compagni)")
+                        # Mappatura per DB (gli altri 3 KPI restano vuoti o 0)
+                        valori_riga = [k1, k2, k3, 0, 0, 0]
+                    else:
+                        st.markdown("**KPI Gara (Tenuta Agonistica)**")
+                        k4 = st.slider(f"Efficacia Scelte", 1, 5, 3, key=f"k4_{p_name}{suffix_ind}", help="Decision making sotto pressione")
+                        k5 = st.slider(f"Leadership/Sacrificio", 1, 5, 3, key=f"k5_{p_name}{suffix_ind}", help="Corsa in più per il compagno / Fase difensiva")
+                        k6 = st.slider(f"Resilienza Errore", 1, 5, 3, key=f"k6_{p_name}{suffix_ind}", help="Cosa fa nei 5s dopo aver perso palla?")
+                        # Mappatura per DB (i primi 3 KPI restano vuoti o 0)
+                        valori_riga = [0, 0, 0, k4, k5, k6]
+
+                with col_note:
+                    nota = st.text_area("Evento/Episodio Chiave", placeholder="Esempio: Al 70° rincorre avversario per 40 metri...", key=f"nota_{p_name}{suffix_ind}")
+
+                dati_da_salvare.append({
+                    "Data": data_sess.strftime("%d/%m/%Y"),
+                    "Contesto": tipo_sessione,
+                    "Calciatore": p_name,
+                    "Intensità": valori_riga[0],
+                    "Attenzione": valori_riga[1],
+                    "Atteggiamento": valori_riga[2],
+                    "Scelte": valori_riga[3],
+                    "Leadership": valori_riga[4],
+                    "Resilienza": valori_riga[5],
+                    "Note": nota
+                })
+
+        if st.button("💾 INVIA VALUTAZIONI A RSG", use_container_width=True):
+            try:
+                st.cache_data.clear()
+                # Struttura Colonne: Data, Contesto, Calciatore, Intensità, Attenzione, Atteggiamento, Scelte, Leadership, Resilienza, Note
+                df_esistente = conn.read(worksheet="Individuale", ttl=0)
+                df_nuovo = pd.DataFrame(dati_da_salvare)
+                df_finale = pd.concat([df_esistente, df_nuovo], ignore_index=True)
+                
+                conn.update(worksheet="Individuale", data=df_finale)
+                st.success(f"✅ Inviate {len(dati_da_salvare)} valutazioni nel database Cloud!")
+                st.session_state.reset_ind += 1
+                st.rerun()
+            except Exception as e:
+                st.error(f"Errore nel salvataggio: {e}")
+
+# =========================================================
+# AGGIORNAMENTO DASHBOARD STAFF (Visualizzazione Radar 6 Assi)
+# =========================================================
+# All'interno di: with t_individuo:
         
-        col_ind1, col_ind2 = st.columns(2)
-        with col_ind1:
-            v_res = st.radio("Resilienza all'Errore", opts, index=0, horizontal=True, key=f"v_res{suffix_ind}")
-            v_com = st.radio("Comunicazione Proattiva", opts, index=0, horizontal=True, key=f"v_com{suffix_ind}")
-            v_int = st.radio("Intensità Mentale", opts, index=0, horizontal=True, key=f"v_int{suffix_ind}")
-        with col_ind2:
-            v_acc = st.radio("Accettazione delle Scelte", opts, index=0, horizontal=True, key=f"v_acc{suffix_ind}")
-            v_lea = st.radio("Leadership / Spirito di Sacrificio", opts, index=0, horizontal=True, key=f"v_lea{suffix_ind}")
-        
-        note_txt = st.text_area("Note Tecnico/Comportamentali", placeholder="Inserisci osservazioni specifiche...", key=f"note{suffix_ind}")
-        
-        if st.button("💾 Salva Analisi Individuale"):
-            if g_ind == "Seleziona" or p_ind == "Seleziona" or len(t_ind) < 5:
-                st.error("⚠️ Compila tutti i campi correttamente.")
-            else:
-                try:
-                    voti_validi = [mappa_voti[st.session_state[f"v_res{suffix_ind}"]], mappa_voti[st.session_state[f"v_com{suffix_ind}"]], mappa_voti[st.session_state[f"v_int{suffix_ind}"]], mappa_voti[st.session_state[f"v_acc{suffix_ind}"]], mappa_voti[st.session_state[f"v_lea{suffix_ind}"]]]
-                    voti_filtrati = [v for v in voti_validi if v is not None]
-                    totale_punti = sum(voti_filtrati) if voti_filtrati else 0
-                    rec_ind = {"Giornata": g_ind, "Minuto": t_ind, "Calciatore": p_ind, "Resilienza": mappa_voti[st.session_state[f"v_res{suffix_ind}"]], "Comunicazione": mappa_voti[st.session_state[f"v_com{suffix_ind}"]], "Intensità": mappa_voti[st.session_state[f"v_int{suffix_ind}"]], "Accettazione": mappa_voti[st.session_state[f"v_acc{suffix_ind}"]], "Leadership": mappa_voti[st.session_state[f"v_lea{suffix_ind}"]], "Totale": totale_punti, "Note": note_txt}
-                    df_ordine = ["Giornata", "Minuto", "Calciatore", "Resilienza", "Comunicazione", "Intensità", "Accettazione", "Leadership", "Totale", "Note"]
-                    df_nuovo = pd.DataFrame([rec_ind]).reindex(columns=df_ordine)
-                    st.cache_data.clear()
-                    df_esistente = conn.read(worksheet="Individuale", ttl=0)
-                    df_finale = pd.concat([df_esistente, df_nuovo], ignore_index=True)
-                    conn.update(worksheet="Individuale", data=df_finale)
-                    st.session_state["mostra_toast"] = f"✅ Analisi di {p_ind} salvata!"
-                    st.session_state.reset_ind += 1
-                    st.rerun()
-                except Exception as e: st.error(f"❌ Errore: {e}")
+        st.markdown("### 🎯 Analisi Proiettiva Serie D")
+        p_sel = st.selectbox("Seleziona Calciatore per Report", lista_calciatori, key="p_radar_staff")
+
+        if p_sel != "Seleziona":
+            try:
+                df_ind = conn.read(worksheet="Individuale", ttl=0)
+                df_player = df_ind[df_ind['Calciatore'] == p_sel]
+                
+                if df_player.empty:
+                    st.warning(f"Nessun dato storico per {p_sel}.")
+                else:
+                    # Calcoliamo le medie ignorando gli zeri (perché Allenamento e Partita caricano solo 3 KPI alla volta)
+                    # Sostituiamo gli 0 con NaN per fare la media corretta
+                    df_calc = df_player.replace(0, pd.NA)
+                    
+                    categorie = ['Intensità', 'Attenzione', 'Atteggiamento', 'Scelte', 'Leadership', 'Resilienza']
+                    valori = [df_calc[cat].mean() for cat in categorie]
+                    # Riempiamo eventuali NaN rimasti (se un ragazzo non è mai stato valutato in partita ad esempio)
+                    valori = [v if pd.notna(v) else 0 for v in valori]
+
+                    fig_radar = go.Figure()
+                    
+                    # Radar del Giocatore
+                    fig_radar.add_trace(go.Scatterpolar(
+                        r=valori + [valori[0]],
+                        theta=categorie + [categorie[0]],
+                        fill='toself',
+                        name=f'Profilo {p_sel}',
+                        line=dict(color='#FFD700', width=3)
+                    ))
+
+                    # Target Serie D (Parametro ideale fissato a 4 per tutti i KPI)
+                    target_seried = [4, 4, 4, 4, 4, 4]
+                    fig_radar.add_trace(go.Scatterpolar(
+                        r=target_seried + [target_seried[0]],
+                        theta=categorie + [categorie[0]],
+                        mode='lines',
+                        name='Target Serie D',
+                        line=dict(color='red', dash='dash')
+                    ))
+
+                    fig_radar.update_layout(
+                        polar=dict(
+                            radialaxis=dict(visible=True, range=[0, 5], tickfont=dict(color="white")),
+                            angularaxis=dict(tickfont=dict(color="white", size=12))
+                        ),
+                        template="plotly_dark",
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        margin=dict(t=50, b=50)
+                    )
+                    
+                    st.plotly_chart(fig_radar, use_container_width=True)
+                    
+                    # Tabella Note Storiche
+                    with st.expander("📖 Diario delle osservazioni (Note Tecniche)"):
+                        st.table(df_player[['Data', 'Contesto', 'Note']].sort_index(ascending=False))
+
+            except Exception as e:
+                st.error(f"Errore caricamento Dashboard: {e}")
 
 # =========================================================
 # LOGICA STAFF TECNICO (SOLO VISUALIZZAZIONE)
@@ -510,31 +609,69 @@ elif ruolo == "Staff Tecnico":
     # TAB PROFILO CALCIATORE (Invariata)
     # ---------------------------------------------------------
     with t_individuo:
-        st.markdown("### Analisi Radar Comportamentale")
-        c_rep1, c_rep2 = st.columns(2)
-        with c_rep1: p_sel = st.selectbox("Seleziona Calciatore", lista_calciatori, key="p_radar_staff")
-        with c_rep2: g_sel = st.selectbox("Filtro Sessione", ["Tutte le giornate"] + list(range(1, 31)), key="g_radar_staff")
+        # =========================================================
+# AGGIORNAMENTO DASHBOARD STAFF (Visualizzazione Radar 6 Assi)
+# =========================================================
+# All'interno di: with t_individuo:
+        
+        st.markdown("### 🎯 Analisi Proiettiva Serie D")
+        p_sel = st.selectbox("Seleziona Calciatore per Report", lista_calciatori, key="p_radar_staff")
 
         if p_sel != "Seleziona":
             try:
                 df_ind = conn.read(worksheet="Individuale", ttl=0)
                 df_player = df_ind[df_ind['Calciatore'] == p_sel]
-                if g_sel != "Tutte le giornate": df_player = df_player[df_player['Giornata'] == g_sel]
                 
                 if df_player.empty:
-                    st.warning(f"Nessun dato trovato per {p_sel}.")
+                    st.warning(f"Nessun dato storico per {p_sel}.")
                 else:
-                    import plotly.graph_objects as go
-                    categorie = ['Resilienza', 'Comunicazione', 'Intensità', 'Accettazione', 'Leadership']
-                    valori = [df_player[cat].mean() for cat in categorie]
-                    media_squadra = [df_ind[cat].mean() for cat in categorie]
+                    # Calcoliamo le medie ignorando gli zeri (perché Allenamento e Partita caricano solo 3 KPI alla volta)
+                    # Sostituiamo gli 0 con NaN per fare la media corretta
+                    df_calc = df_player.replace(0, pd.NA)
+                    
+                    categorie = ['Intensità', 'Attenzione', 'Atteggiamento', 'Scelte', 'Leadership', 'Resilienza']
+                    valori = [df_calc[cat].mean() for cat in categorie]
+                    # Riempiamo eventuali NaN rimasti (se un ragazzo non è mai stato valutato in partita ad esempio)
+                    valori = [v if pd.notna(v) else 0 for v in valori]
 
                     fig_radar = go.Figure()
-                    fig_radar.add_trace(go.Scatterpolar(r=valori + [valori[0]], theta=categorie + [categorie[0]], fill='toself', name=f'Media {p_sel}', line=dict(color='#1f67b5')))
-                    fig_radar.add_trace(go.Scatterpolar(r=media_squadra + [media_squadra[0]], theta=categorie + [categorie[0]], mode='lines', name='Media Squadra', line=dict(color='rgba(200, 200, 200, 0.5)', dash='dash')))
-                    fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                    
+                    # Radar del Giocatore
+                    fig_radar.add_trace(go.Scatterpolar(
+                        r=valori + [valori[0]],
+                        theta=categorie + [categorie[0]],
+                        fill='toself',
+                        name=f'Profilo {p_sel}',
+                        line=dict(color='#FFD700', width=3)
+                    ))
+
+                    # Target Serie D (Parametro ideale fissato a 4 per tutti i KPI)
+                    target_seried = [4, 4, 4, 4, 4, 4]
+                    fig_radar.add_trace(go.Scatterpolar(
+                        r=target_seried + [target_seried[0]],
+                        theta=categorie + [categorie[0]],
+                        mode='lines',
+                        name='Target Serie D',
+                        line=dict(color='red', dash='dash')
+                    ))
+
+                    fig_radar.update_layout(
+                        polar=dict(
+                            radialaxis=dict(visible=True, range=[0, 5], tickfont=dict(color="white")),
+                            angularaxis=dict(tickfont=dict(color="white", size=12))
+                        ),
+                        template="plotly_dark",
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        margin=dict(t=50, b=50)
+                    )
+                    
                     st.plotly_chart(fig_radar, use_container_width=True)
-                    st.button("🖨️ Stampa Report PDF (Browser)")
+                    
+                    # Tabella Note Storiche
+                    with st.expander("📖 Diario delle osservazioni (Note Tecniche)"):
+                        st.table(df_player[['Data', 'Contesto', 'Note']].sort_index(ascending=False))
+
             except Exception as e:
-                st.error(f"Errore caricamento radar: {e}")
+                st.error(f"Errore caricamento Dashboard: {e}")
 
