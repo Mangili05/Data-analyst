@@ -398,37 +398,35 @@ elif ruolo == "Staff Tecnico":
                 if g_off_filtro != "Tutte":
                     df_off_filt = df_off_filt[df_off_filt['Giornata'] == g_off_filtro]
 
-                # --- 1. MAPPA DEI TIRI DINAMICA (Ottimizzata Graficamente) ---
+                # --- 1. MAPPA DEI TIRI DINAMICA (Con Semicerchio di Centrocampo) ---
                 st.markdown("#### 🏟️ Mappa dei Tiri")
                 
-                # Definiamo dimensioni grandi e fisse per il campo (es. 800x600 o proporzionale)
-                # Un campo da calcio è circa 105x68 metri. Usiamo proporzioni simili.
-                campo_width = 800
-                campo_height = 520 # Mantiene una proporzione realistica
-
+                campo_height = 520 
                 fig_pitch = go.Figure()
                 
-                # Colori professionali
-                pitch_green = "#228B22" # Forest Green più scuro per contrasto
+                pitch_green = "#228B22" 
                 line_white = "#ffffff"
 
-                # Disegno metà campo (Coordinate normalizzate 0-100)
-                # Rettangolo principale (Fondo verde)
+                # 1. Rettangolo principale (Metà campo)
                 fig_pitch.add_shape(type="rect", x0=0, y0=0, x1=100, y1=100, line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
                 
-                # Area Grande (Larga 60%, Profonda 16.5%)
+                # 2. Area Grande
                 fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3)) 
                 
-                # Area Piccola (Larga 30%, Profonda 5.5%)
+                # 3. Area Piccola
                 fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3)) 
                 
-                # Dischetto (Punto a 11m -> 89% da fondo campo)
+                # 4. Dischetto Rigore
                 fig_pitch.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white)) 
                 
-                # Lunetta area di rigore (Arco)
+                # 5. Lunetta Area di Rigore
                 fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3))
 
-                # Porta (esterna alla linea)
+                # 6. SEMICERCHIO DI METÀ CAMPO (Aggiunto qui)
+                # Crea un arco che parte da x=40, sale verso y=7 e torna a x=60
+                fig_pitch.add_shape(type="path", path="M 37 0 C 40 8, 60 8, 63 0", line=dict(color=line_white, width=3))
+
+                # 7. Porta (esterna)
                 fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd")
 
                 # Icone e colori per gli esiti
