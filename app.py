@@ -289,6 +289,42 @@ if ruolo == "Match Analyst":
 # NUOVA LOGICA: ANALISI INDIVIDUALE (Sostituire la precedente)
 # =========================================================
     else:
+        if os.path.exists("logo.png"):
+            import base64
+            with open("logo.png", "rb") as f:
+                data = base64.b64encode(f.read()).decode("utf-8")
+            
+            st.markdown(
+                f"""
+                <style>
+                .logo-container {{
+                    position: absolute;
+                    top: -50px; /* Regola l'altezza verticale */
+                    right: 0px; /* Regola la posizione orizzontale */
+                    z-index: 100;
+                }}
+                .logo-img {{
+                    width: 100px; /* Larghezza del logo su PC */
+                    height: auto;
+                }}
+                /* Regolazioni per Smartphone */
+                @media (max-width: 768px) {{
+                    .logo-img {{
+                        width: 70px; /* Più piccolo su mobile per non coprire il testo */
+                    }
+                    .logo-container {{
+                        top: -40px;
+                    }}
+                }}
+                </style>
+                <div class="logo-container">
+                    <img src="data:image/png;base64,{data}" class="logo-img">
+                </div>
+                """,
+                unsafe_allow_html=True
+            
+        )
+
         st.markdown("### 👤 MONITORAGGIO ATTITUDINALE PROIETTIVO")
         st.info("Obiettivo: Valutazione Proiezione Serie D")
         
