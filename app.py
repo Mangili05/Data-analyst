@@ -378,7 +378,7 @@ if ruolo == "Match Analyst":
                 st.success(f"✅ Inviate {len(dati_da_salvare)} valutazioni nel database!")
                 st.session_state.reset_ind += 1
                 st.rerun()
-             except Exception as e:
+            except Exception as e:
                 st.error(f"Errore nel salvataggio: {e}")
 
 # --- QUI DEVE ESSERE ALLINEATO AL BORDO SINISTRO (o al livello del tuo IF iniziale) ---
