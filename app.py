@@ -329,42 +329,59 @@ if ruolo == "Match Analyst":
                 unsafe_allow_html=True
             )
         
-    # --- SCRITTA #WEAREPRO AL CENTRO IN ALTO ---
+    # --- SCRITTA #WEAREPRO BICOLORE AL CENTRO IN ALTO ---
         st.markdown(
             """
             <style>
+            /* Importiamo un font molto spesso e moderno */
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
+            
             .centered-header {
                 position: fixed;
-                top: 15px; /* Allineato quasi al bordo superiore */
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 99998; /* Appena sotto il logo per sicurezza */
-                text-align: center;
+                top: 15px !important; /* Distanza dal bordo superiore */
+                left: 0;
+                right: 0;
                 width: 100%;
+                z-index: 9999; /* Sopra a tutto */
+                text-align: center;
+                pointer-events: none; /* Non blocca i click sui widget sottostanti */
+                background-color: transparent !important;
             }
             .header-text {
-                color: #ffffff;
-                font-family: 'Inter', sans-serif;
-                font-weight: 800 !important;
-                font-size: 50px !important;
-                letter-spacing: 2px;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-                margin: 0;
-                padding: 0;
+                font-family: 'Inter', sans-serif !important;
+                font-size: 60px !important; /* Dimensione su PC, regolala qui */
+                font-weight: 900 !important;
+                letter-spacing: 3px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                text-transform: uppercase;
+                /* Ombra leggera per staccare dallo sfondo se necessario */
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             }
-            /* Regolazione per Smartphone */
+            /* Parte Bianca: #WEARE */
+            .text-white {
+                color: #ffffff !important;
+            }
+            /* Parte Oro: PRO */
+            .text-gold {
+                color: #D4AF37 !important; /* Oro del Logo Pro Palazzolo */
+            }
+            
+            /* Regolazioni dinamiche per Smartphone (schermi piccoli) */
             @media (max-width: 768px) {
                 .header-text {
-                    font-size: 18px;
-                    letter-spacing: 1px;
+                    font-size: 30px !important; /* Più piccolo su mobile */
+                    letter-spacing: 1px !important;
                 }
                 .centered-header {
-                    top: 10px;
+                    top: 10px !important;
                 }
             }
             </style>
             <div class="centered-header">
-                <p class="header-text">#WEAREPRO</p>
+                <h1 class="header-text">
+                    <span class="text-white">#WEARE</span><span class="text-gold">PRO</span>
+                </h1>
             </div>
             """,
             unsafe_allow_html=True
