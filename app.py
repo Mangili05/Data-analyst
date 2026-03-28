@@ -79,46 +79,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- AGGIUNTA LOGO IN ALTO A DESTRA (FIXED SULLA PAGINA) ---
-        if os.path.exists("logo.png"):
-            import base64
-            with open("logo.png", "rb") as f:
-                data = base64.b64encode(f.read()).decode("utf-8")
-            
-            # Usiamo position: fixed per ancorarlo alla finestra del browser
-            st.markdown(
-                f"""
-                <style>
-                .fixed-logo-container {{
-                    position: fixed;
-                    top: 20px; /* Distanza dal bordo superiore della finestra */
-                    right: 20px; /* Distanza dal bordo destro della finestra */
-                    z-index: 99999; /* Assicura che stia sopra a TUTTO */
-                    display: block;
-                }}
-                .fixed-logo-img {{
-                    width: 120px; /* Dimensione su PC */
-                    height: auto;
-                    background-color: transparent; /* Assicura fondo trasparente */
-                }}
-                /* Regolazioni per Smartphone (schermi piccoli) */
-                @media (max-width: 768px) {{
-                    .fixed-logo-img {{
-                        width: 80px; /* Più piccolo su mobile */
-                    }}
-                    .fixed-logo-container {{
-                        top: 10px; /* Più in alto su mobile */
-                        right: 10px;
-                    }}
-                }}
-                </style>
-                <div class="fixed-logo-container">
-                    <img src="data:image/png;base64,{data}" class="fixed-logo-img">
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
 # --- SCRITTA #WEAREPRO BICOLORE AL CENTRO IN ALTO ---
 st.markdown(
     """
