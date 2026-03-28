@@ -537,63 +537,114 @@ elif ruolo == "Staff Tecnico":
             st.error(f"Errore Sezione Offensiva: {e}")
 
     # ---------------------------------------------------------
-    # TAB PROFILO CALCIATORE
+    # TAB PROFILO CALCIATORE (Ottimizzata)
     # ---------------------------------------------------------
     with t_individuo:
         st.markdown("### 🎯 Analisi Proiettiva Serie D")
-        p_sel = st.selectbox("Seleziona Calciatore per Report", lista_calciatori, key="p_radar_staff")
-
-        if p_sel != "Seleziona":
-            try:
-                df_ind = conn.read(worksheet="Individuale", ttl=0)
-                df_player = df_ind[df_ind['Calciatore'] == p_sel]
+        
+        # Caricamento dati una sola volta
+        try:
+            df_ind = conn.read(worksheet="Individuale", ttl=0)
+            # Pulizia dati: trasformiamo gli 0 in NaN per non inficiare le medie dei contesti non pertinenti
+            df_ind_clean = df_ind.copy()
+            kpi_cols = ['Intensità', 'Attenzione', 'Atteggiamento', 'Scelte', 'Leadership', 'Resilienza']
+            for col in kpi_cols:
+                df_ind_clean[col] = pd.to_numeric(df_ind_clean[col], errors='coerce').replace(0, pd.NA)
+    
+            # Selezione Giocatori (Multi-select per confronto)
+            c_sel1, c_sel2 = st.columns([2, 1])
+            with c_sel1:
+                p_focus = st.multiselect("Seleziona Calciatori da analizzare/confrontare", 
+                                       lista_calciatori[1:], 
+                                       max_selections=3,
+                                       key="p_multi_staff")
+            with c_sel2:
+                mostra_target = st.toggle("Mostra Target Serie D", value=True)
+    
+            if not p_focus:
+                st.info("💡 Seleziona uno o più calciatori per visualizzare l'analisi.")
+            else:
+                # --- 1. RADAR CHARTS (Allenamento vs Partita) ---
+                st.markdown("#### 📊 Confronto Skill Set")
+                col_r1, col_r2 = st.columns(2)
                 
-                if df_player.empty:
-                    st.warning(f"Nessun dato storico per {p_sel}.")
-                else:
-                    import pandas as pd
-                    df_calc = df_player.replace(0, pd.NA)
+                kpi_all = ['Intensità', 'Attenzione', 'Atteggiamento']
+                kpi_gara = ['Scelte', 'Leadership', 'Resilienza']
+                colori = ['#FFD700', '#00BFFF', '#FF4500'] # Oro, Azzurro, Arancio per i vari player
+    
+                def create_radar(kpis, titolo, contesto_filtro):
+                    fig = go.Figure()
+                    for i, p in enumerate(p_focus):
+                        d_p = df_ind_clean[(df_ind_clean['Calciatore'] == p) & (df_ind_clean['Contesto'].str.contains(contesto_filtro))]
+                        if not d_p.empty:
+                            valori = [d_p[k].mean() for k in kpis]
+                            fig.add_trace(go.Scatterpolar(
+                                r=valori + [valori[0]],
+                                theta=kpis + [kpis[0]],
+                                fill='toself', name=p,
+                                line=dict(color=colori[i % len(colori)])
+                            ))
                     
-                    categorie = ['Intensità', 'Attenzione', 'Atteggiamento', 'Scelte', 'Leadership', 'Resilienza']
-                    valori = [df_calc[cat].mean() for cat in categorie]
-                    valori = [v if pd.notna(v) else 0 for v in valori]
-
-                    # Generazione Grafico Radar
-                    fig_radar = go.Figure()
-                    fig_radar.add_trace(go.Scatterpolar(
-                        r=valori + [valori[0]],
-                        theta=categorie + [categorie[0]],
-                        fill='toself',
-                        name=f'Profilo {p_sel}',
-                        line=dict(color='#FFD700', width=3)
-                    ))
-
-                    # Target Serie D
-                    target_seried = [4, 4, 4, 4, 4, 4]
-                    fig_radar.add_trace(go.Scatterpolar(
-                        r=target_seried + [target_seried[0]],
-                        theta=categorie + [categorie[0]],
-                        mode='lines',
-                        name='Target Serie D',
-                        line=dict(color='red', dash='dash')
-                    ))
-
-                    fig_radar.update_layout(
-                        polar=dict(
-                            radialaxis=dict(visible=True, range=[0, 5], tickfont=dict(color="white")),
-                            angularaxis=dict(tickfont=dict(color="white", size=12))
-                        ),
-                        template="plotly_dark",
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        margin=dict(t=50, b=50)
-                    )
+                    if mostra_target:
+                        fig.add_trace(go.Scatterpolar(r=[4,4,4,4], theta=kpis+[kpis[0]], 
+                                                    mode='lines', name='Target D', line=dict(color='red', dash='dash')))
                     
-                    st.plotly_chart(fig_radar, use_container_width=True)
+                    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), 
+                                     template="plotly_dark", title=titolo, margin=dict(t=40, b=40),
+                                     paper_bgcolor='rgba(0,0,0,0)', showlegend=False)
+                    return fig
+    
+                with col_r1:
+                    st.plotly_chart(create_radar(kpi_all, "Focus Allenamento", "Allenamento"), use_container_width=True)
+                with col_r2:
+                    st.plotly_chart(create_radar(kpi_gara, "Focus Gara", "Partita"), use_container_width=True)
+    
+                st.divider()
+    
+                # --- 2. BAR CHART COMPARATIVO ---
+                st.markdown("#### ⚖️ Bilanciamento Attitudine vs Performance")
+                
+                bar_data = []
+                for p in p_focus:
+                    d_p = df_ind_clean[df_ind_clean['Calciatore'] == p]
+                    m_all = d_p[d_p['Contesto'].str.contains("Allenamento")][kpi_all].mean().mean()
+                    m_gara = d_p[d_p['Contesto'].str.contains("Partita")][kpi_gara].mean().mean()
+                    bar_data.append({"Calciatore": p, "Tipo": "Allenamento (Attitudine)", "Valore": m_all})
+                    bar_data.append({"Calciatore": p, "Tipo": "Partita (Efficacia)", "Valore": m_gara})
+                
+                df_bar = pd.DataFrame(bar_data)
+                fig_bar = px.bar(df_bar, x="Calciatore", y="Valore", color="Tipo", barmode="group",
+                                 color_discrete_map={"Allenamento (Attitudine)": "#00CC96", "Partita (Efficacia)": "#636EFA"},
+                                 range_y=[0, 5], template="plotly_dark")
+                fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                st.plotly_chart(fig_bar, use_container_width=True)
+    
+                st.divider()
+    
+                # --- 3. TIMELINE DI CRESCITA ---
+                st.markdown("#### 📈 Timeline Evolutiva")
+                filtro_time = st.segmented_control("Visualizza andamento:", ["Allenamento", "Partita", "Entrambi"], default="Entrambi")
+                
+                fig_time = go.Figure()
+                for i, p in enumerate(p_focus):
+                    d_p = df_ind_clean[df_ind_clean['Calciatore'] == p].copy()
+                    d_p['Data'] = pd.to_datetime(d_p['Data'], format='%d/%m/%Y')
+                    d_p = d_p.sort_values('Data')
                     
-                    # Tabella Note Storiche
-                    with st.expander("📖 Diario delle osservazioni (Note Tecniche)"):
-                        st.table(df_player[['Data', 'Contesto', 'Note']].sort_index(ascending=False))
-
-            except Exception as e:
-                st.error(f"Errore caricamento Dashboard: {e}")
+                    # Calcoliamo la media della sessione (escludendo i NaN)
+                    d_p['Media_Sessione'] = d_p[kpi_cols].mean(axis=1)
+                    
+                    if filtro_time != "Entrambi":
+                        d_p = d_p[d_p['Contesto'].str.contains(filtro_time)]
+                    
+                    fig_time.add_trace(go.Scatter(x=d_p['Data'], y=d_p['Media_Sessione'],
+                                                mode='lines+markers', name=p,
+                                                line=dict(color=colori[i % len(colori)], width=3)))
+    
+                fig_time.update_layout(template="plotly_dark", yaxis_range=[0, 5.2],
+                                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                     xaxis_title="Data Osservazione", yaxis_title="Rating Medio")
+                st.plotly_chart(fig_time, use_container_width=True)
+    
+        except Exception as e:
+            st.error(f"Errore nella generazione dei grafici: {e}")
