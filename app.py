@@ -309,10 +309,8 @@ if ruolo == "Match Analyst":
         if not ragazzi_focus:
             st.warning("Seleziona almeno un ragazzo per iniziare la valutazione.")
         else:
-            # Contenitore per i dati da salvare
             dati_da_salvare = []
             
-            # Generazione dinamica delle schede valutazione
             for p_name in ragazzi_focus:
                 with st.expander(f"Valutazione: {p_name}", expanded=True):
                     col_kpi, col_note = st.columns([2, 1])
@@ -320,66 +318,59 @@ if ruolo == "Match Analyst":
                     with col_kpi:
                         if "Allenamento" in tipo_sessione:
                             st.markdown("**KPI Settimanali (Predisposizione)**")
-                            k1 = st.slider(f"Intensità", 1, 5, 3, key=f"k1_{p_name}{suffix_ind}", help="Dà l'anima o cammina?")
-                            k2 = st.slider(f"Attenzione", 1, 5, 3, key=f"k2_{p_name}{suffix_ind}", help="Ricettività alle istruzioni del Mister")
-                            k3 = st.slider(f"Atteggiamento", 1, 5, 3, key=f"k3_{p_name}{suffix_ind}", help="Reazione emotiva (es. incita i compagni)")
-                            # Mappatura per DB (gli altri 3 KPI restano vuoti o 0)
+                            k1 = st.slider(f"Intensità", 1, 5, 3, key=f"k1_{p_name}{suffix_ind}")
+                            k2 = st.slider(f"Attenzione", 1, 5, 3, key=f"k2_{p_name}{suffix_ind}")
+                            k3 = st.slider(f"Atteggiamento", 1, 5, 3, key=f"k3_{p_name}{suffix_ind}")
                             valori_riga = [k1, k2, k3, 0, 0, 0]
                         else:
                             st.markdown("**KPI Gara (Tenuta Agonistica)**")
-                            k4 = st.slider(f"Efficacia Scelte", 1, 5, 3, key=f"k4_{p_name}{suffix_ind}", help="Decision making sotto pressione")
-                            k5 = st.slider(f"Leadership/Sacrificio", 1, 5, 3, key=f"k5_{p_name}{suffix_ind}", help="Corsa in più per il compagno / Fase difensiva")
-                            k6 = st.slider(f"Resilienza Errore", 1, 5, 3, key=f"k6_{p_name}{suffix_ind}", help="Cosa fa nei 5s dopo aver perso palla?")
-                            # Mappatura per DB (i primi 3 KPI restano vuoti o 0)
+                            k4 = st.slider(f"Efficacia Scelte", 1, 5, 3, key=f"k4_{p_name}{suffix_ind}")
+                            k5 = st.slider(f"Leadership/Sacrificio", 1, 5, 3, key=f"k5_{p_name}{suffix_ind}")
+                            k6 = st.slider(f"Resilienza Errore", 1, 5, 3, key=f"k6_{p_name}{suffix_ind}")
                             valori_riga = [0, 0, 0, k4, k5, k6]
     
                     with col_note:
-                        nota = st.text_area("Evento/Episodio Chiave", placeholder="Esempio: Al 70° rincorre avversario per 40 metri...", key=f"nota_{p_name}{suffix_ind}")
+                        nota = st.text_area("Evento/Episodio Chiave", placeholder="Scrivi qui...", key=f"nota_{p_name}{suffix_ind}")
     
+                    # Costruzione record con i nomi esatti delle colonne del Foglio Google
                     dati_da_salvare.append({
-                        "Data": data_sess.strftime("%d/%m/%Y"),
+                        "Giocatore": p_name,
                         "Contesto": tipo_sessione,
-                        "Calciatore": p_name,
+                        "Data": data_sess.strftime("%d/%m/%Y"),
                         "Intensità": valori_riga[0],
                         "Attenzione": valori_riga[1],
                         "Atteggiamento": valori_riga[2],
-                        "Scelte": valori_riga[3],
+                        "Eff. scelte": valori_riga[3],
                         "Leadership": valori_riga[4],
-                        "Resilienza": valori_riga[5],
+                        "Resil. errore": valori_riga[5],
                         "Note": nota
                     })
     
-        if st.button("💾 INVIA VALUTAZIONI A RSG", use_container_width=True):
-            try:
-                st.cache_data.clear()
+            if st.button("💾 INVIA VALUTAZIONI A RSG", use_container_width=True):
+                try:
+                    st.cache_data.clear()
+                    df_nuovo = pd.DataFrame(dati_da_salvare)
                     
-                # Prepariamo i dati seguendo esattamente il tuo ordine
-                df_nuovo = pd.DataFrame(dati_da_salvare)
+                    # Definizione ordine colonne identico al Foglio Google
+                    ordine_colonne = ["Giocatore", "Contesto", "Data", "Intensità", "Attenzione", "Atteggiamento", "Eff. scelte", "Leadership", "Resil. errore", "Note"]
+                    df_nuovo = df_nuovo[ordine_colonne]
+    
+                    # Lettura e concatenazione
+                    df_esistente = conn.read(worksheet="Individuale", ttl=0)
                     
-                # Riordinamento esplicito delle colonne per sicurezza prima dell'invio
-                ordine_colonne = [
-                    "Calciatore", "Contesto", "Data", 
-                    "Intensità", "Attenzione", "Atteggiamento", 
-                    "Eff. scelte", "Leadership", "Resil. errore", "Note"
-                ]
+                    # Rimuoviamo eventuali colonne "Unnamed" o vuote dal foglio prima di unire
+                    df_esistente = df_esistente.loc[:, ~df_esistente.columns.str.contains('^Unnamed')]
                     
-                # Rinominiano le chiavi del dizionario per matchare il tuo nuovo ordine
-                df_nuovo = df_nuovo.rename(columns={
-                    "Scelte": "Eff. scelte",
-                    "Resilienza": "Resil. errore"
-                })
+                    df_finale = pd.concat([df_esistente, df_nuovo], ignore_index=True)
                     
-                df_nuovo = df_nuovo[ordine_colonne] # Applica l'ordine scelto da te
-        
-                df_esistente = conn.read(worksheet="Individuale", ttl=0)
-                df_finale = pd.concat([df_esistente, df_nuovo], ignore_index=True)
+                    # Aggiornamento cloud
+                    conn.update(worksheet="Individuale", data=df_finale)
                     
-                conn.update(worksheet="Individuale", data=df_finale)
-                st.success(f"✅ Inviate {len(dati_da_salvare)} valutazioni nel database!")
-                st.session_state.reset_ind += 1
-                st.rerun()
-            except Exception as e:
-                st.error(f"Errore nel salvataggio: {e}")
+                    st.success(f"✅ Inviate {len(dati_da_salvare)} valutazioni!")
+                    st.session_state.reset_ind += 1
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Errore nel salvataggio: {e}")
 
 # --- QUI DEVE ESSERE ALLINEATO AL BORDO SINISTRO (o al livello del tuo IF iniziale) ---
 elif ruolo == "Staff Tecnico":
