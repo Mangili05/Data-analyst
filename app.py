@@ -9,8 +9,6 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
 
-Perfetto ho incollato il codice della scritta #WEAREPRO nel css iniziale ed ora mi appare correttamene in tutte le pagine dell'applicazione. Si può fare anche per il logo di avere con un unico codice il logo in tutte?
-Il codice del CSS all'inizio è il seguente:
 # --- STILE CSS PERSONALIZZATO ---
 st.markdown("""
     <style>
