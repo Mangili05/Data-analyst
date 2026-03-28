@@ -133,8 +133,8 @@ st.markdown("""
         </h1>
     </div>
     """,
-        unsafe_allow_html=True
-)
+    unsafe_allow_html=True
+) 
 
 # --- CONNESSIONE GOOGLE SHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
