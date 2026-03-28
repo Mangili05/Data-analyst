@@ -9,7 +9,7 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
 
-# --- 1. CONFIGURAZIONE PAGINA (Deve essere la prima istruzione Streamlit) ---
+# --- 1. CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
 # --- 2. LOGICA CARICAMENTO LOGO ---
@@ -19,7 +19,7 @@ if os.path.exists("logo.png"):
     with open("logo.png", "rb") as f:
         logo_base64 = base64.b64encode(f.read()).decode("utf-8")
 
-# --- 3. STILE CSS UNIFICATO (Logo, Scritta #WEAREPRO e Interfaccia) ---
+# --- 3. STILE CSS UNIFICATO E CORRETTO ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
@@ -27,16 +27,15 @@ st.markdown(f"""
     /* BACKGROUND GENERALE */
     .stApp {{ background-color: #1E3A8A; }}
     
-    /* LOGO FISSO IN ALTO A DESTRA */
+    /* LOGO FISSO IN ALTO A DESTRA (Unico) */
     .fixed-logo-container {{
         position: fixed;
         top: 20px !important;
         right: 20px !important;
         z-index: 10000;
-        display: block;
     }}
     .fixed-logo-img {{
-        width: 110px;
+        width: 100px;
         height: auto;
     }}
 
@@ -63,38 +62,40 @@ st.markdown(f"""
     .text-white {{ color: #ffffff !important; }}
     .text-gold {{ color: #D4AF37 !important; }}
 
-    /* WIDGET E BOTTONI */
+    /* CORREZIONE BOTTONI BIANCHI (Landing Page) */
+    /* Forza il testo blu scuro sui bottoni bianchi per renderli leggibili */
     div.stButton > button {{
-        width: 100%;
-        border-radius: 8px;
-        height: 3em;
         background-color: #ffffff !important;
         color: #1E3A8A !important;
-        font-weight: bold;
+        border-radius: 8px;
+        font-weight: bold !important;
         border: none;
+        height: 3em;
+        width: 100%;
     }}
     
+    /* Hover bottoni */
+    div.stButton > button:hover {{
+        background-color: #f0f0f0 !important;
+        color: #1E3A8A !important;
+    }}
+
+    /* CONTROLLI SEGMENTATI (Squadra/Individuale) */
     div[data-baseweb="segmented-control"] button {{
         color: #ffffff !important;
-        background-color: #262730;
     }}
 
-    div[data-baseweb="segmented-control"] button[aria-checked="true"] {{
-        background-color: #1f67b5 !important;
-    }}
-
-    /* TESTI E INPUT */
+    /* TESTI GENERALI */
     h1, h2, h3, p, label, .stMarkdown {{ color: white !important; }}
-    input {{ color: white !important; }}
     
-    /* SIDEBAR E PULIZIA */
-    [data-testid="stSidebar"] {{ background-color: #112244; }}
+    /* PULIZIA INTERFACCIA */
     #MainMenu, footer, header {{ visibility: hidden; }}
+    [data-testid="stSidebar"] {{ background-color: #112244; }}
 
     /* RESPONSIVE MOBILE */
     @media (max-width: 768px) {{
-        .fixed-logo-img {{ width: 70px; }}
-        .header-text {{ font-size: 28px !important; }}
+        .fixed-logo-img {{ width: 60px; }}
+        .header-text {{ font-size: 26px !important; }}
         .fixed-logo-container, .centered-header {{ top: 10px !important; }}
     }}
     </style>
