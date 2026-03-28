@@ -301,7 +301,7 @@ if ruolo == "Match Analyst":
                 <style>
                 .fixed-logo-container {{
                     position: fixed;
-                    top: 60px; /* Distanza dal bordo superiore della finestra */
+                    top: 20px; /* Distanza dal bordo superiore della finestra */
                     right: 20px; /* Distanza dal bordo destro della finestra */
                     z-index: 99999; /* Assicura che stia sopra a TUTTO */
                     display: block;
