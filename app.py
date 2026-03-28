@@ -80,8 +80,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- SCRITTA #WEAREPRO BICOLORE AL CENTRO IN ALTO ---
-st.markdown(
-    """
+st.markdown("""
     <style>
     /* Importiamo un font molto spesso e moderno */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
