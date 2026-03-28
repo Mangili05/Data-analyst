@@ -290,7 +290,7 @@ if ruolo == "Match Analyst":
 # =========================================================
     else:
         st.markdown("### 👤 MONITORAGGIO ATTITUDINALE PROIETTIVO")
-        st.info("Focus su 3/4 ragazzi per sessione - Obiettivo: Valutazione Proiezione Serie D")
+        st.info("Obiettivo: Valutazione Proiezione Serie D")
         
         if "reset_ind" not in st.session_state: st.session_state.reset_ind = 0
         suffix_ind = f"_ind_{st.session_state.reset_ind}"
@@ -302,37 +302,33 @@ if ruolo == "Match Analyst":
         with ci2: 
             data_sess = st.date_input("Data Osservazione", key=f"date_sess{suffix_ind}")
         with ci3: 
-            ragazzi_focus = st.multiselect("Ragazzi in Focus (max 4)", lista_calciatori[1:], max_selections=4, key=f"focus_players{suffix_ind}")
+            ragazzi_focus = st.multiselect("Ragazzi in Focus", lista_calciatori[1:], max_selections=4, key=f"focus_players{suffix_ind}")
     
         st.divider()
     
         if not ragazzi_focus:
-            st.warning("Seleziona almeno un ragazzo per iniziare la valutazione.")
+            st.warning("Seleziona almeno un ragazzo.")
         else:
             dati_da_salvare = []
             
             for p_name in ragazzi_focus:
                 with st.expander(f"Valutazione: {p_name}", expanded=True):
                     col_kpi, col_note = st.columns([2, 1])
-                    
                     with col_kpi:
                         if "Allenamento" in tipo_sessione:
-                            st.markdown("**KPI Settimanali (Predisposizione)**")
                             k1 = st.slider(f"Intensità", 1, 5, 3, key=f"k1_{p_name}{suffix_ind}")
                             k2 = st.slider(f"Attenzione", 1, 5, 3, key=f"k2_{p_name}{suffix_ind}")
                             k3 = st.slider(f"Atteggiamento", 1, 5, 3, key=f"k3_{p_name}{suffix_ind}")
                             valori_riga = [k1, k2, k3, 0, 0, 0]
                         else:
-                            st.markdown("**KPI Gara (Tenuta Agonistica)**")
                             k4 = st.slider(f"Efficacia Scelte", 1, 5, 3, key=f"k4_{p_name}{suffix_ind}")
                             k5 = st.slider(f"Leadership/Sacrificio", 1, 5, 3, key=f"k5_{p_name}{suffix_ind}")
                             k6 = st.slider(f"Resilienza Errore", 1, 5, 3, key=f"k6_{p_name}{suffix_ind}")
                             valori_riga = [0, 0, 0, k4, k5, k6]
     
                     with col_note:
-                        nota = st.text_area("Evento/Episodio Chiave", placeholder="Scrivi qui...", key=f"nota_{p_name}{suffix_ind}")
+                        nota = st.text_area("Note", key=f"nota_{p_name}{suffix_ind}")
     
-                    # Costruzione record con i nomi esatti delle colonne del Foglio Google
                     dati_da_salvare.append({
                         "Giocatore": p_name,
                         "Contesto": tipo_sessione,
@@ -349,28 +345,30 @@ if ruolo == "Match Analyst":
             if st.button("💾 INVIA VALUTAZIONI A RSG", use_container_width=True):
                 try:
                     st.cache_data.clear()
+                    # 1. Creiamo il nuovo DataFrame
                     df_nuovo = pd.DataFrame(dati_da_salvare)
-                    
-                    # Definizione ordine colonne identico al Foglio Google
-                    ordine_colonne = ["Giocatore", "Contesto", "Data", "Intensità", "Attenzione", "Atteggiamento", "Eff. scelte", "Leadership", "Resil. errore", "Note"]
-                    df_nuovo = df_nuovo[ordine_colonne]
+                    ordine_esatto = ["Giocatore", "Contesto", "Data", "Intensità", "Attenzione", "Atteggiamento", "Eff. scelte", "Leadership", "Resil. errore", "Note"]
+                    df_nuovo = df_nuovo[ordine_esatto]
     
-                    # Lettura e concatenazione
+                    # 2. Leggiamo il database esistente
                     df_esistente = conn.read(worksheet="Individuale", ttl=0)
                     
-                    # Rimuoviamo eventuali colonne "Unnamed" o vuote dal foglio prima di unire
-                    df_esistente = df_esistente.loc[:, ~df_esistente.columns.str.contains('^Unnamed')]
-                    
+                    # --- IL FIX CRUCIALE ---
+                    # Tagliamo via qualsiasi colonna extra oltre la decima (Note) 
+                    # e rinominiamo forzatamente le colonne per farle coincidere al 100%
+                    df_esistente = df_esistente.iloc[:, :10] 
+                    df_esistente.columns = ordine_esatto 
+                    # -----------------------
+    
+                    # 3. Concateniamo e aggiorniamo
                     df_finale = pd.concat([df_esistente, df_nuovo], ignore_index=True)
-                    
-                    # Aggiornamento cloud
                     conn.update(worksheet="Individuale", data=df_finale)
                     
-                    st.success(f"✅ Inviate {len(dati_da_salvare)} valutazioni!")
+                    st.success("✅ Salvataggio completato con successo nell'ordine corretto!")
                     st.session_state.reset_ind += 1
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Errore nel salvataggio: {e}")
+                    st.error(f"Errore: {e}")
 
 # --- QUI DEVE ESSERE ALLINEATO AL BORDO SINISTRO (o al livello del tuo IF iniziale) ---
 elif ruolo == "Staff Tecnico":
