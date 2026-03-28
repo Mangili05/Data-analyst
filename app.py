@@ -349,7 +349,7 @@ if ruolo == "Match Analyst":
                         "Note": nota
                     })
     
-                if st.button("💾 INVIA VALUTAZIONI A RSG", use_container_width=True):
+          if st.button("💾 INVIA VALUTAZIONI A RSG", use_container_width=True):
             try:
                 st.cache_data.clear()
                 
