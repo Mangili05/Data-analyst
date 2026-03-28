@@ -346,7 +346,7 @@ if ruolo == "Match Analyst":
                 color: #ffffff;
                 font-family: 'Inter', sans-serif;
                 font-weight: 800;
-                font-size: 24px;
+                font-size: 48px;
                 letter-spacing: 2px;
                 text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
                 margin: 0;
