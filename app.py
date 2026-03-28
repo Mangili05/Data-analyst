@@ -349,37 +349,37 @@ if ruolo == "Match Analyst":
                         "Note": nota
                     })
     
-              if st.button("💾 INVIA VALUTAZIONI A RSG", use_container_width=True):
-                try:
-                    st.cache_data.clear()
+        if st.button("💾 INVIA VALUTAZIONI A RSG", use_container_width=True):
+            try:
+                st.cache_data.clear()
                     
-                    # Prepariamo i dati seguendo esattamente il tuo ordine
-                    df_nuovo = pd.DataFrame(dati_da_salvare)
+                # Prepariamo i dati seguendo esattamente il tuo ordine
+                df_nuovo = pd.DataFrame(dati_da_salvare)
                     
-                    # Riordinamento esplicito delle colonne per sicurezza prima dell'invio
-                    ordine_colonne = [
-                        "Calciatore", "Contesto", "Data", 
-                        "Intensità", "Attenzione", "Atteggiamento", 
-                        "Eff. scelte", "Leadership", "Resil. errore", "Note"
-                    ]
+                # Riordinamento esplicito delle colonne per sicurezza prima dell'invio
+                ordine_colonne = [
+                    "Calciatore", "Contesto", "Data", 
+                    "Intensità", "Attenzione", "Atteggiamento", 
+                    "Eff. scelte", "Leadership", "Resil. errore", "Note"
+                ]
                     
-                    # Rinominiano le chiavi del dizionario per matchare il tuo nuovo ordine
-                    df_nuovo = df_nuovo.rename(columns={
-                        "Scelte": "Eff. scelte",
-                        "Resilienza": "Resil. errore"
-                    })
+                # Rinominiano le chiavi del dizionario per matchare il tuo nuovo ordine
+                df_nuovo = df_nuovo.rename(columns={
+                    "Scelte": "Eff. scelte",
+                    "Resilienza": "Resil. errore"
+                })
                     
-                    df_nuovo = df_nuovo[ordine_colonne] # Applica l'ordine scelto da te
+                df_nuovo = df_nuovo[ordine_colonne] # Applica l'ordine scelto da te
         
-                    df_esistente = conn.read(worksheet="Individuale", ttl=0)
-                    df_finale = pd.concat([df_esistente, df_nuovo], ignore_index=True)
+                df_esistente = conn.read(worksheet="Individuale", ttl=0)
+                df_finale = pd.concat([df_esistente, df_nuovo], ignore_index=True)
                     
-                    conn.update(worksheet="Individuale", data=df_finale)
-                    st.success(f"✅ Inviate {len(dati_da_salvare)} valutazioni nel database!")
-                    st.session_state.reset_ind += 1
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Errore nel salvataggio: {e}")
+                conn.update(worksheet="Individuale", data=df_finale)
+                st.success(f"✅ Inviate {len(dati_da_salvare)} valutazioni nel database!")
+                st.session_state.reset_ind += 1
+                st.rerun()
+             except Exception as e:
+                st.error(f"Errore nel salvataggio: {e}")
 
 # --- QUI DEVE ESSERE ALLINEATO AL BORDO SINISTRO (o al livello del tuo IF iniziale) ---
 elif ruolo == "Staff Tecnico":
