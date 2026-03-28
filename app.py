@@ -299,19 +299,18 @@ if ruolo == "Match Analyst":
                 <style>
                 .logo-container {{
                     position: absolute;
-                    top: -50px; /* Regola l'altezza verticale */
-                    right: 0px; /* Regola la posizione orizzontale */
+                    top: -50px;
+                    right: 0px;
                     z-index: 100;
                 }}
                 .logo-img {{
-                    width: 100px; /* Larghezza del logo su PC */
+                    width: 100px;
                     height: auto;
                 }}
-                /* Regolazioni per Smartphone */
                 @media (max-width: 768px) {{
                     .logo-img {{
-                        width: 70px; /* Più piccolo su mobile per non coprire il testo */
-                    }
+                        width: 70px;
+                    }}
                     .logo-container {{
                         top: -40px;
                     }}
@@ -322,8 +321,7 @@ if ruolo == "Match Analyst":
                 </div>
                 """,
                 unsafe_allow_html=True
-            
-        )
+            )
 
         st.markdown("### 👤 MONITORAGGIO ATTITUDINALE PROIETTIVO")
         st.info("Obiettivo: Valutazione Proiezione Serie D")
