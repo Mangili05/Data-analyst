@@ -9,201 +9,106 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
 
-# --- STILE CSS PERSONALIZZATO ---
-st.markdown("""
-    <style>
-    /* Forza il colore del testo nei bottoni e nei controlli segmentati */
-    div.stButton > button, 
-    div[data-baseweb="segmented-control"] button {
-        color: #ffffff !important;
-        background-color: #262730;
-        border: 1px solid #4b4b4b;
-    }
-
-    /* Assicura che il testo rimanga visibile anche negli stati attivi/selezionati */
-    div[data-baseweb="segmented-control"] button[aria-checked="true"] {
-        color: #ffffff !important;
-        background-color: #1f67b5 !important;
-    }
-
-    /* Colore del testo nelle etichette dei radio button e checkbox */
-    .stMarkdown p, .stRadio label {
-        color: #ffffff !important;
-    }
-    
-    /* Forza visibilità scritte dentro i widget di input */
-    input {
-        color: #ffffff !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- CONFIGURAZIONE PAGINA ---
+# --- 1. CONFIGURAZIONE PAGINA (Deve essere la prima istruzione Streamlit) ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
-# --- CONFIGURAZIONE STILE CSS (Unificato) ---
-st.markdown("""
-    <style>
-    .stApp { background-color: #1E3A8A; }
-    
-    /* Testi bianchi ovunque */
-    h1, h2, h3, p, label, .stMarkdown { color: white !important; }
-    .stSelectbox label p { color: white !important; }
-
-    /* Logo in alto a destra */
-    .logo-top-right {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-    }
-
-    /* Bottoni bianchi (Landing Page) */
-    .stButton>button {
-        width: 100%;
-        border-radius: 8px;
-        height: 3em;
-        background-color: #ffffff;
-        color: #1E3A8A !important;
-        font-weight: bold;
-        border: none;
-    }
-    
-    /* Pulizia Sidebar */
-    [data-testid="stSidebar"] { background-color: #112244; }
-    
-    /* Nascondi header Streamlit */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- SCRITTA #WEAREPRO BICOLORE AL CENTRO IN ALTO ---
-st.markdown("""
-    <style>
-    /* Importiamo un font molto spesso e moderno */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
-        
-    .centered-header {
-        position: fixed;
-        top: 15px !important; /* Distanza dal bordo superiore */
-        left: 0;
-        right: 0;
-        width: 100%;
-        z-index: 9999; /* Sopra a tutto */
-        text-align: center;
-        pointer-events: none; /* Non blocca i click sui widget sottostanti */
-        background-color: transparent !important;
-    }
-    .header-text {
-        font-family: 'Inter', sans-serif !important;
-        font-size: 60px !important; /* Dimensione su PC, regolala qui */
-        font-weight: 900 !important;
-        letter-spacing: 3px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        text-transform: uppercase;
-        /* Ombra leggera per staccare dallo sfondo se necessario */
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    /* Parte Bianca: #WEARE */
-    .text-white {
-        color: #ffffff !important;
-    }
-    /* Parte Oro: PRO */
-    .text-gold {
-        color: #D4AF37 !important; /* Oro del Logo Pro Palazzolo */
-     }
-        
-    /* Regolazioni dinamiche per Smartphone (schermi piccoli) */
-    @media (max-width: 768px) {
-        .header-text {
-            font-size: 30px !important; /* Più piccolo su mobile */
-            letter-spacing: 1px !important;
-        }
-        .centered-header {
-            top: 10px !important;
-        }
-    }
-    </style>
-    <div class="centered-header">
-        <h1 class="header-text">
-            <span class="text-white">#WEARE</span><span class="text-gold">PRO</span>
-        </h1>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-# --- LOGO E SCRITTA FISSI (Per tutte le pagine) ---
+# --- 2. LOGICA CARICAMENTO LOGO ---
+logo_base64 = ""
 if os.path.exists("logo.png"):
-    import base64
-    with open("logo.png", "rb") as f:
-        data = base64.b64encode(f.read()).decode("utf-8")
-    
-    st.markdown(
-        f"""
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
+    import base64
+    with open("logo.png", "rb") as f:
+        logo_base64 = base64.b64encode(f.read()).decode("utf-8")
 
-        /* 1. LOGO IN ALTO A DESTRA */
-        .fixed-logo-container {{
-            position: fixed;
-            top: 20px !important;
-            right: 20px !important;
-            z-index: 10000;
-            display: block;
-        }}
-        .fixed-logo-img {{
-            width: 110px; /* Dimensione PC */
-            height: auto;
-        }}
+# --- 3. STILE CSS UNIFICATO (Logo, Scritta #WEAREPRO e Interfaccia) ---
+st.markdown(f"""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
 
-        /* 2. SCRITTA #WEAREPRO AL CENTRO */
-        .centered-header {{
-            position: fixed;
-            top: 15px !important;
-            left: 0;
-            right: 0;
-            width: 100%;
-            z-index: 9999;
-            text-align: center;
-            pointer-events: none;
-        }}
-        .header-text {{
-            font-family: 'Inter', sans-serif !important;
-            font-size: 60px !important;
-            font-weight: 900 !important;
-            letter-spacing: 3px !important;
-            text-transform: uppercase;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            margin: 0;
-        }}
-        .text-white {{ color: #ffffff !important; }}
-        .text-gold {{ color: #D4AF37 !important; }}
+    /* BACKGROUND GENERALE */
+    .stApp {{ background-color: #1E3A8A; }}
+    
+    /* LOGO FISSO IN ALTO A DESTRA */
+    .fixed-logo-container {{
+        position: fixed;
+        top: 20px !important;
+        right: 20px !important;
+        z-index: 10000;
+        display: block;
+    }}
+    .fixed-logo-img {{
+        width: 110px;
+        height: auto;
+    }}
 
-        /* 3. REGOLAZIONI MOBILE */
-        @media (max-width: 768px) {{
-            .fixed-logo-img {{ width: 70px; }}
-            .fixed-logo-container {{ top: 10px !important; right: 10px !important; }}
-            .header-text {{ font-size: 28px !important; letter-spacing: 1px !important; }}
-            .centered-header {{ top: 10px !important; }}
-        }}
-        </style>
+    /* SCRITTA #WEAREPRO CENTRALE */
+    .centered-header {{
+        position: fixed;
+        top: 15px !important;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 9999;
+        text-align: center;
+        pointer-events: none;
+    }}
+    .header-text {{
+        font-family: 'Inter', sans-serif !important;
+        font-size: 60px !important;
+        font-weight: 900 !important;
+        letter-spacing: 3px !important;
+        text-transform: uppercase;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        margin: 0;
+    }}
+    .text-white {{ color: #ffffff !important; }}
+    .text-gold {{ color: #D4AF37 !important; }}
 
-        <div class="fixed-logo-container">
-            <img src="data:image/png;base64,{data}" class="fixed-logo-img">
-        </div>
+    /* WIDGET E BOTTONI */
+    div.stButton > button {{
+        width: 100%;
+        border-radius: 8px;
+        height: 3em;
+        background-color: #ffffff !important;
+        color: #1E3A8A !important;
+        font-weight: bold;
+        border: none;
+    }}
+    
+    div[data-baseweb="segmented-control"] button {{
+        color: #ffffff !important;
+        background-color: #262730;
+    }}
 
-        <div class="centered-header">
-            <h1 class="header-text">
-                <span class="text-white">#WEARE</span><span class="text-gold">PRO</span>
-            </h1>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    div[data-baseweb="segmented-control"] button[aria-checked="true"] {{
+        background-color: #1f67b5 !important;
+    }}
+
+    /* TESTI E INPUT */
+    h1, h2, h3, p, label, .stMarkdown {{ color: white !important; }}
+    input {{ color: white !important; }}
+    
+    /* SIDEBAR E PULIZIA */
+    [data-testid="stSidebar"] {{ background-color: #112244; }}
+    #MainMenu, footer, header {{ visibility: hidden; }}
+
+    /* RESPONSIVE MOBILE */
+    @media (max-width: 768px) {{
+        .fixed-logo-img {{ width: 70px; }}
+        .header-text {{ font-size: 28px !important; }}
+        .fixed-logo-container, .centered-header {{ top: 10px !important; }}
+    }}
+    </style>
+
+    <div class="fixed-logo-container">
+        <img src="data:image/png;base64,{logo_base64}" class="fixed-logo-img">
+    </div>
+
+    <div class="centered-header">
+        <h1 class="header-text">
+            <span class="text-white">#WEARE</span><span class="text-gold">PRO</span>
+        </h1>
+    </div>
+""", unsafe_allow_html=True)
 
 # --- CONNESSIONE GOOGLE SHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
