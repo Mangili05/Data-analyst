@@ -328,7 +328,49 @@ if ruolo == "Match Analyst":
                 """,
                 unsafe_allow_html=True
             )
+        
+    # --- SCRITTA #WEAREPRO AL CENTRO IN ALTO ---
+        st.markdown(
+            """
+            <style>
+            .centered-header {
+                position: fixed;
+                top: 15px; /* Allineato quasi al bordo superiore */
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 99998; /* Appena sotto il logo per sicurezza */
+                text-align: center;
+                width: 100%;
+            }
+            .header-text {
+                color: #ffffff;
+                font-family: 'Inter', sans-serif;
+                font-weight: 800;
+                font-size: 24px;
+                letter-spacing: 2px;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+                margin: 0;
+                padding: 0;
+            }
+            /* Regolazione per Smartphone */
+            @media (max-width: 768px) {
+                .header-text {
+                    font-size: 18px;
+                    letter-spacing: 1px;
+                }
+                .centered-header {
+                    top: 10px;
+                }
+            }
+            </style>
+            <div class="centered-header">
+                <p class="header-text">#WEAREPRO</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
+        
         st.markdown("### 👤 MONITORAGGIO ATTITUDINALE PROIETTIVO")
         st.info("Obiettivo: Valutazione Proiezione Serie D")
         
