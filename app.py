@@ -198,6 +198,13 @@ ruolo = st.session_state.profilo
 # LOGICA MATCH ANALYST
 # =========================================================
 if ruolo == "Match Analyst":
+
+    # --- TASTO TORNA ALLA HOME ---
+    if st.button("⬅️ Torna alla Home", key="home_btn_ma"):
+        # Resetta la scelta e ricarica la pagina
+        st.session_state.ruolo = None  # Cambia 'ruolo' se la tua variabile si chiama diversamente
+        st.rerun()
+    
     st.markdown("## 🛠️ CONSOLE MATCH ANALYST")
     st.markdown("<p style='color: #8b949e;'>Inserimento dati e gestione database</p>", unsafe_allow_html=True)
 
