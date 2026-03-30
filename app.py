@@ -201,8 +201,9 @@ if ruolo == "Match Analyst":
 
     # --- TASTO TORNA ALLA HOME ---
     if st.button("⬅️ Torna alla Home", key="home_btn_ma"):
-        # Resetta la scelta e ricarica la pagina
-        st.session_state.ruolo = None  # Cambia 'ruolo' se la tua variabile si chiama diversamente
+        # Resetta l'autenticazione e il profilo scelto
+        st.session_state.autenticato = False
+        st.session_state.profilo = None
         st.rerun()
     
     st.markdown("## 🛠️ CONSOLE MATCH ANALYST")
@@ -521,8 +522,9 @@ elif ruolo == "Staff Tecnico":
 
     # --- TASTO TORNA ALLA HOME ---
     if st.button("⬅️ Torna alla Home", key="home_btn_staff"):
-        # Resetta la scelta e ricarica la pagina
-        st.session_state.ruolo = None  # Cambia 'ruolo' se la tua variabile si chiama diversamente
+        # Resetta l'autenticazione e il profilo scelto
+        st.session_state.autenticato = False
+        st.session_state.profilo = None
         st.rerun()
     
     st.markdown("## 📊 DASHBOARD PERFORMANCE")
