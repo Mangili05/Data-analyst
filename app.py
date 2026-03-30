@@ -188,9 +188,6 @@ if not st.session_state.autenticato:
 # --- SIDEBAR (DOPO LOGIN) ---
 st.sidebar.image("logo.png", width=120)
 st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
-if st.sidebar.button("⬅️ LOGOUT"):
-    st.session_state.autenticato = False
-    st.rerun()
 
 ruolo = st.session_state.profilo
 
