@@ -433,7 +433,7 @@ if ruolo == "Match Analyst":
                 unsafe_allow_html=True
             )
         
-        st.markdown("### 👤 MONITORAGGIO ATTITUDINALE PROIETTIVO")
+        st.markdown("### 🧠 MONITORAGGIO ATTITUDINALE PROIETTIVO")
         st.info("Obiettivo: Valutazione Proiezione Serie D")
         
         if "reset_ind" not in st.session_state: st.session_state.reset_ind = 0
