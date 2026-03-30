@@ -441,7 +441,7 @@ if ruolo == "Match Analyst":
         with ci2: 
             data_sess = st.date_input("Data Osservazione", key=f"date_sess{suffix_ind}")
         with ci3: 
-            ragazzi_focus = st.multiselect("Ragazzi in Focus", lista_calciatori[1:], max_selections=4, key=f"focus_players{suffix_ind}")
+            ragazzi_focus = st.multiselect("Calciatori", lista_calciatori[1:], max_selections=4, key=f"focus_players{suffix_ind}")
     
         st.divider()
     
