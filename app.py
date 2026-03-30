@@ -434,7 +434,6 @@ if ruolo == "Match Analyst":
             )
         
         st.markdown("### 🧠 MONITORAGGIO ATTITUDINALE PROIETTIVO")
-        st.info("Obiettivo: Valutazione Proiezione Serie D")
         
         if "reset_ind" not in st.session_state: st.session_state.reset_ind = 0
         suffix_ind = f"_ind_{st.session_state.reset_ind}"
