@@ -518,6 +518,13 @@ if ruolo == "Match Analyst":
 
 # --- QUI DEVE ESSERE ALLINEATO AL BORDO SINISTRO (o al livello del tuo IF iniziale) ---
 elif ruolo == "Staff Tecnico":
+
+    # --- TASTO TORNA ALLA HOME ---
+    if st.button("⬅️ Torna alla Home", key="home_btn_staff"):
+        # Resetta la scelta e ricarica la pagina
+        st.session_state.ruolo = None  # Cambia 'ruolo' se la tua variabile si chiama diversamente
+        st.rerun()
+    
     st.markdown("## 📊 DASHBOARD PERFORMANCE")
     st.markdown("<p style='color: #8b949e;'>Pro Palazzolo U16 - Area Consultazione Staff</p>", unsafe_allow_html=True)
 
