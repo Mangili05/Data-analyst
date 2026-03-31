@@ -661,6 +661,7 @@ elif st.session_state.profilo == "Staff Tecnico":
                                                value=(min_date, max_date),
                                                min_value=min_date,
                                                max_value=max_date,
+                                               format="DD/MM/YYYY",
                                                key="timeline_date_range")
                 
                 fig_time = go.Figure()
