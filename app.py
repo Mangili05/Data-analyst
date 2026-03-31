@@ -9,17 +9,14 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
 
-# --- CONFIGURAZIONE PAGINA (Sempre al primo posto) ---
+# --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Football Data Analyst", layout="wide")
 
-# --- 1. STILE CSS GLOBALE E RESET ---
+# --- 1. STILE CSS GLOBALE ---
 st.markdown("""
     <style>
-    /* Sfondo App e Testi */
     .stApp { background-color: #1E3A8A; }
     h1, h2, h3, p, label, .stMarkdown { color: white !important; }
-    
-    /* Forza visibilità widget */
     div.stButton > button, div[data-baseweb="segmented-control"] button {
         color: #ffffff !important;
         background-color: #262730;
@@ -29,53 +26,17 @@ st.markdown("""
         color: #ffffff !important;
         background-color: #1f67b5 !important;
     }
-    input { color: #ffffff !important; }
-
-    /* Sidebar */
-    [data-testid="stSidebar"] { background-color: #112244; }
-    
-    /* Nascondi header Streamlit originale per fare spazio al nostro */
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-
-    /* SPAZIATURA PER HEADER FISSO (aumentata per contenere il logo) */
-    .block-container {
-        padding-top: 130px !important;
-    }
-
-    /* HEADER FISSO: SCRITTA #WEAREPRO */
+    .block-container { padding-top: 130px !important; }
     .centered-header {
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        width: 100%;
-        height: 110px; /* ALTEZZA AUMENTATA PER NON TAGLIARE IL LOGO */
-        background-color: #1E3A8A; /* Blu solido per coprire lo scorrimento */
-        z-index: 9999;
-        text-align: center;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        position: fixed; top: 0; left: 0; right: 0;
+        width: 100%; height: 110px; background-color: #1E3A8A;
+        z-index: 9999; text-align: center; display: flex;
+        align-items: center; justify-content: center;
         border-bottom: 2px solid rgba(255,255,255,0.1);
     }
-    .header-text {
-        font-family: 'Inter', sans-serif !important;
-        font-size: 50px !important;
-        font-weight: 900 !important;
-        margin: 0 !important;
-        text-transform: uppercase;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-
-    /* LOGO FISSO IN ALTO A DESTRA */
-    .fixed-logo-container {
-        position: fixed;
-        top: 10px; /* SPOSTATO PIU' IN ALTO */
-        right: 25px;
-        z-index: 10000;
-    }
-    .fixed-logo-img { width: 90px; height: auto; } /* DIMENSIONE ADATTATA ALLA BARRA */
-
-    /* Responsive Mobile */
+    .header-text { font-family: 'Inter', sans-serif !important; font-size: 50px !important; font-weight: 900 !important; text-transform: uppercase; }
+    .fixed-logo-container { position: fixed; top: 10px; right: 25px; z-index: 10000; }
+    .fixed-logo-img { width: 90px; height: auto; }
     @media (max-width: 768px) {
         .header-text { font-size: 26px !important; }
         .fixed-logo-img { width: 60px; }
@@ -85,9 +46,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# =========================================================
-# HEADER E LOGO UNIVERSALE (Spostato all'inizio per vederlo anche nel Login)
-# =========================================================
+# --- HEADER E LOGO ---
 logo_base64 = ""
 if os.path.exists("logo.png"):
     with open("logo.png", "rb") as f:
@@ -95,34 +54,30 @@ if os.path.exists("logo.png"):
 
 st.markdown(f"""
     <div class="centered-header">
-        <h1 class="header-text">
-            <span style="color: #ffffff;">#WEARE</span><span style="color: #D4AF37;">PRO</span>
-        </h1>
+        <h1 class="header-text"><span style="color: #ffffff;">#WEARE</span><span style="color: #D4AF37;">PRO</span></h1>
     </div>
-    <div class="fixed-logo-container">
-        <img src="data:image/png;base64,{logo_base64}" class="fixed-logo-img">
-    </div>
+    <div class="fixed-logo-container"><img src="data:image/png;base64,{logo_base64}" class="fixed-logo-img"></div>
 """, unsafe_allow_html=True)
 
-# --- CONNESSIONE E FUNZIONI ---
+# --- CONNESSIONE ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 
+# --- VARIABILI DI STATO E DATI ---
 if "reset_counter" not in st.session_state: st.session_state.reset_counter = 0
-def reset_campi():
-    st.session_state.reset_counter += 1
-    if 'off_coords' in st.session_state: del st.session_state['off_coords']
-    if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
-
-squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
-lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
-
-# --- LOGIN LOGIC ---
 if "autenticato" not in st.session_state:
     st.session_state.autenticato = False
     st.session_state.profilo = None
 
+def reset_campi():
+    st.session_state.reset_counter += 1
+    for key in ['off_coords', 'def_tiro_coords']:
+        if key in st.session_state: del st.session_state[key]
+
+squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
+lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
+
+# --- LOGIN ---
 if not st.session_state.autenticato:
-    # IL LOGO CENTRALE E' STATO RIMOSSO
     _, col_main, _ = st.columns([1, 2, 1])
     with col_main:
         st.markdown("<h1 style='text-align: center;'>⚽ ANALISI DATI</h1>", unsafe_allow_html=True)
@@ -140,18 +95,17 @@ if not st.session_state.autenticato:
                 st.rerun()
     st.stop()
 
-# --- SIDEBAR ---
+# --- SIDEBAR COMUNE ---
 st.sidebar.image("logo.png", width=100)
 st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
+if st.sidebar.button("Logout"):
+    st.session_state.autenticato = False
+    st.rerun()
 
 # =========================================================
-# LOGICA MATCH ANALYST
+# 1. LOGICA MATCH ANALYST
 # =========================================================
 if st.session_state.profilo == "Match Analyst":
-    if st.button("⬅️ Torna alla Home"):
-        st.session_state.autenticato = False
-        st.rerun()
-    
     st.markdown("## 🛠️ CONSOLE MATCH ANALYST")
     scelta_analisi = st.segmented_control("OGGETTO DI ANALISI", ["Squadra", "Individuale"], default="Squadra")
     
@@ -555,147 +509,147 @@ elif st.session_state.profilo == "Staff Tecnico":
 # ---------------------------------------------------------
 # TAB PROFILO CALCIATORE (Versione Staff Tecnico - Pulizia Automatica)
 # ---------------------------------------------------------
-with t_individuo:
-    st.markdown("### 🎯 Analisi Delle Prestazioni Individuali")
+    with t_individuo:
+        st.markdown("### 🎯 Analisi Delle Prestazioni Individuali")
+        
+        try:
+            # 1. Caricamento e Pulizia
+            df_ind = conn.read(worksheet="Individuale", ttl=0)
+            df_ind_clean = df_ind.copy()
+            
+            kpi_all = ['Intensità', 'Attenzione', 'Atteggiamento']
+            kpi_gara = ['Eff. scelte', 'Leadership', 'Resil. errore']
+            kpi_totali = kpi_all + kpi_gara
+            
+            df_ind_clean['Data'] = pd.to_datetime(df_ind_clean['Data'], dayfirst=True).dt.date
+            for col in kpi_totali:
+                df_ind_clean[col] = pd.to_numeric(df_ind_clean[col], errors='coerce').replace(0, pd.NA)
     
-    try:
-        # 1. Caricamento e Pulizia
-        df_ind = conn.read(worksheet="Individuale", ttl=0)
-        df_ind_clean = df_ind.copy()
-        
-        kpi_all = ['Intensità', 'Attenzione', 'Atteggiamento']
-        kpi_gara = ['Eff. scelte', 'Leadership', 'Resil. errore']
-        kpi_totali = kpi_all + kpi_gara
-        
-        df_ind_clean['Data'] = pd.to_datetime(df_ind_clean['Data'], dayfirst=True).dt.date
-        for col in kpi_totali:
-            df_ind_clean[col] = pd.to_numeric(df_ind_clean[col], errors='coerce').replace(0, pd.NA)
-
-        # 2. Selezione Giocatori
-        p_focus = st.multiselect("Seleziona uno o più atleti da analizzare", 
-                               lista_calciatori[1:], 
-                               max_selections=3,
-                               key="p_multi_staff")
-
-        if not p_focus:
-            st.info("💡 Seleziona uno o più calciatori per visualizzare l'analisi.")
-        else:
-            # --- 1. RADAR CHARTS CON LOGICA DI VISIBILITÀ ---
-            st.markdown("#### 📊 Skill Set: Allenamento vs Partita")
-            
-            date_disponibili_radar = sorted(df_ind_clean['Data'].unique(), reverse=True)
-            sel_date_radar = st.multiselect("📅 Filtra Radar per Data (vuoto = Totale)", 
-                                           options=date_disponibili_radar,
-                                           key="filter_date_radar")
-
-            col_r1, col_r2 = st.columns(2)
-            colori = ['#FFD700', '#00BFFF', '#FF4500'] 
-
-            # Funzione interna per verificare se ci sono dati per quel contesto/data
-            def get_filtered_data(contesto_filtro, date_filtro):
-                mask = (df_ind_clean['Giocatore'].isin(p_focus)) & \
-                       (df_ind_clean['Contesto'].str.contains(contesto_filtro, na=False))
-                if date_filtro:
-                    mask = mask & (df_ind_clean['Data'].isin(date_filtro))
-                return df_ind_clean[mask]
-
-            # Dati filtrati per i due radar
-            df_radar_all = get_filtered_data("Allenamento", sel_date_radar)
-            df_radar_gara = get_filtered_data("Partita", sel_date_radar)
-
-            def create_radar_fig(df_filtered, kpis, titolo):
-                fig = go.Figure()
+            # 2. Selezione Giocatori
+            p_focus = st.multiselect("Seleziona uno o più atleti da analizzare", 
+                                   lista_calciatori[1:], 
+                                   max_selections=3,
+                                   key="p_multi_staff")
+    
+            if not p_focus:
+                st.info("💡 Seleziona uno o più calciatori per visualizzare l'analisi.")
+            else:
+                # --- 1. RADAR CHARTS CON LOGICA DI VISIBILITÀ ---
+                st.markdown("#### 📊 Skill Set: Allenamento vs Partita")
+                
+                date_disponibili_radar = sorted(df_ind_clean['Data'].unique(), reverse=True)
+                sel_date_radar = st.multiselect("📅 Filtra Radar per Data (vuoto = Totale)", 
+                                               options=date_disponibili_radar,
+                                               key="filter_date_radar")
+    
+                col_r1, col_r2 = st.columns(2)
+                colori = ['#FFD700', '#00BFFF', '#FF4500'] 
+    
+                # Funzione interna per verificare se ci sono dati per quel contesto/data
+                def get_filtered_data(contesto_filtro, date_filtro):
+                    mask = (df_ind_clean['Giocatore'].isin(p_focus)) & \
+                           (df_ind_clean['Contesto'].str.contains(contesto_filtro, na=False))
+                    if date_filtro:
+                        mask = mask & (df_ind_clean['Data'].isin(date_filtro))
+                    return df_ind_clean[mask]
+    
+                # Dati filtrati per i due radar
+                df_radar_all = get_filtered_data("Allenamento", sel_date_radar)
+                df_radar_gara = get_filtered_data("Partita", sel_date_radar)
+    
+                def create_radar_fig(df_filtered, kpis, titolo):
+                    fig = go.Figure()
+                    for i, p in enumerate(p_focus):
+                        d_p = df_filtered[df_filtered['Giocatore'] == p]
+                        if not d_p.empty:
+                            valori = [d_p[k].mean() for k in kpis]
+                            valori = [v if pd.notna(v) else 0 for v in valori]
+                            fig.add_trace(go.Scatterpolar(
+                                r=valori + [valori[0]], theta=kpis + [kpis[0]],
+                                fill='toself', name=p,
+                                line=dict(color=colori[i % len(colori)], width=2)
+                            ))
+                    fig.update_layout(
+                        polar=dict(radialaxis=dict(visible=True, range=[0, 5], gridcolor="gray")),
+                        template="plotly_dark", title=titolo, margin=dict(t=60, b=40, l=40, r=40),
+                        paper_bgcolor='rgba(0,0,0,0)', showlegend=True if len(p_focus)>1 else False
+                    )
+                    return fig
+    
+                # Visualizzazione condizionale Radar
+                with col_r1:
+                    if not df_radar_all.empty:
+                        st.plotly_chart(create_radar_fig(df_radar_all, kpi_all, "Focus Allenamento"), 
+                                        use_container_width=True, config={'staticPlot': True})
+                with col_r2:
+                    if not df_radar_gara.empty:
+                        st.plotly_chart(create_radar_fig(df_radar_gara, kpi_gara, "Focus Gara"), 
+                                        use_container_width=True, config={'staticPlot': True})
+    
+                st.divider()
+    
+                # --- 2. BAR CHART COMPARATIVO ---
+                st.markdown("#### ⚖️ Bilanciamento Attitudine vs Performance")
+                
+                c_date1, c_date2 = st.columns(2)
+                with c_date1:
+                    date_all = sorted(df_ind_clean[df_ind_clean['Contesto'].str.contains("Allenamento", na=False)]['Data'].unique(), reverse=True)
+                    sel_date_all = st.multiselect("📅 Date Allenamento", options=date_all, key="bar_date_all")
+                with c_date2:
+                    date_gara = sorted(df_ind_clean[df_ind_clean['Contesto'].str.contains("Partita", na=False)]['Data'].unique(), reverse=True)
+                    sel_date_gara = st.multiselect("📅 Date Partita", options=date_gara, key="bar_date_gara")
+    
+                bar_data = []
+                for p in p_focus:
+                    d_p = df_ind_clean[df_ind_clean['Giocatore'] == p]
+                    # Allenamento
+                    m_all = d_p[(d_p['Contesto'].str.contains("Allenamento")) & (d_p['Data'].isin(sel_date_all) if sel_date_all else True)][kpi_all].mean().mean()
+                    # Partita
+                    m_gara = d_p[(d_p['Contesto'].str.contains("Partita")) & (d_p['Data'].isin(sel_date_gara) if sel_date_gara else True)][kpi_gara].mean().mean()
+                    
+                    if pd.notna(m_all): bar_data.append({"Calciatore": p, "Tipo": "Allenamento", "Valore": m_all})
+                    if pd.notna(m_gara): bar_data.append({"Calciatore": p, "Tipo": "Partita", "Valore": m_gara})
+                
+                # Mostra il Bar Chart solo se ci sono dati
+                if bar_data:
+                    df_bar = pd.DataFrame(bar_data)
+                    fig_bar = px.bar(df_bar, x="Calciatore", y="Valore", color="Tipo", barmode="group",
+                                     color_discrete_map={"Allenamento": "#00CC96", "Partita": "#636EFA"},
+                                     range_y=[0, 5], template="plotly_dark", text_auto='.1f')
+                    fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+                    st.plotly_chart(fig_bar, use_container_width=True, config={'staticPlot': True})
+    
+                st.divider()
+    
+                # --- 3. TIMELINE DI CRESCITA ---
+                st.markdown("#### 📈 Timeline Evolutiva")
+                filtro_time = st.radio("Mostra andamento per:", ["Entrambi", "Allenamento", "Partita"], horizontal=True)
+                
+                fig_time = go.Figure()
+                any_data_timeline = False
+    
                 for i, p in enumerate(p_focus):
-                    d_p = df_filtered[df_filtered['Giocatore'] == p]
+                    d_p = df_ind_clean[df_ind_clean['Giocatore'] == p].copy()
+                    d_p = d_p.sort_values('Data')
+                    d_p['Media_Sessione'] = d_p[kpi_totali].mean(axis=1)
+                    
+                    if filtro_time != "Entrambi":
+                        d_p = d_p[d_p['Contesto'].str.contains(filtro_time, na=False)]
+                    
                     if not d_p.empty:
-                        valori = [d_p[k].mean() for k in kpis]
-                        valori = [v if pd.notna(v) else 0 for v in valori]
-                        fig.add_trace(go.Scatterpolar(
-                            r=valori + [valori[0]], theta=kpis + [kpis[0]],
-                            fill='toself', name=p,
-                            line=dict(color=colori[i % len(colori)], width=2)
-                        ))
-                fig.update_layout(
-                    polar=dict(radialaxis=dict(visible=True, range=[0, 5], gridcolor="gray")),
-                    template="plotly_dark", title=titolo, margin=dict(t=60, b=40, l=40, r=40),
-                    paper_bgcolor='rgba(0,0,0,0)', showlegend=True if len(p_focus)>1 else False
-                )
-                return fig
-
-            # Visualizzazione condizionale Radar
-            with col_r1:
-                if not df_radar_all.empty:
-                    st.plotly_chart(create_radar_fig(df_radar_all, kpi_all, "Focus Allenamento"), 
-                                    use_container_width=True, config={'staticPlot': True})
-            with col_r2:
-                if not df_radar_gara.empty:
-                    st.plotly_chart(create_radar_fig(df_radar_gara, kpi_gara, "Focus Gara"), 
-                                    use_container_width=True, config={'staticPlot': True})
-
-            st.divider()
-
-            # --- 2. BAR CHART COMPARATIVO ---
-            st.markdown("#### ⚖️ Bilanciamento Attitudine vs Performance")
-            
-            c_date1, c_date2 = st.columns(2)
-            with c_date1:
-                date_all = sorted(df_ind_clean[df_ind_clean['Contesto'].str.contains("Allenamento", na=False)]['Data'].unique(), reverse=True)
-                sel_date_all = st.multiselect("📅 Date Allenamento", options=date_all, key="bar_date_all")
-            with c_date2:
-                date_gara = sorted(df_ind_clean[df_ind_clean['Contesto'].str.contains("Partita", na=False)]['Data'].unique(), reverse=True)
-                sel_date_gara = st.multiselect("📅 Date Partita", options=date_gara, key="bar_date_gara")
-
-            bar_data = []
-            for p in p_focus:
-                d_p = df_ind_clean[df_ind_clean['Giocatore'] == p]
-                # Allenamento
-                m_all = d_p[(d_p['Contesto'].str.contains("Allenamento")) & (d_p['Data'].isin(sel_date_all) if sel_date_all else True)][kpi_all].mean().mean()
-                # Partita
-                m_gara = d_p[(d_p['Contesto'].str.contains("Partita")) & (d_p['Data'].isin(sel_date_gara) if sel_date_gara else True)][kpi_gara].mean().mean()
-                
-                if pd.notna(m_all): bar_data.append({"Calciatore": p, "Tipo": "Allenamento", "Valore": m_all})
-                if pd.notna(m_gara): bar_data.append({"Calciatore": p, "Tipo": "Partita", "Valore": m_gara})
-            
-            # Mostra il Bar Chart solo se ci sono dati
-            if bar_data:
-                df_bar = pd.DataFrame(bar_data)
-                fig_bar = px.bar(df_bar, x="Calciatore", y="Valore", color="Tipo", barmode="group",
-                                 color_discrete_map={"Allenamento": "#00CC96", "Partita": "#636EFA"},
-                                 range_y=[0, 5], template="plotly_dark", text_auto='.1f')
-                fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
-                                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
-                st.plotly_chart(fig_bar, use_container_width=True, config={'staticPlot': True})
-
-            st.divider()
-
-            # --- 3. TIMELINE DI CRESCITA ---
-            st.markdown("#### 📈 Timeline Evolutiva")
-            filtro_time = st.radio("Mostra andamento per:", ["Entrambi", "Allenamento", "Partita"], horizontal=True)
-            
-            fig_time = go.Figure()
-            any_data_timeline = False
-
-            for i, p in enumerate(p_focus):
-                d_p = df_ind_clean[df_ind_clean['Giocatore'] == p].copy()
-                d_p = d_p.sort_values('Data')
-                d_p['Media_Sessione'] = d_p[kpi_totali].mean(axis=1)
-                
-                if filtro_time != "Entrambi":
-                    d_p = d_p[d_p['Contesto'].str.contains(filtro_time, na=False)]
-                
-                if not d_p.empty:
-                    any_data_timeline = True
-                    fig_time.add_trace(go.Scatter(x=d_p['Data'], y=d_p['Media_Sessione'],
-                                                mode='lines+markers', name=p,
-                                                line=dict(color=colori[i % len(colori)], width=3),
-                                                marker=dict(size=10)))
-
-            # Mostra la timeline solo se ci sono dati da tracciare
-            if any_data_timeline:
-                fig_time.update_layout(template="plotly_dark", yaxis_range=[0, 5.2],
-                                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                                     xaxis_title="Data Osservazione", yaxis_title="Valutazione Media")
-                st.plotly_chart(fig_time, use_container_width=True, config={'staticPlot': True})
-
-    except Exception as e:
-        st.error(f"Errore nella generazione dei grafici: {e}")
+                        any_data_timeline = True
+                        fig_time.add_trace(go.Scatter(x=d_p['Data'], y=d_p['Media_Sessione'],
+                                                    mode='lines+markers', name=p,
+                                                    line=dict(color=colori[i % len(colori)], width=3),
+                                                    marker=dict(size=10)))
+    
+                # Mostra la timeline solo se ci sono dati da tracciare
+                if any_data_timeline:
+                    fig_time.update_layout(template="plotly_dark", yaxis_range=[0, 5.2],
+                                         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                         xaxis_title="Data Osservazione", yaxis_title="Valutazione Media")
+                    st.plotly_chart(fig_time, use_container_width=True, config={'staticPlot': True})
+    
+        except Exception as e:
+            st.error(f"Errore nella generazione dei grafici: {e}")
