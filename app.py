@@ -15,6 +15,10 @@ st.set_page_config(page_title="Football Data Analyst", layout="wide")
 # --- 1. STILE CSS GLOBALE ---
 st.markdown("""
     <style>
+    /* Nasconde la barra superiore e il footer di default di Streamlit */
+    [data-testid="stHeader"] {display: none !important;}
+    footer {display: none !important;}
+    
     .stApp { background-color: #1E3A8A; }
     h1, h2, h3, p, label, .stMarkdown { color: white !important; }
     div.stButton > button, div[data-baseweb="segmented-control"] button {
@@ -95,17 +99,17 @@ if not st.session_state.autenticato:
                 st.rerun()
     st.stop()
 
-# --- SIDEBAR COMUNE ---
-st.sidebar.image("logo.png", width=100)
-st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
-if st.sidebar.button("Logout"):
-    st.session_state.autenticato = False
-    st.rerun()
-
 # =========================================================
 # 1. LOGICA MATCH ANALYST
 # =========================================================
 if st.session_state.profilo == "Match Analyst":
+    
+    # --- NUOVO BOTTONE TORNA ALLA HOME ---
+    if st.button("⬅️ Torna alla Home"):
+        st.session_state.autenticato = False
+        st.session_state.profilo = None
+        st.rerun()
+    
     st.markdown("## 🛠️ CONSOLE MATCH ANALYST")
     scelta_analisi = st.segmented_control("OGGETTO DI ANALISI", ["Squadra", "Individuale"], default="Squadra")
     
