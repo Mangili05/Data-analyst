@@ -38,9 +38,9 @@ st.markdown("""
     header {visibility: hidden;}
     footer {visibility: hidden;}
 
-    /* SPAZIATURA PER HEADER FISSO */
+    /* SPAZIATURA PER HEADER FISSO (aumentata per contenere il logo) */
     .block-container {
-        padding-top: 100px !important;
+        padding-top: 130px !important;
     }
 
     /* HEADER FISSO: SCRITTA #WEAREPRO */
@@ -48,7 +48,7 @@ st.markdown("""
         position: fixed;
         top: 0; left: 0; right: 0;
         width: 100%;
-        height: 90px;
+        height: 110px; /* ALTEZZA AUMENTATA PER NON TAGLIARE IL LOGO */
         background-color: #1E3A8A; /* Blu solido per coprire lo scorrimento */
         z-index: 9999;
         text-align: center;
@@ -69,20 +69,39 @@ st.markdown("""
     /* LOGO FISSO IN ALTO A DESTRA */
     .fixed-logo-container {
         position: fixed;
-        top: 15px;
+        top: 10px; /* SPOSTATO PIU' IN ALTO */
         right: 25px;
         z-index: 10000;
     }
-    .fixed-logo-img { width: 110px; height: auto; }
+    .fixed-logo-img { width: 90px; height: auto; } /* DIMENSIONE ADATTATA ALLA BARRA */
 
     /* Responsive Mobile */
     @media (max-width: 768px) {
         .header-text { font-size: 26px !important; }
-        .fixed-logo-img { width: 70px; }
-        .centered-header { height: 70px; }
-        .block-container { padding-top: 80px !important; }
+        .fixed-logo-img { width: 60px; }
+        .centered-header { height: 80px; }
+        .block-container { padding-top: 100px !important; }
     }
     </style>
+""", unsafe_allow_html=True)
+
+# =========================================================
+# HEADER E LOGO UNIVERSALE (Spostato all'inizio per vederlo anche nel Login)
+# =========================================================
+logo_base64 = ""
+if os.path.exists("logo.png"):
+    with open("logo.png", "rb") as f:
+        logo_base64 = base64.b64encode(f.read()).decode("utf-8")
+
+st.markdown(f"""
+    <div class="centered-header">
+        <h1 class="header-text">
+            <span style="color: #ffffff;">#WEARE</span><span style="color: #D4AF37;">PRO</span>
+        </h1>
+    </div>
+    <div class="fixed-logo-container">
+        <img src="data:image/png;base64,{logo_base64}" class="fixed-logo-img">
+    </div>
 """, unsafe_allow_html=True)
 
 # --- CONNESSIONE E FUNZIONI ---
@@ -103,12 +122,7 @@ if "autenticato" not in st.session_state:
     st.session_state.profilo = None
 
 if not st.session_state.autenticato:
-    # Logo Landing Page (al centro)
-    if os.path.exists("logo.png"):
-        with open("logo.png", "rb") as f:
-            data = base64.b64encode(f.read()).decode("utf-8")
-            st.markdown(f'<div style="text-align:center"><img src="data:image/png;base64,{data}" width="180"></div>', unsafe_allow_html=True)
-
+    # IL LOGO CENTRALE E' STATO RIMOSSO
     _, col_main, _ = st.columns([1, 2, 1])
     with col_main:
         st.markdown("<h1 style='text-align: center;'>⚽ ANALISI DATI</h1>", unsafe_allow_html=True)
@@ -125,25 +139,6 @@ if not st.session_state.autenticato:
                 st.session_state.profilo = ruolo_scelto
                 st.rerun()
     st.stop()
-
-# =========================================================
-# HEADER E LOGO UNIVERSALE (SOLO DOPO LOGIN)
-# =========================================================
-logo_base64 = ""
-if os.path.exists("logo.png"):
-    with open("logo.png", "rb") as f:
-        logo_base64 = base64.b64encode(f.read()).decode("utf-8")
-
-st.markdown(f"""
-    <div class="centered-header">
-        <h1 class="header-text">
-            <span style="color: #ffffff;">#WEARE</span><span style="color: #D4AF37;">PRO</span>
-        </h1>
-    </div>
-    <div class="fixed-logo-container">
-        <img src="data:image/png;base64,{logo_base64}" class="fixed-logo-img">
-    </div>
-""", unsafe_allow_html=True)
 
 # --- SIDEBAR ---
 st.sidebar.image("logo.png", width=100)
