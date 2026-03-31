@@ -528,27 +528,44 @@ elif st.session_state.profilo == "Staff Tecnico":
             df_ind_clean['Data'] = pd.to_datetime(df_ind_clean['Data'], dayfirst=True).dt.date
             for col in kpi_totali:
                 df_ind_clean[col] = pd.to_numeric(df_ind_clean[col], errors='coerce').replace(0, pd.NA)
-    
+
+            # --- Funzione helper per le date con i giorni in italiano ---
+            def formatta_data_ita(d):
+                giorni_ita = {0: "lunedì", 1: "martedì", 2: "mercoledì", 3: "giovedì", 4: "venerdì", 5: "sabato", 6: "domenica"}
+                return f"{d.strftime('%Y-%m-%d')}, {giorni_ita[d.weekday()]}"
+
             # 2. Selezione Giocatori
             p_focus = st.multiselect("Seleziona uno o più atleti da analizzare", 
                                    lista_calciatori[1:], 
                                    max_selections=3,
                                    key="p_multi_staff")
-    
+
             if not p_focus:
                 st.info("💡 Seleziona uno o più calciatori per visualizzare l'analisi.")
             else:
                 # --- 1. RADAR CHARTS CON LOGICA DI VISIBILITÀ ---
                 st.markdown("#### 📊 Skill Set: Allenamento vs Partita")
                 
-                date_disponibili_radar = sorted(df_ind_clean['Data'].unique(), reverse=True)
-                sel_date_radar = st.multiselect("📅 Filtra Radar per Data (vuoto = Totale)", 
-                                               options=date_disponibili_radar,
-                                               key="filter_date_radar")
-    
+                # Liste date separate per Allenamento e Partita
+                date_all = sorted(df_ind_clean[df_ind_clean['Contesto'].str.contains("Allenamento", na=False)]['Data'].unique(), reverse=True)
+                date_gara = sorted(df_ind_clean[df_ind_clean['Contesto'].str.contains("Partita", na=False)]['Data'].unique(), reverse=True)
+                
+                # Filtri separati per Radar Allenamento e Radar Partita
+                c_rad1, c_rad2 = st.columns(2)
+                with c_rad1:
+                    sel_date_radar_all = st.multiselect("📅 Date Allenamento (vuoto = Totale)", 
+                                                       options=date_all,
+                                                       format_func=formatta_data_ita,
+                                                       key="filter_date_radar_all")
+                with c_rad2:
+                    sel_date_radar_gara = st.multiselect("📅 Date Partita (vuoto = Totale)", 
+                                                        options=date_gara,
+                                                        format_func=formatta_data_ita,
+                                                        key="filter_date_radar_gara")
+
                 col_r1, col_r2 = st.columns(2)
                 colori = ['#FFD700', '#00BFFF', '#FF4500'] 
-    
+
                 # Funzione interna per verificare se ci sono dati per quel contesto/data
                 def get_filtered_data(contesto_filtro, date_filtro):
                     mask = (df_ind_clean['Giocatore'].isin(p_focus)) & \
@@ -556,11 +573,11 @@ elif st.session_state.profilo == "Staff Tecnico":
                     if date_filtro:
                         mask = mask & (df_ind_clean['Data'].isin(date_filtro))
                     return df_ind_clean[mask]
-    
+
                 # Dati filtrati per i due radar
-                df_radar_all = get_filtered_data("Allenamento", sel_date_radar)
-                df_radar_gara = get_filtered_data("Partita", sel_date_radar)
-    
+                df_radar_all = get_filtered_data("Allenamento", sel_date_radar_all)
+                df_radar_gara = get_filtered_data("Partita", sel_date_radar_gara)
+
                 def create_radar_fig(df_filtered, kpis, titolo):
                     fig = go.Figure()
                     for i, p in enumerate(p_focus):
@@ -579,7 +596,7 @@ elif st.session_state.profilo == "Staff Tecnico":
                         paper_bgcolor='rgba(0,0,0,0)', showlegend=True if len(p_focus)>1 else False
                     )
                     return fig
-    
+
                 # Visualizzazione condizionale Radar
                 with col_r1:
                     if not df_radar_all.empty:
@@ -589,27 +606,25 @@ elif st.session_state.profilo == "Staff Tecnico":
                     if not df_radar_gara.empty:
                         st.plotly_chart(create_radar_fig(df_radar_gara, kpi_gara, "Focus Gara"), 
                                         use_container_width=True, config={'staticPlot': True})
-    
+
                 st.divider()
-    
+
                 # --- 2. BAR CHART COMPARATIVO ---
                 st.markdown("#### ⚖️ Bilanciamento Attitudine vs Performance")
                 
                 c_date1, c_date2 = st.columns(2)
                 with c_date1:
-                    date_all = sorted(df_ind_clean[df_ind_clean['Contesto'].str.contains("Allenamento", na=False)]['Data'].unique(), reverse=True)
-                    sel_date_all = st.multiselect("📅 Date Allenamento", options=date_all, key="bar_date_all")
+                    sel_date_all_bar = st.multiselect("📅 Date Allenamento", options=date_all, format_func=formatta_data_ita, key="bar_date_all")
                 with c_date2:
-                    date_gara = sorted(df_ind_clean[df_ind_clean['Contesto'].str.contains("Partita", na=False)]['Data'].unique(), reverse=True)
-                    sel_date_gara = st.multiselect("📅 Date Partita", options=date_gara, key="bar_date_gara")
-    
+                    sel_date_gara_bar = st.multiselect("📅 Date Partita", options=date_gara, format_func=formatta_data_ita, key="bar_date_gara")
+
                 bar_data = []
                 for p in p_focus:
                     d_p = df_ind_clean[df_ind_clean['Giocatore'] == p]
                     # Allenamento
-                    m_all = d_p[(d_p['Contesto'].str.contains("Allenamento")) & (d_p['Data'].isin(sel_date_all) if sel_date_all else True)][kpi_all].mean().mean()
+                    m_all = d_p[(d_p['Contesto'].str.contains("Allenamento")) & (d_p['Data'].isin(sel_date_all_bar) if sel_date_all_bar else True)][kpi_all].mean().mean()
                     # Partita
-                    m_gara = d_p[(d_p['Contesto'].str.contains("Partita")) & (d_p['Data'].isin(sel_date_gara) if sel_date_gara else True)][kpi_gara].mean().mean()
+                    m_gara = d_p[(d_p['Contesto'].str.contains("Partita")) & (d_p['Data'].isin(sel_date_gara_bar) if sel_date_gara_bar else True)][kpi_gara].mean().mean()
                     
                     if pd.notna(m_all): bar_data.append({"Calciatore": p, "Tipo": "Allenamento", "Valore": m_all})
                     if pd.notna(m_gara): bar_data.append({"Calciatore": p, "Tipo": "Partita", "Valore": m_gara})
@@ -623,19 +638,46 @@ elif st.session_state.profilo == "Staff Tecnico":
                     fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
                                          legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
                     st.plotly_chart(fig_bar, use_container_width=True, config={'staticPlot': True})
-    
+
                 st.divider()
-    
+
                 # --- 3. TIMELINE DI CRESCITA ---
                 st.markdown("#### 📈 Timeline Evolutiva")
-                filtro_time = st.radio("Mostra andamento per:", ["Entrambi", "Allenamento", "Partita"], horizontal=True)
+                
+                # Setup Date per il filtro Timeline
+                min_date = df_ind_clean['Data'].min()
+                max_date = df_ind_clean['Data'].max()
+                
+                col_t1, col_t2 = st.columns(2)
+                with col_t1:
+                    filtro_time = st.radio("Mostra andamento per:", ["Entrambi", "Allenamento", "Partita"], horizontal=True)
+                with col_t2:
+                    # Prevenzione crash se il dataframe è vuoto
+                    if pd.isna(min_date) or pd.isna(max_date):
+                        import datetime
+                        min_date, max_date = datetime.date.today(), datetime.date.today()
+                        
+                    date_range = st.date_input("🗓️ Seleziona il periodo (Da - A)", 
+                                               value=(min_date, max_date),
+                                               min_value=min_date,
+                                               max_value=max_date,
+                                               key="timeline_date_range")
                 
                 fig_time = go.Figure()
                 any_data_timeline = False
-    
+
                 for i, p in enumerate(p_focus):
                     d_p = df_ind_clean[df_ind_clean['Giocatore'] == p].copy()
                     d_p = d_p.sort_values('Data')
+                    
+                    # Logica di filtraggio del Range Selezionato
+                    if isinstance(date_range, tuple) and len(date_range) == 2:
+                        start_date, end_date = date_range
+                        d_p = d_p[(d_p['Data'] >= start_date) & (d_p['Data'] <= end_date)]
+                    elif isinstance(date_range, tuple) and len(date_range) == 1:
+                        # Se l'utente non ha ancora cliccato la seconda data
+                        d_p = d_p[d_p['Data'] == date_range[0]]
+                        
                     d_p['Media_Sessione'] = d_p[kpi_totali].mean(axis=1)
                     
                     if filtro_time != "Entrambi":
@@ -647,13 +689,13 @@ elif st.session_state.profilo == "Staff Tecnico":
                                                     mode='lines+markers', name=p,
                                                     line=dict(color=colori[i % len(colori)], width=3),
                                                     marker=dict(size=10)))
-    
+
                 # Mostra la timeline solo se ci sono dati da tracciare
                 if any_data_timeline:
                     fig_time.update_layout(template="plotly_dark", yaxis_range=[0, 5.2],
                                          paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                                          xaxis_title="Data Osservazione", yaxis_title="Valutazione Media")
                     st.plotly_chart(fig_time, use_container_width=True, config={'staticPlot': True})
-    
+
         except Exception as e:
             st.error(f"Errore nella generazione dei grafici: {e}")
