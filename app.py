@@ -556,7 +556,7 @@ elif st.session_state.profilo == "Staff Tecnico":
 # TAB PROFILO CALCIATORE (Allineata al nuovo DB)
 # ---------------------------------------------------------
     with t_individuo:
-        st.markdown("### 🎯 Analisi Proiettiva Serie D")
+        st.markdown("### 🎯 Analisi Delle Prestazioni Individuali")
         
         try:
             # 1. Caricamento e Pulizia
@@ -575,7 +575,7 @@ elif st.session_state.profilo == "Staff Tecnico":
             # 2. Selezione Giocatori
             c_sel1, c_sel2 = st.columns([2, 1])
             with c_sel1:
-                p_focus = st.multiselect("Seleziona Calciatori da confrontare", 
+                p_focus = st.multiselect("Seleziona uno o più atleti da analizzare", 
                                        lista_calciatori[1:], 
                                        max_selections=3,
                                        key="p_multi_staff")
