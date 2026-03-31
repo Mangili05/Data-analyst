@@ -694,7 +694,7 @@ elif st.session_state.profilo == "Staff Tecnico":
                 if any_data_timeline:
                     fig_time.update_layout(template="plotly_dark", yaxis_range=[0, 5.2],
                                          paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                                         xaxis_title="Data Osservazione", yaxis_title="Valutazione Media")
+                                         xaxis_title="Data Osservazione", yaxis_title="Valutazione Media", xaxis=dict(tickformat="%d-%m-%Y")
                     st.plotly_chart(fig_time, use_container_width=True, config={'staticPlot': True})
 
         except Exception as e:
