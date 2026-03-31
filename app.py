@@ -153,7 +153,7 @@ if st.session_state.profilo == "Match Analyst":
         st.rerun()
     
     st.markdown("## 🛠️ CONSOLE MATCH ANALYST")
-    scelta_analisi = st.segmented_control("MODALITÀ INSERIMENTO", ["Squadra", "Individuale"], default="Squadra")
+    scelta_analisi = st.segmented_control("OGGETTO DI ANALISI", ["Squadra", "Individuale"], default="Squadra")
     
     if scelta_analisi == "Squadra":
         with st.expander("ℹ️ Informazioni partita", expanded=True):
