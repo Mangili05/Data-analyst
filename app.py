@@ -9,174 +9,115 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
 
-# --- STILE CSS PERSONALIZZATO ---
+# --- CONFIGURAZIONE PAGINA (Sempre al primo posto) ---
+st.set_page_config(page_title="Football Data Analyst", layout="wide")
+
+# --- 1. STILE CSS GLOBALE E RESET ---
 st.markdown("""
     <style>
-    /* Forza il colore del testo nei bottoni e nei controlli segmentati */
-    div.stButton > button, 
-    div[data-baseweb="segmented-control"] button {
+    /* Sfondo App e Testi */
+    .stApp { background-color: #1E3A8A; }
+    h1, h2, h3, p, label, .stMarkdown { color: white !important; }
+    
+    /* Forza visibilità widget */
+    div.stButton > button, div[data-baseweb="segmented-control"] button {
         color: #ffffff !important;
         background-color: #262730;
         border: 1px solid #4b4b4b;
     }
-
-    /* Assicura che il testo rimanga visibile anche negli stati attivi/selezionati */
     div[data-baseweb="segmented-control"] button[aria-checked="true"] {
         color: #ffffff !important;
         background-color: #1f67b5 !important;
     }
+    input { color: #ffffff !important; }
 
-    /* Colore del testo nelle etichette dei radio button e checkbox */
-    .stMarkdown p, .stRadio label {
-        color: #ffffff !important;
-    }
+    /* Sidebar */
+    [data-testid="stSidebar"] { background-color: #112244; }
     
-    /* Forza visibilità scritte dentro i widget di input */
-    input {
-        color: #ffffff !important;
+    /* Nascondi header Streamlit originale per fare spazio al nostro */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+
+    /* SPAZIATURA PER HEADER FISSO */
+    .block-container {
+        padding-top: 100px !important;
+    }
+
+    /* HEADER FISSO: SCRITTA #WEAREPRO */
+    .centered-header {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        width: 100%;
+        height: 90px;
+        background-color: #1E3A8A; /* Blu solido per coprire lo scorrimento */
+        z-index: 9999;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 2px solid rgba(255,255,255,0.1);
+    }
+    .header-text {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 50px !important;
+        font-weight: 900 !important;
+        margin: 0 !important;
+        text-transform: uppercase;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* LOGO FISSO IN ALTO A DESTRA */
+    .fixed-logo-container {
+        position: fixed;
+        top: 15px;
+        right: 25px;
+        z-index: 10000;
+    }
+    .fixed-logo-img { width: 110px; height: auto; }
+
+    /* Responsive Mobile */
+    @media (max-width: 768px) {
+        .header-text { font-size: 26px !important; }
+        .fixed-logo-img { width: 70px; }
+        .centered-header { height: 70px; }
+        .block-container { padding-top: 80px !important; }
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONFIGURAZIONE PAGINA ---
-st.set_page_config(page_title="Football Data Analyst", layout="wide")
-
-# --- CONFIGURAZIONE STILE CSS (Unificato) ---
-st.markdown("""
-    <style>
-    .stApp { background-color: #1E3A8A; }
-    
-    /* Testi bianchi ovunque */
-    h1, h2, h3, p, label, .stMarkdown { color: white !important; }
-    .stSelectbox label p { color: white !important; }
-
-    /* Logo in alto a destra */
-    .logo-top-right {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-    }
-
-    /* Bottoni bianchi (Landing Page) */
-    .stButton>button {
-        width: 100%;
-        border-radius: 8px;
-        height: 3em;
-        background-color: #ffffff;
-        color: #1E3A8A !important;
-        font-weight: bold;
-        border: none;
-    }
-    
-    /* Pulizia Sidebar */
-    [data-testid="stSidebar"] { background-color: #112244; }
-    
-    /* Nascondi header Streamlit */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- SCRITTA #WEAREPRO BICOLORE AL CENTRO IN ALTO ---
-st.markdown(
-    """
-    <style>
-    /* Importiamo un font molto spesso e moderno */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
-        
-    .centered-header {
-        position: fixed;
-        top: 15px !important; /* Distanza dal bordo superiore */
-        left: 0;
-        right: 0;
-        width: 100%;
-        z-index: 9999; /* Sopra a tutto */
-        text-align: center;
-        pointer-events: none; /* Non blocca i click sui widget sottostanti */
-        background-color: transparent !important;
-    }
-    .header-text {
-        font-family: 'Inter', sans-serif !important;
-        font-size: 60px !important; /* Dimensione su PC, regolala qui */
-        font-weight: 900 !important;
-        letter-spacing: 3px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        text-transform: uppercase;
-        /* Ombra leggera per staccare dallo sfondo se necessario */
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    /* Parte Bianca: #WEARE */
-    .text-white {
-        color: #ffffff !important;
-    }
-    /* Parte Oro: PRO */
-    .text-gold {
-        color: #D4AF37 !important; /* Oro del Logo Pro Palazzolo */
-    }
-        
-    /* Regolazioni dinamiche per Smartphone (schermi piccoli) */
-     @media (max-width: 768px) {
-        .header-text {
-            font-size: 30px !important; /* Più piccolo su mobile */
-            letter-spacing: 1px !important;
-        }
-        .centered-header {
-            top: 10px !important;
-        }
-    }
-    </style>
-    <div class="centered-header">
-         <h1 class="header-text">
-            <span class="text-white">#WEARE</span><span class="text-gold">PRO</span>
-        </h1>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-# --- CONNESSIONE GOOGLE SHEETS ---
+# --- CONNESSIONE E FUNZIONI ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# --- GESTIONE COUNTER PER RESET ---
-if "reset_counter" not in st.session_state:
-    st.session_state.reset_counter = 0
-
+if "reset_counter" not in st.session_state: st.session_state.reset_counter = 0
 def reset_campi():
     st.session_state.reset_counter += 1
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
-# --- DATI COMUNI ---
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
 
-# --- LOGICA DI ACCESSO ---
+# --- LOGIN LOGIC ---
 if "autenticato" not in st.session_state:
     st.session_state.autenticato = False
     st.session_state.profilo = None
 
 if not st.session_state.autenticato:
-    # Logo in alto a destra solo nella landing
+    # Logo Landing Page (al centro)
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             data = base64.b64encode(f.read()).decode("utf-8")
-            st.markdown(f'<div class="logo-top-right"><img src="data:image/png;base64,{data}" width="120"></div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align:center"><img src="data:image/png;base64,{data}" width="180"></div>', unsafe_allow_html=True)
 
     _, col_main, _ = st.columns([1, 2, 1])
     with col_main:
-        st.markdown("<br><br><h1 style='text-align: center;'>⚽ ANALISI DATI</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center;'>Benvenuto. Seleziona il tuo profilo per continuare.</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center;'>⚽ ANALISI DATI</h1>", unsafe_allow_html=True)
         ruolo_scelto = st.selectbox("Chi sta accedendo?", ["Seleziona...", "Match Analyst", "Staff Tecnico"])
-        
         permesso = False
         if ruolo_scelto == "Match Analyst":
             pwd = st.text_input("Codice Accesso", type="password")
             if pwd == "1234": permesso = True
-        elif ruolo_scelto == "Staff Tecnico":
-            permesso = True
+        elif ruolo_scelto == "Staff Tecnico": permesso = True
 
         if st.button("ENTRA NELL'APP"):
             if ruolo_scelto != "Seleziona..." and permesso:
@@ -185,74 +126,41 @@ if not st.session_state.autenticato:
                 st.rerun()
     st.stop()
 
-# --- SIDEBAR (DOPO LOGIN) ---
-st.sidebar.image("logo.png", width=120)
-st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
+# =========================================================
+# HEADER E LOGO UNIVERSALE (SOLO DOPO LOGIN)
+# =========================================================
+logo_base64 = ""
+if os.path.exists("logo.png"):
+    with open("logo.png", "rb") as f:
+        logo_base64 = base64.b64encode(f.read()).decode("utf-8")
 
-ruolo = st.session_state.profilo
+st.markdown(f"""
+    <div class="centered-header">
+        <h1 class="header-text">
+            <span style="color: #ffffff;">#WEARE</span><span style="color: #D4AF37;">PRO</span>
+        </h1>
+    </div>
+    <div class="fixed-logo-container">
+        <img src="data:image/png;base64,{logo_base64}" class="fixed-logo-img">
+    </div>
+""", unsafe_allow_html=True)
+
+# --- SIDEBAR ---
+st.sidebar.image("logo.png", width=100)
+st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
 
 # =========================================================
 # LOGICA MATCH ANALYST
 # =========================================================
-if ruolo == "Match Analyst":
-
-    # --- TASTO TORNA ALLA HOME ---
-    if st.button("⬅️ Torna alla Home", key="home_btn_ma"):
-        # Resetta l'autenticazione e il profilo scelto
+if st.session_state.profilo == "Match Analyst":
+    if st.button("⬅️ Torna alla Home"):
         st.session_state.autenticato = False
-        st.session_state.profilo = None
         st.rerun()
     
     st.markdown("## 🛠️ CONSOLE MATCH ANALYST")
-    st.markdown("<p style='color: #8b949e;'>Inserimento dati e gestione database</p>", unsafe_allow_html=True)
-
-    # Il segmented_control decide cosa mostrare sotto
     scelta_analisi = st.segmented_control("MODALITÀ INSERIMENTO", ["Squadra", "Individuale"], default="Squadra")
-    st.divider()
-
-    # --- CASO 1: SQUADRA ---
+    
     if scelta_analisi == "Squadra":
-        # --- AGGIUNTA LOGO IN ALTO A DESTRA (FIXED SULLA PAGINA) ---
-        if os.path.exists("logo.png"):
-            import base64
-            with open("logo.png", "rb") as f:
-                data = base64.b64encode(f.read()).decode("utf-8")
-            
-            # Usiamo position: fixed per ancorarlo alla finestra del browser
-            st.markdown(
-                f"""
-                <style>
-                .fixed-logo-container {{
-                    position: fixed;
-                    top: 20px; /* Distanza dal bordo superiore della finestra */
-                    right: 20px; /* Distanza dal bordo destro della finestra */
-                    z-index: 99999; /* Assicura che stia sopra a TUTTO */
-                    display: block;
-                }}
-                .fixed-logo-img {{
-                    width: 120px; /* Dimensione su PC */
-                    height: auto;
-                    background-color: transparent; /* Assicura fondo trasparente */
-                }}
-                /* Regolazioni per Smartphone (schermi piccoli) */
-                @media (max-width: 768px) {{
-                    .fixed-logo-img {{
-                        width: 80px; /* Più piccolo su mobile */
-                    }}
-                    .fixed-logo-container {{
-                        top: 10px; /* Più in alto su mobile */
-                        right: 10px;
-                    }}
-                }}
-                </style>
-                <div class="fixed-logo-container">
-                    <img src="data:image/png;base64,{data}" class="fixed-logo-img">
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        
         with st.expander("ℹ️ Informazioni partita", expanded=True):
             c1, c2 = st.columns(2)
             with c1: st.selectbox("Giornata", ["Seleziona giornata"] + list(range(1, 31)), key="g_key")
@@ -393,46 +301,6 @@ if ruolo == "Match Analyst":
 # NUOVA LOGICA: ANALISI INDIVIDUALE (Sostituire la precedente)
 # =========================================================
     else:
-# --- AGGIUNTA LOGO IN ALTO A DESTRA (FIXED SULLA PAGINA) ---
-        if os.path.exists("logo.png"):
-            import base64
-            with open("logo.png", "rb") as f:
-                data = base64.b64encode(f.read()).decode("utf-8")
-            
-            # Usiamo position: fixed per ancorarlo alla finestra del browser
-            st.markdown(
-                f"""
-                <style>
-                .fixed-logo-container {{
-                    position: fixed;
-                    top: 20px; /* Distanza dal bordo superiore della finestra */
-                    right: 20px; /* Distanza dal bordo destro della finestra */
-                    z-index: 99999; /* Assicura che stia sopra a TUTTO */
-                    display: block;
-                }}
-                .fixed-logo-img {{
-                    width: 120px; /* Dimensione su PC */
-                    height: auto;
-                    background-color: transparent; /* Assicura fondo trasparente */
-                }}
-                /* Regolazioni per Smartphone (schermi piccoli) */
-                @media (max-width: 768px) {{
-                    .fixed-logo-img {{
-                        width: 80px; /* Più piccolo su mobile */
-                    }}
-                    .fixed-logo-container {{
-                        top: 10px; /* Più in alto su mobile */
-                        right: 10px;
-                    }}
-                }}
-                </style>
-                <div class="fixed-logo-container">
-                    <img src="data:image/png;base64,{data}" class="fixed-logo-img">
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        
         st.markdown("### 🧠 MONITORAGGIO ATTITUDINALE PROIETTIVO")
         
         if "reset_ind" not in st.session_state: st.session_state.reset_ind = 0
@@ -514,13 +382,9 @@ if ruolo == "Match Analyst":
                     st.error(f"Errore: {e}")
 
 # --- QUI DEVE ESSERE ALLINEATO AL BORDO SINISTRO (o al livello del tuo IF iniziale) ---
-elif ruolo == "Staff Tecnico":
-
-    # --- TASTO TORNA ALLA HOME ---
-    if st.button("⬅️ Torna alla Home", key="home_btn_staff"):
-        # Resetta l'autenticazione e il profilo scelto
+elif st.session_state.profilo == "Staff Tecnico":
+    if st.button("⬅️ Torna alla Home"):
         st.session_state.autenticato = False
-        st.session_state.profilo = None
         st.rerun()
     
     st.markdown("## 📊 DASHBOARD PERFORMANCE")
