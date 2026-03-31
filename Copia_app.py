@@ -9,174 +9,129 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 from PIL import Image, ImageDraw
 from streamlit_gsheets import GSheetsConnection
 
-# --- STILE CSS PERSONALIZZATO ---
+# --- CONFIGURAZIONE PAGINA (Sempre al primo posto) ---
+st.set_page_config(page_title="Football Data Analyst", layout="wide")
+
+# --- 1. STILE CSS GLOBALE E RESET ---
 st.markdown("""
     <style>
-    /* Forza il colore del testo nei bottoni e nei controlli segmentati */
-    div.stButton > button, 
-    div[data-baseweb="segmented-control"] button {
+    /* Sfondo App e Testi */
+    .stApp { background-color: #1E3A8A; }
+    h1, h2, h3, p, label, .stMarkdown { color: white !important; }
+    
+    /* Forza visibilità widget */
+    div.stButton > button, div[data-baseweb="segmented-control"] button {
         color: #ffffff !important;
         background-color: #262730;
         border: 1px solid #4b4b4b;
     }
-
-    /* Assicura che il testo rimanga visibile anche negli stati attivi/selezionati */
     div[data-baseweb="segmented-control"] button[aria-checked="true"] {
         color: #ffffff !important;
         background-color: #1f67b5 !important;
     }
+    input { color: #ffffff !important; }
 
-    /* Colore del testo nelle etichette dei radio button e checkbox */
-    .stMarkdown p, .stRadio label {
-        color: #ffffff !important;
-    }
+    /* Sidebar */
+    [data-testid="stSidebar"] { background-color: #112244; }
     
-    /* Forza visibilità scritte dentro i widget di input */
-    input {
-        color: #ffffff !important;
+    /* Nascondi header Streamlit originale per fare spazio al nostro */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+
+    /* SPAZIATURA PER HEADER FISSO (aumentata per contenere il logo) */
+    .block-container {
+        padding-top: 130px !important;
+    }
+
+    /* HEADER FISSO: SCRITTA #WEAREPRO */
+    .centered-header {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        width: 100%;
+        height: 110px; /* ALTEZZA AUMENTATA PER NON TAGLIARE IL LOGO */
+        background-color: #1E3A8A; /* Blu solido per coprire lo scorrimento */
+        z-index: 9999;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 2px solid rgba(255,255,255,0.1);
+    }
+    .header-text {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 50px !important;
+        font-weight: 900 !important;
+        margin: 0 !important;
+        text-transform: uppercase;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* LOGO FISSO IN ALTO A DESTRA */
+    .fixed-logo-container {
+        position: fixed;
+        top: 10px; /* SPOSTATO PIU' IN ALTO */
+        right: 25px;
+        z-index: 10000;
+    }
+    .fixed-logo-img { width: 90px; height: auto; } /* DIMENSIONE ADATTATA ALLA BARRA */
+
+    /* Responsive Mobile */
+    @media (max-width: 768px) {
+        .header-text { font-size: 26px !important; }
+        .fixed-logo-img { width: 60px; }
+        .centered-header { height: 80px; }
+        .block-container { padding-top: 100px !important; }
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONFIGURAZIONE PAGINA ---
-st.set_page_config(page_title="Football Data Analyst", layout="wide")
+# =========================================================
+# HEADER E LOGO UNIVERSALE (Spostato all'inizio per vederlo anche nel Login)
+# =========================================================
+logo_base64 = ""
+if os.path.exists("logo.png"):
+    with open("logo.png", "rb") as f:
+        logo_base64 = base64.b64encode(f.read()).decode("utf-8")
 
-# --- CONFIGURAZIONE STILE CSS (Unificato) ---
-st.markdown("""
-    <style>
-    .stApp { background-color: #1E3A8A; }
-    
-    /* Testi bianchi ovunque */
-    h1, h2, h3, p, label, .stMarkdown { color: white !important; }
-    .stSelectbox label p { color: white !important; }
-
-    /* Logo in alto a destra */
-    .logo-top-right {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-    }
-
-    /* Bottoni bianchi (Landing Page) */
-    .stButton>button {
-        width: 100%;
-        border-radius: 8px;
-        height: 3em;
-        background-color: #ffffff;
-        color: #1E3A8A !important;
-        font-weight: bold;
-        border: none;
-    }
-    
-    /* Pulizia Sidebar */
-    [data-testid="stSidebar"] { background-color: #112244; }
-    
-    /* Nascondi header Streamlit */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- SCRITTA #WEAREPRO BICOLORE AL CENTRO IN ALTO ---
-st.markdown(
-    """
-    <style>
-    /* Importiamo un font molto spesso e moderno */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
-        
-    .centered-header {
-        position: fixed;
-        top: 15px !important; /* Distanza dal bordo superiore */
-        left: 0;
-        right: 0;
-        width: 100%;
-        z-index: 9999; /* Sopra a tutto */
-        text-align: center;
-        pointer-events: none; /* Non blocca i click sui widget sottostanti */
-        background-color: transparent !important;
-    }
-    .header-text {
-        font-family: 'Inter', sans-serif !important;
-        font-size: 60px !important; /* Dimensione su PC, regolala qui */
-        font-weight: 900 !important;
-        letter-spacing: 3px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        text-transform: uppercase;
-        /* Ombra leggera per staccare dallo sfondo se necessario */
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    /* Parte Bianca: #WEARE */
-    .text-white {
-        color: #ffffff !important;
-    }
-    /* Parte Oro: PRO */
-    .text-gold {
-        color: #D4AF37 !important; /* Oro del Logo Pro Palazzolo */
-    }
-        
-    /* Regolazioni dinamiche per Smartphone (schermi piccoli) */
-     @media (max-width: 768px) {
-        .header-text {
-            font-size: 30px !important; /* Più piccolo su mobile */
-            letter-spacing: 1px !important;
-        }
-        .centered-header {
-            top: 10px !important;
-        }
-    }
-    </style>
+st.markdown(f"""
     <div class="centered-header">
-         <h1 class="header-text">
-            <span class="text-white">#WEARE</span><span class="text-gold">PRO</span>
+        <h1 class="header-text">
+            <span style="color: #ffffff;">#WEARE</span><span style="color: #D4AF37;">PRO</span>
         </h1>
     </div>
-    """,
-    unsafe_allow_html=True
-)
+    <div class="fixed-logo-container">
+        <img src="data:image/png;base64,{logo_base64}" class="fixed-logo-img">
+    </div>
+""", unsafe_allow_html=True)
 
-# --- CONNESSIONE GOOGLE SHEETS ---
+# --- CONNESSIONE E FUNZIONI ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# --- GESTIONE COUNTER PER RESET ---
-if "reset_counter" not in st.session_state:
-    st.session_state.reset_counter = 0
-
+if "reset_counter" not in st.session_state: st.session_state.reset_counter = 0
 def reset_campi():
     st.session_state.reset_counter += 1
     if 'off_coords' in st.session_state: del st.session_state['off_coords']
     if 'def_tiro_coords' in st.session_state: del st.session_state['def_tiro_coords']
 
-# --- DATI COMUNI ---
 squadre_campionato = ["Breno", "Calcio Brusaporto", "Caravaggio", "Crema 1908", "FC Voluntas", "Leon", "Mario Rigamonti", "Ponte SP Mapello", "Pro Palazzolo", "Real Calepina", "Scanzorosciate", "Speranza Agrate", "Uesse Sarnico 1908", "Vighenzi Calcio", "Villa Valle", "Virtus CiseranoBergamo"]
 lista_calciatori = ["Seleziona", "Betti Alessandro", "Bombardieri Lorenzo", "Bosetti Davide", "Calimeri Guido", "Colombo Lorenzo", "Dotti Alessandro", "Kala Gabriel", "Koxha Brajan", "Lancini Tommaso", "Membrini Luca", "Moretti Jacopo", "Palladio Andrea", "Pasqua Alberto", "Pelucchi Tommaso", "Pennacchio Stefano", "Pensa Maikol", "Piscitello Filippo", "Romualdi Gianmarco", "Scaglia Matteo", "Turelli Alessandro", "Zerbini Giorgio"]
 
-# --- LOGICA DI ACCESSO ---
+# --- LOGIN LOGIC ---
 if "autenticato" not in st.session_state:
     st.session_state.autenticato = False
     st.session_state.profilo = None
 
 if not st.session_state.autenticato:
-    # Logo in alto a destra solo nella landing
-    if os.path.exists("logo.png"):
-        with open("logo.png", "rb") as f:
-            data = base64.b64encode(f.read()).decode("utf-8")
-            st.markdown(f'<div class="logo-top-right"><img src="data:image/png;base64,{data}" width="120"></div>', unsafe_allow_html=True)
-
+    # IL LOGO CENTRALE E' STATO RIMOSSO
     _, col_main, _ = st.columns([1, 2, 1])
     with col_main:
-        st.markdown("<br><br><h1 style='text-align: center;'>⚽ ANALISI DATI</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center;'>Benvenuto. Seleziona il tuo profilo per continuare.</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center;'>⚽ ANALISI DATI</h1>", unsafe_allow_html=True)
         ruolo_scelto = st.selectbox("Chi sta accedendo?", ["Seleziona...", "Match Analyst", "Staff Tecnico"])
-        
         permesso = False
         if ruolo_scelto == "Match Analyst":
             pwd = st.text_input("Codice Accesso", type="password")
             if pwd == "1234": permesso = True
-        elif ruolo_scelto == "Staff Tecnico":
-            permesso = True
+        elif ruolo_scelto == "Staff Tecnico": permesso = True
 
         if st.button("ENTRA NELL'APP"):
             if ruolo_scelto != "Seleziona..." and permesso:
@@ -185,74 +140,22 @@ if not st.session_state.autenticato:
                 st.rerun()
     st.stop()
 
-# --- SIDEBAR (DOPO LOGIN) ---
-st.sidebar.image("logo.png", width=120)
+# --- SIDEBAR ---
+st.sidebar.image("logo.png", width=100)
 st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
-
-ruolo = st.session_state.profilo
 
 # =========================================================
 # LOGICA MATCH ANALYST
 # =========================================================
-if ruolo == "Match Analyst":
-
-    # --- TASTO TORNA ALLA HOME ---
-    if st.button("⬅️ Torna alla Home", key="home_btn_ma"):
-        # Resetta l'autenticazione e il profilo scelto
+if st.session_state.profilo == "Match Analyst":
+    if st.button("⬅️ Torna alla Home"):
         st.session_state.autenticato = False
-        st.session_state.profilo = None
         st.rerun()
     
     st.markdown("## 🛠️ CONSOLE MATCH ANALYST")
-    st.markdown("<p style='color: #8b949e;'>Inserimento dati e gestione database</p>", unsafe_allow_html=True)
-
-    # Il segmented_control decide cosa mostrare sotto
-    scelta_analisi = st.segmented_control("MODALITÀ INSERIMENTO", ["Squadra", "Individuale"], default="Squadra")
-    st.divider()
-
-    # --- CASO 1: SQUADRA ---
+    scelta_analisi = st.segmented_control("OGGETTO DI ANALISI", ["Squadra", "Individuale"], default="Squadra")
+    
     if scelta_analisi == "Squadra":
-        # --- AGGIUNTA LOGO IN ALTO A DESTRA (FIXED SULLA PAGINA) ---
-        if os.path.exists("logo.png"):
-            import base64
-            with open("logo.png", "rb") as f:
-                data = base64.b64encode(f.read()).decode("utf-8")
-            
-            # Usiamo position: fixed per ancorarlo alla finestra del browser
-            st.markdown(
-                f"""
-                <style>
-                .fixed-logo-container {{
-                    position: fixed;
-                    top: 20px; /* Distanza dal bordo superiore della finestra */
-                    right: 20px; /* Distanza dal bordo destro della finestra */
-                    z-index: 99999; /* Assicura che stia sopra a TUTTO */
-                    display: block;
-                }}
-                .fixed-logo-img {{
-                    width: 120px; /* Dimensione su PC */
-                    height: auto;
-                    background-color: transparent; /* Assicura fondo trasparente */
-                }}
-                /* Regolazioni per Smartphone (schermi piccoli) */
-                @media (max-width: 768px) {{
-                    .fixed-logo-img {{
-                        width: 80px; /* Più piccolo su mobile */
-                    }}
-                    .fixed-logo-container {{
-                        top: 10px; /* Più in alto su mobile */
-                        right: 10px;
-                    }}
-                }}
-                </style>
-                <div class="fixed-logo-container">
-                    <img src="data:image/png;base64,{data}" class="fixed-logo-img">
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        
         with st.expander("ℹ️ Informazioni partita", expanded=True):
             c1, c2 = st.columns(2)
             with c1: st.selectbox("Giornata", ["Seleziona giornata"] + list(range(1, 31)), key="g_key")
@@ -393,46 +296,6 @@ if ruolo == "Match Analyst":
 # NUOVA LOGICA: ANALISI INDIVIDUALE (Sostituire la precedente)
 # =========================================================
     else:
-# --- AGGIUNTA LOGO IN ALTO A DESTRA (FIXED SULLA PAGINA) ---
-        if os.path.exists("logo.png"):
-            import base64
-            with open("logo.png", "rb") as f:
-                data = base64.b64encode(f.read()).decode("utf-8")
-            
-            # Usiamo position: fixed per ancorarlo alla finestra del browser
-            st.markdown(
-                f"""
-                <style>
-                .fixed-logo-container {{
-                    position: fixed;
-                    top: 20px; /* Distanza dal bordo superiore della finestra */
-                    right: 20px; /* Distanza dal bordo destro della finestra */
-                    z-index: 99999; /* Assicura che stia sopra a TUTTO */
-                    display: block;
-                }}
-                .fixed-logo-img {{
-                    width: 120px; /* Dimensione su PC */
-                    height: auto;
-                    background-color: transparent; /* Assicura fondo trasparente */
-                }}
-                /* Regolazioni per Smartphone (schermi piccoli) */
-                @media (max-width: 768px) {{
-                    .fixed-logo-img {{
-                        width: 80px; /* Più piccolo su mobile */
-                    }}
-                    .fixed-logo-container {{
-                        top: 10px; /* Più in alto su mobile */
-                        right: 10px;
-                    }}
-                }}
-                </style>
-                <div class="fixed-logo-container">
-                    <img src="data:image/png;base64,{data}" class="fixed-logo-img">
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        
         st.markdown("### 🧠 MONITORAGGIO ATTITUDINALE PROIETTIVO")
         
         if "reset_ind" not in st.session_state: st.session_state.reset_ind = 0
@@ -441,7 +304,7 @@ if ruolo == "Match Analyst":
         # 1. SETUP SESSIONE
         ci1, ci2, ci3 = st.columns([1, 1, 2])
         with ci1: 
-            tipo_sessione = st.radio("Contesto", ["Allenamento", "Partita (VEO)"], horizontal=True, key=f"tipo_sess{suffix_ind}")
+            tipo_sessione = st.radio("Contesto", ["Allenamento", "Partita"], horizontal=True, key=f"tipo_sess{suffix_ind}")
         with ci2: 
             data_sess = st.date_input("Data Osservazione", key=f"date_sess{suffix_ind}")
         with ci3: 
@@ -514,13 +377,9 @@ if ruolo == "Match Analyst":
                     st.error(f"Errore: {e}")
 
 # --- QUI DEVE ESSERE ALLINEATO AL BORDO SINISTRO (o al livello del tuo IF iniziale) ---
-elif ruolo == "Staff Tecnico":
-
-    # --- TASTO TORNA ALLA HOME ---
-    if st.button("⬅️ Torna alla Home", key="home_btn_staff"):
-        # Resetta l'autenticazione e il profilo scelto
+elif st.session_state.profilo == "Staff Tecnico":
+    if st.button("⬅️ Torna alla Home"):
         st.session_state.autenticato = False
-        st.session_state.profilo = None
         st.rerun()
     
     st.markdown("## 📊 DASHBOARD PERFORMANCE")
@@ -693,132 +552,150 @@ elif ruolo == "Staff Tecnico":
         except Exception as e:
             st.error(f"Errore Sezione Offensiva: {e}")
 
-    # ---------------------------------------------------------
-# TAB PROFILO CALCIATORE (Allineata al nuovo DB)
 # ---------------------------------------------------------
-    with t_individuo:
-        st.markdown("### 🎯 Analisi Proiettiva Serie D")
+# TAB PROFILO CALCIATORE (Versione Staff Tecnico - Ottimizzata Mobile)
+# ---------------------------------------------------------
+with t_individuo:
+    st.markdown("### 🎯 Analisi Delle Prestazioni Individuali")
+    
+    try:
+        # 1. Caricamento e Pulizia
+        df_ind = conn.read(worksheet="Individuale", ttl=0)
+        df_ind_clean = df_ind.copy()
         
-        try:
-            # 1. Caricamento e Pulizia
-            df_ind = conn.read(worksheet="Individuale", ttl=0)
-            df_ind_clean = df_ind.copy()
+        # Mappatura nomi colonne
+        kpi_all = ['Intensità', 'Attenzione', 'Atteggiamento']
+        kpi_gara = ['Eff. scelte', 'Leadership', 'Resil. errore']
+        kpi_totali = kpi_all + kpi_gara
+        
+        # Pulizia dati e conversione Date
+        df_ind_clean['Data'] = pd.to_datetime(df_ind_clean['Data'], dayfirst=True).dt.date
+        for col in kpi_totali:
+            df_ind_clean[col] = pd.to_numeric(df_ind_clean[col], errors='coerce').replace(0, pd.NA)
+
+        # 2. Selezione Giocatori
+        p_focus = st.multiselect("Seleziona uno o più atleti da analizzare", 
+                               lista_calciatori[1:], 
+                               max_selections=3,
+                               key="p_multi_staff")
+
+        if not p_focus:
+            st.info("💡 Seleziona uno o più calciatori per visualizzare l'analisi.")
+        else:
+            # --- 1. RADAR CHARTS CON FILTRO DATA ---
+            st.markdown("#### 📊 Skill Set: Allenamento vs Partita")
             
-            # Mappatura nuovi nomi colonne
-            kpi_all = ['Intensità', 'Attenzione', 'Atteggiamento']
-            kpi_gara = ['Eff. scelte', 'Leadership', 'Resil. errore']
-            kpi_totali = kpi_all + kpi_gara
-            
-            # Pulizia: forza numerico e trasforma 0 in NaN
-            for col in kpi_totali:
-                df_ind_clean[col] = pd.to_numeric(df_ind_clean[col], errors='coerce').replace(0, pd.NA)
-    
-            # 2. Selezione Giocatori
-            c_sel1, c_sel2 = st.columns([2, 1])
-            with c_sel1:
-                p_focus = st.multiselect("Seleziona Calciatori da confrontare", 
-                                       lista_calciatori[1:], 
-                                       max_selections=3,
-                                       key="p_multi_staff")
-            with c_sel2:
-                mostra_target = st.toggle("Mostra Target Serie D (4.0)", value=True)
-    
-            if not p_focus:
-                st.info("💡 Seleziona uno o più calciatori per visualizzare l'analisi individuale e comparativa.")
-            else:
-                # --- 1. RADAR CHARTS ---
-                st.markdown("#### 📊 Skill Set: Allenamento vs Partita")
-                col_r1, col_r2 = st.columns(2)
-                colori = ['#FFD700', '#00BFFF', '#FF4500'] 
-    
-                def create_radar(kpis, titolo, contesto_filtro):
-                    fig = go.Figure()
-                    for i, p in enumerate(p_focus):
-                        # Filtro per giocatore e contesto (Allenamento o Partita)
-                        d_p = df_ind_clean[(df_ind_clean['Giocatore'] == p) & 
-                                         (df_ind_clean['Contesto'].str.contains(contesto_filtro, na=False))]
-                        
-                        if not d_p.empty:
-                            valori = [d_p[k].mean() for k in kpis]
-                            # Se tutti i valori sono NaN, metti 0 per non far sparire il grafico
-                            valori = [v if pd.notna(v) else 0 for v in valori]
-                            
-                            fig.add_trace(go.Scatterpolar(
-                                r=valori + [valori[0]],
-                                theta=kpis + [kpis[0]],
-                                fill='toself', name=p,
-                                line=dict(color=colori[i % len(colori)], width=2)
-                            ))
-                    
-                    if mostra_target:
-                        fig.add_trace(go.Scatterpolar(r=[4,4,4,4], theta=kpis+[kpis[0]], 
-                                                    mode='lines', name='Target D', 
-                                                    line=dict(color='rgba(255,0,0,0.5)', dash='dash')))
-                    
-                    fig.update_layout(
-                        polar=dict(radialaxis=dict(visible=True, range=[0, 5], gridcolor="gray")),
-                        template="plotly_dark", title=titolo, margin=dict(t=60, b=40, l=40, r=40),
-                        paper_bgcolor='rgba(0,0,0,0)', showlegend=True if len(p_focus)>1 else False
-                    )
-                    return fig
-    
-                with col_r1:
-                    st.plotly_chart(create_radar(kpi_all, "Focus Allenamento", "Allenamento"), use_container_width=True)
-                with col_r2:
-                    st.plotly_chart(create_radar(kpi_gara, "Focus Gara", "Partita"), use_container_width=True)
-    
-                st.divider()
-    
-                # --- 2. BAR CHART COMPARATIVO ---
-                st.markdown("#### ⚖️ Bilanciamento Attitudine vs Performance")
-                bar_data = []
-                for p in p_focus:
-                    d_p = df_ind_clean[df_ind_clean['Giocatore'] == p]
-                    # Media KPI Allenamento nelle sessioni di Allenamento
-                    m_all = d_p[d_p['Contesto'].str.contains("Allenamento", na=False)][kpi_all].mean().mean()
-                    # Media KPI Gara nelle sessioni di Partita
-                    m_gara = d_p[d_p['Contesto'].str.contains("Partita", na=False)][kpi_gara].mean().mean()
-                    
-                    bar_data.append({"Calciatore": p, "Tipo": "Allenamento (Media KPI)", "Valore": m_all if pd.notna(m_all) else 0})
-                    bar_data.append({"Calciatore": p, "Tipo": "Partita (Media KPI)", "Valore": m_gara if pd.notna(m_gara) else 0})
-                
-                df_bar = pd.DataFrame(bar_data)
-                fig_bar = px.bar(df_bar, x="Calciatore", y="Valore", color="Tipo", barmode="group",
-                                 color_discrete_map={"Allenamento (Media KPI)": "#00CC96", "Partita (Media KPI)": "#636EFA"},
-                                 range_y=[0, 5], template="plotly_dark", text_auto='.1f')
-                fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
-                                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
-                st.plotly_chart(fig_bar, use_container_width=True)
-    
-                st.divider()
-    
-                # --- 3. TIMELINE DI CRESCITA ---
-                st.markdown("#### 📈 Timeline Evolutiva")
-                # Uso di radio o segmented_control per il filtro
-                filtro_time = st.radio("Filtra andamento per:", ["Entrambi", "Allenamento", "Partita"], horizontal=True)
-                
-                fig_time = go.Figure()
+            # Filtro data per i radar
+            date_disponibili_radar = sorted(df_ind_clean['Data'].unique(), reverse=True)
+            sel_date_radar = st.multiselect("📅 Filtra Radar per Data (vuoto = Totale)", 
+                                           options=date_disponibili_radar,
+                                           key="filter_date_radar")
+
+            col_r1, col_r2 = st.columns(2)
+            colori = ['#FFD700', '#00BFFF', '#FF4500'] 
+
+            def create_radar(kpis, titolo, contesto_filtro, date_filtro):
+                fig = go.Figure()
                 for i, p in enumerate(p_focus):
-                    d_p = df_ind_clean[df_ind_clean['Giocatore'] == p].copy()
-                    d_p['Data'] = pd.to_datetime(d_p['Data'], dayfirst=True) # dayfirst=True per formato europeo
-                    d_p = d_p.sort_values('Data')
+                    # Filtro base
+                    mask = (df_ind_clean['Giocatore'] == p) & (df_ind_clean['Contesto'].str.contains(contesto_filtro, na=False))
+                    # Filtro date (se selezionate)
+                    if date_filtro:
+                        mask = mask & (df_ind_clean['Data'].isin(date_filtro))
                     
-                    # Calcoliamo la media della riga basandoci su tutti i KPI popolati
-                    d_p['Media_Sessione'] = d_p[kpi_totali].mean(axis=1)
-                    
-                    if filtro_time != "Entrambi":
-                        d_p = d_p[d_p['Contesto'].str.contains(filtro_time, na=False)]
+                    d_p = df_ind_clean[mask]
                     
                     if not d_p.empty:
-                        fig_time.add_trace(go.Scatter(x=d_p['Data'], y=d_p['Media_Sessione'],
-                                                    mode='lines+markers', name=p,
-                                                    line=dict(color=colori[i % len(colori)], width=3),
-                                                    marker=dict(size=10)))
-    
-                fig_time.update_layout(template="plotly_dark", yaxis_range=[0, 5.2],
-                                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                                     xaxis_title="Data Osservazione", yaxis_title="Valutazione Media")
-                st.plotly_chart(fig_time, use_container_width=True)
-    
-        except Exception as e:
-            st.error(f"Errore nella generazione dei grafici: {e}")
+                        valori = [d_p[k].mean() for k in kpis]
+                        valori = [v if pd.notna(v) else 0 for v in valori]
+                        
+                        fig.add_trace(go.Scatterpolar(
+                            r=valori + [valori[0]],
+                            theta=kpis + [kpis[0]],
+                            fill='toself', name=p,
+                            line=dict(color=colori[i % len(colori)], width=2)
+                        ))
+                
+                fig.update_layout(
+                    polar=dict(radialaxis=dict(visible=True, range=[0, 5], gridcolor="gray")),
+                    template="plotly_dark", title=titolo, margin=dict(t=60, b=40, l=40, r=40),
+                    paper_bgcolor='rgba(0,0,0,0)', showlegend=True if len(p_focus)>1 else False
+                )
+                return fig
+
+            with col_r1:
+                st.plotly_chart(create_radar(kpi_all, "Focus Allenamento", "Allenamento", sel_date_radar), 
+                                use_container_width=True, config={'staticPlot': True})
+            with col_r2:
+                st.plotly_chart(create_radar(kpi_gara, "Focus Gara", "Partita", sel_date_radar), 
+                                use_container_width=True, config={'staticPlot': True})
+
+            st.divider()
+
+            # --- 2. BAR CHART COMPARATIVO CON DOPPIO FILTRO DATA ---
+            st.markdown("#### ⚖️ Bilanciamento Attitudine vs Performance")
+            
+            c_date1, c_date2 = st.columns(2)
+            with c_date1:
+                date_all = sorted(df_ind_clean[df_ind_clean['Contesto'].str.contains("Allenamento", na=False)]['Data'].unique(), reverse=True)
+                sel_date_all = st.multiselect("📅 Date Allenamento", options=date_all, key="bar_date_all")
+            with c_date2:
+                date_gara = sorted(df_ind_clean[df_ind_clean['Contesto'].str.contains("Partita", na=False)]['Data'].unique(), reverse=True)
+                sel_date_gara = st.multiselect("📅 Date Partita", options=date_gara, key="bar_date_gara")
+
+            bar_data = []
+            for p in p_focus:
+                d_p = df_ind_clean[df_ind_clean['Giocatore'] == p]
+                
+                # Calcolo media Allenamento
+                mask_all = d_p['Contesto'].str.contains("Allenamento", na=False)
+                if sel_date_all: mask_all = mask_all & (d_p['Data'].isin(sel_date_all))
+                m_all = d_p[mask_all][kpi_all].mean().mean()
+                
+                # Calcolo media Gara
+                mask_gara = d_p['Contesto'].str.contains("Partita", na=False)
+                if sel_date_gara: mask_gara = mask_gara & (d_p['Data'].isin(sel_date_gara))
+                m_gara = d_p[mask_gara][kpi_gara].mean().mean()
+                
+                bar_data.append({"Calciatore": p, "Tipo": "Allenamento", "Valore": m_all if pd.notna(m_all) else 0})
+                bar_data.append({"Calciatore": p, "Tipo": "Partita", "Valore": m_gara if pd.notna(m_gara) else 0})
+            
+            df_bar = pd.DataFrame(bar_data)
+            fig_bar = px.bar(df_bar, x="Calciatore", y="Valore", color="Tipo", barmode="group",
+                             color_discrete_map={"Allenamento": "#00CC96", "Partita": "#636EFA"},
+                             range_y=[0, 5], template="plotly_dark", text_auto='.1f')
+            
+            fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+            
+            st.plotly_chart(fig_bar, use_container_width=True, config={'staticPlot': True})
+
+            st.divider()
+
+            # --- 3. TIMELINE DI CRESCITA ---
+            st.markdown("#### 📈 Timeline Evolutiva")
+            filtro_time = st.radio("Mostra andamento per:", ["Entrambi", "Allenamento", "Partita"], horizontal=True)
+            
+            fig_time = go.Figure()
+            for i, p in enumerate(p_focus):
+                d_p = df_ind_clean[df_ind_clean['Giocatore'] == p].copy()
+                d_p = d_p.sort_values('Data')
+                d_p['Media_Sessione'] = d_p[kpi_totali].mean(axis=1)
+                
+                if filtro_time != "Entrambi":
+                    d_p = d_p[d_p['Contesto'].str.contains(filtro_time, na=False)]
+                
+                if not d_p.empty:
+                    fig_time.add_trace(go.Scatter(x=d_p['Data'], y=d_p['Media_Sessione'],
+                                                mode='lines+markers', name=p,
+                                                line=dict(color=colori[i % len(colori)], width=3),
+                                                marker=dict(size=10)))
+
+            fig_time.update_layout(template="plotly_dark", yaxis_range=[0, 5.2],
+                                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                 xaxis_title="Data Osservazione", yaxis_title="Valutazione Media")
+            
+            st.plotly_chart(fig_time, use_container_width=True, config={'staticPlot': True})
+
+    except Exception as e:
+        st.error(f"Errore nella generazione dei grafici: {e}")
