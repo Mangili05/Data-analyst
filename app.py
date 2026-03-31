@@ -690,8 +690,9 @@ elif st.session_state.profilo == "Staff Tecnico":
                                                     line=dict(color=colori[i % len(colori)], width=3),
                                                     marker=dict(size=10)))
 
-                # Mostra la timeline solo se ci sono dati da tracciare
+                # --- 3. TIMELINE DI CRESCITA (Aggiornata con formato italiano) ---
                 if any_data_timeline:
+                    # Impostiamo il formato italiano sia per i testi sull'asse che per il mouse
                     fig_time.update_layout(
                         template="plotly_dark", 
                         yaxis_range=[0, 5.2],
@@ -699,10 +700,14 @@ elif st.session_state.profilo == "Staff Tecnico":
                         plot_bgcolor='rgba(0,0,0,0)',
                         xaxis_title="Data Osservazione", 
                         yaxis_title="Valutazione Media",
-                        # AGGIUNGI QUESTA RIGA QUI SOTTO:
-                        xaxis=dict(tickformat="%d-%m-%Y") 
+                        hovermode="x unified", # Unifica il fumetto per vedere tutti i giocatori insieme in quella data
+                        xaxis=dict(
+                            type='date',           # Forza Plotly a trattare l'asse come date
+                            tickformat="%d-%m-%Y", # Formato etichette: 31-03-2026
+                            hoverformat="%d-%m-%Y" # Formato nel fumetto al passaggio del mouse
+                        )
                     )
-                    st.plotly_chart(fig_time, use_container_width=True, config={'staticPlot': True})
+                    st.plotly_chart(fig_time, use_container_width=True, config={'displayModeBar': False})
 
         except Exception as e:
             st.error(f"Errore nella generazione dei grafici: {e}")
