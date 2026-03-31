@@ -98,7 +98,9 @@ if not st.session_state.autenticato:
 # --- SIDEBAR COMUNE ---
 st.sidebar.image("logo.png", width=100)
 st.sidebar.write(f"Utente: **{st.session_state.profilo}**")
-
+if st.sidebar.button("Logout"):
+    st.session_state.autenticato = False
+    st.rerun()
 
 # =========================================================
 # 1. LOGICA MATCH ANALYST
