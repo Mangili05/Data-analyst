@@ -532,7 +532,7 @@ elif st.session_state.profilo == "Staff Tecnico":
             # --- Funzione helper per le date con i giorni in italiano ---
             def formatta_data_ita(d):
                 giorni_ita = {0: "lunedì", 1: "martedì", 2: "mercoledì", 3: "giovedì", 4: "venerdì", 5: "sabato", 6: "domenica"}
-                return f"{d.strftime('%Y-%m-%d')}, {giorni_ita[d.weekday()]}"
+                return f"{d.strftime('%d-%m-%y')}, {giorni_ita[d.weekday()]}"
 
             # 2. Selezione Giocatori
             p_focus = st.multiselect("Seleziona uno o più atleti da analizzare", 
