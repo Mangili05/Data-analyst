@@ -692,9 +692,16 @@ elif st.session_state.profilo == "Staff Tecnico":
 
                 # Mostra la timeline solo se ci sono dati da tracciare
                 if any_data_timeline:
-                    fig_time.update_layout(template="plotly_dark", yaxis_range=[0, 5.2],
-                                         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                                         xaxis_title="Data Osservazione", yaxis_title="Valutazione Media", xaxis=dict(tickformat="%d-%m-%Y")
+                    fig_time.update_layout(
+                        template="plotly_dark", 
+                        yaxis_range=[0, 5.2],
+                        paper_bgcolor='rgba(0,0,0,0)', 
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        xaxis_title="Data Osservazione", 
+                        yaxis_title="Valutazione Media",
+                        # AGGIUNGI QUESTA RIGA QUI SOTTO:
+                        xaxis=dict(tickformat="%d-%m-%Y") 
+                    )
                     st.plotly_chart(fig_time, use_container_width=True, config={'staticPlot': True})
 
         except Exception as e:
