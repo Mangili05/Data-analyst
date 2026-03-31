@@ -304,7 +304,7 @@ if st.session_state.profilo == "Match Analyst":
         # 1. SETUP SESSIONE
         ci1, ci2, ci3 = st.columns([1, 1, 2])
         with ci1: 
-            tipo_sessione = st.radio("Contesto", ["Allenamento", "Partita (VEO)"], horizontal=True, key=f"tipo_sess{suffix_ind}")
+            tipo_sessione = st.radio("Contesto", ["Allenamento", "Partita"], horizontal=True, key=f"tipo_sess{suffix_ind}")
         with ci2: 
             data_sess = st.date_input("Data Osservazione", key=f"date_sess{suffix_ind}")
         with ci3: 
