@@ -553,7 +553,7 @@ elif st.session_state.profilo == "Staff Tecnico":
             st.error(f"Errore Sezione Offensiva: {e}")
 
 # ---------------------------------------------------------
-# TAB PROFILO CALCIATORE (Versione Staff Tecnico - Ottimizzata Mobile)
+# TAB PROFILO CALCIATORE (Versione Staff Tecnico - Pulizia Automatica)
 # ---------------------------------------------------------
 with t_individuo:
     st.markdown("### 🎯 Analisi Delle Prestazioni Individuali")
@@ -563,12 +563,10 @@ with t_individuo:
         df_ind = conn.read(worksheet="Individuale", ttl=0)
         df_ind_clean = df_ind.copy()
         
-        # Mappatura nomi colonne
         kpi_all = ['Intensità', 'Attenzione', 'Atteggiamento']
         kpi_gara = ['Eff. scelte', 'Leadership', 'Resil. errore']
         kpi_totali = kpi_all + kpi_gara
         
-        # Pulizia dati e conversione Date
         df_ind_clean['Data'] = pd.to_datetime(df_ind_clean['Data'], dayfirst=True).dt.date
         for col in kpi_totali:
             df_ind_clean[col] = pd.to_numeric(df_ind_clean[col], errors='coerce').replace(0, pd.NA)
@@ -582,10 +580,9 @@ with t_individuo:
         if not p_focus:
             st.info("💡 Seleziona uno o più calciatori per visualizzare l'analisi.")
         else:
-            # --- 1. RADAR CHARTS CON FILTRO DATA ---
+            # --- 1. RADAR CHARTS CON LOGICA DI VISIBILITÀ ---
             st.markdown("#### 📊 Skill Set: Allenamento vs Partita")
             
-            # Filtro data per i radar
             date_disponibili_radar = sorted(df_ind_clean['Data'].unique(), reverse=True)
             sel_date_radar = st.multiselect("📅 Filtra Radar per Data (vuoto = Totale)", 
                                            options=date_disponibili_radar,
@@ -594,28 +591,30 @@ with t_individuo:
             col_r1, col_r2 = st.columns(2)
             colori = ['#FFD700', '#00BFFF', '#FF4500'] 
 
-            def create_radar(kpis, titolo, contesto_filtro, date_filtro):
+            # Funzione interna per verificare se ci sono dati per quel contesto/data
+            def get_filtered_data(contesto_filtro, date_filtro):
+                mask = (df_ind_clean['Giocatore'].isin(p_focus)) & \
+                       (df_ind_clean['Contesto'].str.contains(contesto_filtro, na=False))
+                if date_filtro:
+                    mask = mask & (df_ind_clean['Data'].isin(date_filtro))
+                return df_ind_clean[mask]
+
+            # Dati filtrati per i due radar
+            df_radar_all = get_filtered_data("Allenamento", sel_date_radar)
+            df_radar_gara = get_filtered_data("Partita", sel_date_radar)
+
+            def create_radar_fig(df_filtered, kpis, titolo):
                 fig = go.Figure()
                 for i, p in enumerate(p_focus):
-                    # Filtro base
-                    mask = (df_ind_clean['Giocatore'] == p) & (df_ind_clean['Contesto'].str.contains(contesto_filtro, na=False))
-                    # Filtro date (se selezionate)
-                    if date_filtro:
-                        mask = mask & (df_ind_clean['Data'].isin(date_filtro))
-                    
-                    d_p = df_ind_clean[mask]
-                    
+                    d_p = df_filtered[df_filtered['Giocatore'] == p]
                     if not d_p.empty:
                         valori = [d_p[k].mean() for k in kpis]
                         valori = [v if pd.notna(v) else 0 for v in valori]
-                        
                         fig.add_trace(go.Scatterpolar(
-                            r=valori + [valori[0]],
-                            theta=kpis + [kpis[0]],
+                            r=valori + [valori[0]], theta=kpis + [kpis[0]],
                             fill='toself', name=p,
                             line=dict(color=colori[i % len(colori)], width=2)
                         ))
-                
                 fig.update_layout(
                     polar=dict(radialaxis=dict(visible=True, range=[0, 5], gridcolor="gray")),
                     template="plotly_dark", title=titolo, margin=dict(t=60, b=40, l=40, r=40),
@@ -623,16 +622,19 @@ with t_individuo:
                 )
                 return fig
 
+            # Visualizzazione condizionale Radar
             with col_r1:
-                st.plotly_chart(create_radar(kpi_all, "Focus Allenamento", "Allenamento", sel_date_radar), 
-                                use_container_width=True, config={'staticPlot': True})
+                if not df_radar_all.empty:
+                    st.plotly_chart(create_radar_fig(df_radar_all, kpi_all, "Focus Allenamento"), 
+                                    use_container_width=True, config={'staticPlot': True})
             with col_r2:
-                st.plotly_chart(create_radar(kpi_gara, "Focus Gara", "Partita", sel_date_radar), 
-                                use_container_width=True, config={'staticPlot': True})
+                if not df_radar_gara.empty:
+                    st.plotly_chart(create_radar_fig(df_radar_gara, kpi_gara, "Focus Gara"), 
+                                    use_container_width=True, config={'staticPlot': True})
 
             st.divider()
 
-            # --- 2. BAR CHART COMPARATIVO CON DOPPIO FILTRO DATA ---
+            # --- 2. BAR CHART COMPARATIVO ---
             st.markdown("#### ⚖️ Bilanciamento Attitudine vs Performance")
             
             c_date1, c_date2 = st.columns(2)
@@ -646,29 +648,23 @@ with t_individuo:
             bar_data = []
             for p in p_focus:
                 d_p = df_ind_clean[df_ind_clean['Giocatore'] == p]
+                # Allenamento
+                m_all = d_p[(d_p['Contesto'].str.contains("Allenamento")) & (d_p['Data'].isin(sel_date_all) if sel_date_all else True)][kpi_all].mean().mean()
+                # Partita
+                m_gara = d_p[(d_p['Contesto'].str.contains("Partita")) & (d_p['Data'].isin(sel_date_gara) if sel_date_gara else True)][kpi_gara].mean().mean()
                 
-                # Calcolo media Allenamento
-                mask_all = d_p['Contesto'].str.contains("Allenamento", na=False)
-                if sel_date_all: mask_all = mask_all & (d_p['Data'].isin(sel_date_all))
-                m_all = d_p[mask_all][kpi_all].mean().mean()
-                
-                # Calcolo media Gara
-                mask_gara = d_p['Contesto'].str.contains("Partita", na=False)
-                if sel_date_gara: mask_gara = mask_gara & (d_p['Data'].isin(sel_date_gara))
-                m_gara = d_p[mask_gara][kpi_gara].mean().mean()
-                
-                bar_data.append({"Calciatore": p, "Tipo": "Allenamento", "Valore": m_all if pd.notna(m_all) else 0})
-                bar_data.append({"Calciatore": p, "Tipo": "Partita", "Valore": m_gara if pd.notna(m_gara) else 0})
+                if pd.notna(m_all): bar_data.append({"Calciatore": p, "Tipo": "Allenamento", "Valore": m_all})
+                if pd.notna(m_gara): bar_data.append({"Calciatore": p, "Tipo": "Partita", "Valore": m_gara})
             
-            df_bar = pd.DataFrame(bar_data)
-            fig_bar = px.bar(df_bar, x="Calciatore", y="Valore", color="Tipo", barmode="group",
-                             color_discrete_map={"Allenamento": "#00CC96", "Partita": "#636EFA"},
-                             range_y=[0, 5], template="plotly_dark", text_auto='.1f')
-            
-            fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
-                                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
-            
-            st.plotly_chart(fig_bar, use_container_width=True, config={'staticPlot': True})
+            # Mostra il Bar Chart solo se ci sono dati
+            if bar_data:
+                df_bar = pd.DataFrame(bar_data)
+                fig_bar = px.bar(df_bar, x="Calciatore", y="Valore", color="Tipo", barmode="group",
+                                 color_discrete_map={"Allenamento": "#00CC96", "Partita": "#636EFA"},
+                                 range_y=[0, 5], template="plotly_dark", text_auto='.1f')
+                fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+                st.plotly_chart(fig_bar, use_container_width=True, config={'staticPlot': True})
 
             st.divider()
 
@@ -677,6 +673,8 @@ with t_individuo:
             filtro_time = st.radio("Mostra andamento per:", ["Entrambi", "Allenamento", "Partita"], horizontal=True)
             
             fig_time = go.Figure()
+            any_data_timeline = False
+
             for i, p in enumerate(p_focus):
                 d_p = df_ind_clean[df_ind_clean['Giocatore'] == p].copy()
                 d_p = d_p.sort_values('Data')
@@ -686,16 +684,18 @@ with t_individuo:
                     d_p = d_p[d_p['Contesto'].str.contains(filtro_time, na=False)]
                 
                 if not d_p.empty:
+                    any_data_timeline = True
                     fig_time.add_trace(go.Scatter(x=d_p['Data'], y=d_p['Media_Sessione'],
                                                 mode='lines+markers', name=p,
                                                 line=dict(color=colori[i % len(colori)], width=3),
                                                 marker=dict(size=10)))
 
-            fig_time.update_layout(template="plotly_dark", yaxis_range=[0, 5.2],
-                                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                                 xaxis_title="Data Osservazione", yaxis_title="Valutazione Media")
-            
-            st.plotly_chart(fig_time, use_container_width=True, config={'staticPlot': True})
+            # Mostra la timeline solo se ci sono dati da tracciare
+            if any_data_timeline:
+                fig_time.update_layout(template="plotly_dark", yaxis_range=[0, 5.2],
+                                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                     xaxis_title="Data Osservazione", yaxis_title="Valutazione Media")
+                st.plotly_chart(fig_time, use_container_width=True, config={'staticPlot': True})
 
     except Exception as e:
         st.error(f"Errore nella generazione dei grafici: {e}")
