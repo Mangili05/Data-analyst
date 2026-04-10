@@ -457,7 +457,7 @@ elif st.session_state.profilo == "Staff Tecnico":
                         
                         # Aumentiamo fattore_y a 55 per spostarli più in basso (verso il centrocampo)
                         # Se sono ancora troppo alti, metti 60.
-                        fattore_y = 50 
+                        fattore_y = 45 
                         df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * fattore_y)
                 
                         fig_pitch.add_trace(go.Scatter(
