@@ -453,11 +453,11 @@ elif st.session_state.profilo == "Staff Tecnico":
                         # --- CALIBRAZIONE PRECISA ---
                         # Moltiplichiamo la X per 1.05 per "spingere" leggermente verso i lati se serve, 
                         # o aggiustiamo il divisore. Proviamo così:
-                        df_e['Plotly_X'] = (df_e['Coord_X'] / 358) * 100
+                        df_e['Plotly_X'] = ((df_e['Coord_X'] / 358) * 100) -2
                         
                         # Aumentiamo fattore_y a 55 per spostarli più in basso (verso il centrocampo)
                         # Se sono ancora troppo alti, metti 60.
-                        fattore_y = 45 
+                        fattore_y = 43 
                         df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * fattore_y)
                 
                         fig_pitch.add_trace(go.Scatter(
