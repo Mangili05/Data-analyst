@@ -422,53 +422,55 @@ elif st.session_state.profilo == "Staff Tecnico":
                                     line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
                 
                 # 2. Area Grande (Y da 83.5 a 100)
-                fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3)) 
+                fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3), layer="below") 
                 
                 # 3. Area Piccola
-                fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3)) 
+                fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3), layer="below") 
                 
                 # 4. Dischetto
-                fig_pitch.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white)) 
+                fig_pitch.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white), layer="below") 
                 
                 # 5. Lunetta area di rigore
-                fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3))
+                fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3), layer="below")
                 
                 # 6. Lunetta centrocampo (posizionata ora su Y = y_inizio)
                 fig_pitch.add_shape(type="path", path=f"M 37 {y_inizio} C 40 {y_inizio+8}, 60 {y_inizio+8}, 63 {y_inizio}", 
-                                    line=dict(color=line_white, width=3))
+                                    line=dict(color=line_white, width=3), layer="below")
 
                 # 7. Porta
-                fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd")
+                fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd", layer="below")
 
                 esiti_map = {"Gol": "#FFD700", "Tiro in porta": "#00FF00", "Tiro fuori": "#FF0000"}
                 symbols = {"Gol": "circle", "Tiro in porta": "diamond", "Tiro fuori": "x"}
                 
+                # --- 2. NUOVO CICLO PER I TIRI (CALIBRATO) ---
                 for esito, color in esiti_map.items():
-                    # Usiamo .copy() per evitare warning di Pandas
-                    df_e = df_off_filt[df_off_filt['Esito finale'] == esito].copy() 
-                    
+                    df_e = df_off_filt[df_off_filt['Esito finale'] == esito].copy()
                     if not df_e.empty:
-                        # 1. Assicuriamoci che i valori siano numeri
                         df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
                         df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
-                        
-                        # --- FORMULA DI CONVERSIONE (CALIBRATA) ---
-                        # L'asse X è proporzionalmente corretto
+                
+                        # --- CALIBRAZIONE PRECISA ---
+                        # Moltiplichiamo la X per 1.05 per "spingere" leggermente verso i lati se serve, 
+                        # o aggiustiamo il divisore. Proviamo così:
                         df_e['Plotly_X'] = (df_e['Coord_X'] / 358) * 100
                         
-                        # CALIBRAZIONE ASSE Y:
-                        # Se campo.jpg è un'immagine a METÀ CAMPO: usa un valore tra 45 e 55
-                        # Se campo.jpg è un'immagine a CAMPO INTERO: usa un valore tra 95 e 105
-                        fattore_y = 42  # <-- INIZIA CON 51 (Assumendo sia una foto a metà campo)
-                        
+                        # Aumentiamo fattore_y a 55 per spostarli più in basso (verso il centrocampo)
+                        # Se sono ancora troppo alti, metti 60.
+                        fattore_y = 55 
                         df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * fattore_y)
-
+                
                         fig_pitch.add_trace(go.Scatter(
                             x=df_e['Plotly_X'], 
                             y=df_e['Plotly_Y'], 
                             mode='markers', 
                             name=esito,
-                            marker=dict(size=16, color=color, symbol=symbols[esito], line=dict(width=1.5, color="white")),
+                            marker=dict(
+                                size=18, # Leggermente più grande per visibilità
+                                color=color, 
+                                symbol=symbols[esito], 
+                                line=dict(width=2, color="white")
+                            ),
                             text=df_e['Giocatore'], 
                             hoverinfo='text+name'
                         ))
