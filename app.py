@@ -459,7 +459,7 @@ elif st.session_state.profilo == "Staff Tecnico":
                         # CALIBRAZIONE ASSE Y:
                         # Se campo.jpg è un'immagine a METÀ CAMPO: usa un valore tra 45 e 55
                         # Se campo.jpg è un'immagine a CAMPO INTERO: usa un valore tra 95 e 105
-                        fattore_y = 45  # <-- INIZIA CON 51 (Assumendo sia una foto a metà campo)
+                        fattore_y = 42  # <-- INIZIA CON 51 (Assumendo sia una foto a metà campo)
                         
                         df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * fattore_y)
 
