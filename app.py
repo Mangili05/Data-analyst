@@ -444,11 +444,25 @@ elif st.session_state.profilo == "Staff Tecnico":
                 symbols = {"Gol": "circle", "Tiro in porta": "diamond", "Tiro fuori": "x"}
                 
                 for esito, color in esiti_map.items():
-                    df_e = df_off_filt[df_off_filt['Esito finale'] == esito]
+                    # Usiamo .copy() per evitare warning di Pandas
+                    df_e = df_off_filt[df_off_filt['Esito finale'] == esito].copy() 
+                    
                     if not df_e.empty:
+                        # 1. Assicuriamoci che i valori siano numeri (trasforma gli spazi vuoti in NaN)
+                        df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
+                        df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
+                        
+                        # --- FORMULA DI CONVERSIONE (DA PIXEL A SCALA PLOTLY) ---
+                        # X: proporzione da scala 0-358 a scala 0-100
+                        df_e['Plotly_X'] = (df_e['Coord_X'] / 358) * 100
+                        
+                        # Y: proporzione da scala 0-283 a scala 30-100 
+                        # (Nota: sottraiamo da 100 perché nell'immagine Y=0 è in alto, in Plotly Y=100 è in alto)
+                        df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * 70)
+
                         fig_pitch.add_trace(go.Scatter(
-                            x=df_e['Coord_X'], 
-                            y=df_e['Coord_Y'], 
+                            x=df_e['Plotly_X'], 
+                            y=df_e['Plotly_Y'], 
                             mode='markers', 
                             name=esito,
                             marker=dict(size=16, color=color, symbol=symbols[esito], line=dict(width=1.5, color="white")),
