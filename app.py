@@ -453,7 +453,7 @@ elif st.session_state.profilo == "Staff Tecnico":
                         # --- CALIBRAZIONE PRECISA ---
                         # Moltiplichiamo la X per 1.05 per "spingere" leggermente verso i lati se serve, 
                         # o aggiustiamo il divisore. Proviamo così:
-                        df_e['Plotly_X'] = ((df_e['Coord_X'] / 358) * 100) -2
+                        df_e['Plotly_X'] = ((df_e['Coord_X'] / 358) * 100) -1
                         
                         # Aumentiamo fattore_y a 55 per spostarli più in basso (verso il centrocampo)
                         # Se sono ancora troppo alti, metti 60.
