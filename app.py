@@ -448,17 +448,20 @@ elif st.session_state.profilo == "Staff Tecnico":
                     df_e = df_off_filt[df_off_filt['Esito finale'] == esito].copy() 
                     
                     if not df_e.empty:
-                        # 1. Assicuriamoci che i valori siano numeri (trasforma gli spazi vuoti in NaN)
+                        # 1. Assicuriamoci che i valori siano numeri
                         df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
                         df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
                         
-                        # --- FORMULA DI CONVERSIONE (DA PIXEL A SCALA PLOTLY) ---
-                        # X: proporzione da scala 0-358 a scala 0-100
+                        # --- FORMULA DI CONVERSIONE (CALIBRATA) ---
+                        # L'asse X è proporzionalmente corretto
                         df_e['Plotly_X'] = (df_e['Coord_X'] / 358) * 100
                         
-                        # Y: proporzione da scala 0-283 a scala 30-100 
-                        # (Nota: sottraiamo da 100 perché nell'immagine Y=0 è in alto, in Plotly Y=100 è in alto)
-                        df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * 70)
+                        # CALIBRAZIONE ASSE Y:
+                        # Se campo.jpg è un'immagine a METÀ CAMPO: usa un valore tra 45 e 55
+                        # Se campo.jpg è un'immagine a CAMPO INTERO: usa un valore tra 95 e 105
+                        fattore_y = 51  # <-- INIZIA CON 51 (Assumendo sia una foto a metà campo)
+                        
+                        df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * fattore_y)
 
                         fig_pitch.add_trace(go.Scatter(
                             x=df_e['Plotly_X'], 
