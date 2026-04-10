@@ -443,30 +443,30 @@ elif st.session_state.profilo == "Staff Tecnico":
                 esiti_map = {"Gol": "#FFD700", "Tiro in porta": "#00FF00", "Tiro fuori": "#FF0000"}
                 symbols = {"Gol": "circle", "Tiro in porta": "diamond", "Tiro fuori": "x"}
                 
-                # --- 2. NUOVO CICLO PER I TIRI (CALIBRATO) ---
+                # --- 2. CICLO PER I TIRI (CALIBRAZIONE DEFINITIVA) ---
                 for esito, color in esiti_map.items():
                     df_e = df_off_filt[df_off_filt['Esito finale'] == esito].copy()
                     if not df_e.empty:
                         df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
                         df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
                 
-                        # --- CALIBRAZIONE PRECISA ---
-                        # Moltiplichiamo la X per 1.05 per "spingere" leggermente verso i lati se serve, 
-                        # o aggiustiamo il divisore. Proviamo così:
-                        df_e['Plotly_X'] = ((df_e['Coord_X'] / 358) * 100) -1
+                        # --- CALIBRAZIONE ASSE X (SPOSTA A SINISTRA E ALLARGA) ---
+                        # Questa formula centra il valore 177 (dischetto) su 50 
+                        # e il valore 78 (angolo area) su 20.
+                        df_e['Plotly_X'] = ((df_e['Coord_X'] / 358) * 108.5) - 3.6
                         
-                        # Aumentiamo fattore_y a 55 per spostarli più in basso (verso il centrocampo)
-                        # Se sono ancora troppo alti, metti 60.
-                        fattore_y = 43 
-                        df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * fattore_y)
-                
+                        # --- CALIBRAZIONE ASSE Y (SPOSTA VERSO LA PORTA) ---
+                        # Usiamo base 97 invece di 100 per abbassare il punto di origine
+                        # e un fattore più piccolo (16.5) per la scala corretta.
+                        df_e['Plotly_Y'] = 97 - ((df_e['Coord_Y'] / 283) * 16.5)
+
                         fig_pitch.add_trace(go.Scatter(
                             x=df_e['Plotly_X'], 
                             y=df_e['Plotly_Y'], 
                             mode='markers', 
                             name=esito,
                             marker=dict(
-                                size=18, # Leggermente più grande per visibilità
+                                size=18, 
                                 color=color, 
                                 symbol=symbols[esito], 
                                 line=dict(width=2, color="white")
