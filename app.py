@@ -159,7 +159,7 @@ if st.session_state.profilo == "Match Analyst":
                         "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
                     }
                 elif fase == "Prima Pressione":
-                    nome_foglio = "PrimaPressione"
+                    nome_foglio = "Pressione"
                     cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
                     record = {
                         "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
