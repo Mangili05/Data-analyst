@@ -158,6 +158,15 @@ if st.session_state.profilo == "Match Analyst":
                         "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'),
                         "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
                     }
+                elif fase == "Prima Pressione":
+                    nome_foglio = "PrimaPressione"
+                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
+                    record = {
+                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
+                        "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
+                        "Inizio": st.session_state.get(f'pp_in{s}'), "Fine": st.session_state.get(f'pp_fi{s}'),
+                        "Tipologia": st.session_state.get(f'pp_tipo{s}'), "Modalità": st.session_state.get(f'pp_mod{s}'), "Esito finale": st.session_state.get(f'pp_esito{s}')
+                    }
                 elif fase == "Azione Difensiva":
                     nome_foglio = "Difensiva"
                     cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
@@ -179,7 +188,7 @@ if st.session_state.profilo == "Match Analyst":
             except Exception as e: st.error(f"❌ Errore: {e}")
 
         suffix = f"_{st.session_state.reset_counter}"
-        tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
+        tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "⚡ Prima Pressione", "🛡️ Azione Difensiva"])
 
         with tabs[0]:
             rc1, rc2 = st.columns(2)
@@ -227,6 +236,23 @@ if st.session_state.profilo == "Match Analyst":
             if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
 
         with tabs[2]:
+            rp1, rp2 = st.columns(2)
+            with rp1: st.text_input("Inizio", placeholder="min:sec", key=f"pp_in{suffix}")
+            with rp2: st.text_input("Fine", placeholder="min:sec", key=f"pp_fi{suffix}")
+            
+            cp_sx, cp_cent, cp_dx = st.columns([1, 2.5, 1])
+            with cp_sx: 
+                st.radio("Tipologia", ["Pressing", "Pressione"], key=f"pp_tipo{suffix}", horizontal=True)
+            with cp_cent:
+                _, inner_cp, _ = st.columns([1, 2, 1])
+                with inner_cp: 
+                    st.radio("Modalità", ["Ultraoffensiva", "Offensiva", "Difensiva"], key=f"pp_mod{suffix}", horizontal=True)
+            with cp_dx: 
+                st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}", horizontal=True)
+            
+            if st.button("💾 Salva Prima Pressione"): esegui_salvataggio("Prima Pressione")
+        
+        with tabs[3]:
             cd1, cd2 = st.columns(2)
             with cd1:
                 st.text_input("Inizio", placeholder="min:sec", key=f"def_in{suffix}")
