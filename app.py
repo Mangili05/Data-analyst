@@ -15,7 +15,6 @@ st.set_page_config(page_title="Football Data Analyst", layout="wide")
 # --- 1. STILE CSS GLOBALE ---
 st.markdown("""
     <style>
-    /* Nasconde la barra superiore e il footer di default di Streamlit */
     [data-testid="stHeader"] {display: none !important;}
     footer {display: none !important;}
     
@@ -104,7 +103,6 @@ if not st.session_state.autenticato:
 # =========================================================
 if st.session_state.profilo == "Match Analyst":
     
-    # --- NUOVO BOTTONE TORNA ALLA HOME ---
     if st.button("⬅️ Torna alla Home"):
         st.session_state.autenticato = False
         st.session_state.profilo = None
@@ -159,7 +157,7 @@ if st.session_state.profilo == "Match Analyst":
                         "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
                     }
                 elif fase == "Prima Pressione":
-                    nome_foglio = "Pressione"
+                    nome_foglio = "PrimaPressione"
                     cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
                     record = {
                         "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
@@ -188,6 +186,7 @@ if st.session_state.profilo == "Match Analyst":
             except Exception as e: st.error(f"❌ Errore: {e}")
 
         suffix = f"_{st.session_state.reset_counter}"
+        # Aggiunta del tab "Prima Pressione" nell'ordine richiesto
         tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "⚡ Prima Pressione", "🛡️ Azione Difensiva"])
 
         with tabs[0]:
@@ -216,25 +215,18 @@ if st.session_state.profilo == "Match Analyst":
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
                 if os.path.exists("campo.jpg"):
-
                     img = Image.open("campo.jpg").resize((358, 283))
-
                     if "off_coords" in st.session_state:
-
                         draw = ImageDraw.Draw(img)
-
                         x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-
                         draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
-
                     val = streamlit_image_coordinates(img, key=f"campetto_off{suffix}")
-
                     if val and (st.session_state.get("off_coords") != val):
-
                         st.session_state["off_coords"] = val
                         st.rerun()
             if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
 
+        # --- NUOVA SEZIONE: PRIMA PRESSIONE ---
         with tabs[2]:
             rp1, rp2 = st.columns(2)
             with rp1: st.text_input("Inizio", placeholder="min:sec", key=f"pp_in{suffix}")
@@ -251,7 +243,7 @@ if st.session_state.profilo == "Match Analyst":
                 st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}", horizontal=True)
             
             if st.button("💾 Salva Prima Pressione"): esegui_salvataggio("Prima Pressione")
-        
+
         with tabs[3]:
             cd1, cd2 = st.columns(2)
             with cd1:
