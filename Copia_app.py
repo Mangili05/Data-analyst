@@ -15,7 +15,6 @@ st.set_page_config(page_title="Football Data Analyst", layout="wide")
 # --- 1. STILE CSS GLOBALE ---
 st.markdown("""
     <style>
-    /* Nasconde la barra superiore e il footer di default di Streamlit */
     [data-testid="stHeader"] {display: none !important;}
     footer {display: none !important;}
     
@@ -104,7 +103,6 @@ if not st.session_state.autenticato:
 # =========================================================
 if st.session_state.profilo == "Match Analyst":
     
-    # --- NUOVO BOTTONE TORNA ALLA HOME ---
     if st.button("⬅️ Torna alla Home"):
         st.session_state.autenticato = False
         st.session_state.profilo = None
@@ -158,6 +156,15 @@ if st.session_state.profilo == "Match Analyst":
                         "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'),
                         "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
                     }
+                elif fase == "Prima Pressione":
+                    nome_foglio = "Pressione"
+                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
+                    record = {
+                        "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
+                        "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
+                        "Inizio": st.session_state.get(f'pp_in{s}'), "Fine": st.session_state.get(f'pp_fi{s}'),
+                        "Tipologia": st.session_state.get(f'pp_tipo{s}'), "Modalità": st.session_state.get(f'pp_mod{s}'), "Esito finale": st.session_state.get(f'pp_esito{s}')
+                    }
                 elif fase == "Azione Difensiva":
                     nome_foglio = "Difensiva"
                     cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
@@ -179,64 +186,99 @@ if st.session_state.profilo == "Match Analyst":
             except Exception as e: st.error(f"❌ Errore: {e}")
 
         suffix = f"_{st.session_state.reset_counter}"
-        tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "🛡️ Azione Difensiva"])
+        tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "⚡ Prima Pressione", "🛡️ Azione Difensiva"])
 
         with tabs[0]:
             rc1, rc2 = st.columns(2)
-            with rc1: st.text_input("Inizio", placeholder="min:sec", key=f"t_in{suffix}")
-            with rc2: st.text_input("Fine", placeholder="min:sec", key=f"t_fi{suffix}")
+            with rc1: 
+                val_in = st.text_input("Inizio", placeholder="mm:ss", key=f"t_in{suffix}")
+                if val_in and len(val_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
+            with rc2: 
+                val_fi = st.text_input("Fine", placeholder="mm:ss", key=f"t_fi{suffix}")
+                if val_fi and len(val_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
+            
             c_sx, c_cent, c_dx = st.columns([1, 2.5, 1])
             with c_sx: st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
             with c_cent:
                 _, inner_c, _ = st.columns([1, 2, 1])
                 with inner_c: st.radio("Modalità", ["Bassa", "Manovrata", "Diretta"], key=f"mod_rad{suffix}", horizontal=True)
             with c_dx: st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
-            if st.button("💾 Salva Costruzione"): esegui_salvataggio("Costruzione dal Basso")
+            
+            if st.button("💾 Salva Costruzione"):
+                if len(val_in) in [5, 6] and len(val_fi) in [5, 6]: esegui_salvataggio("Costruzione dal Basso")
+                else: st.error("⚠️ Inizio e Fine devono avere 5 o 6 caratteri!")
 
         with tabs[1]:
             co1, co2 = st.columns(2)
             with co1:
-                st.text_input("Inizio", placeholder="min:sec", key=f"off_in{suffix}")
+                off_in = st.text_input("Inizio", placeholder="mm:ss", key=f"off_in{suffix}")
+                if off_in and len(off_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione offensiva", "Palla inattiva"], key=f"off_tipo_azione{suffix}")
             with co2:
-                st.text_input("Fine", placeholder="min:sec", key=f"off_fi{suffix}")
+                off_fi = st.text_input("Fine", placeholder="mm:ss", key=f"off_fi{suffix}")
+                if off_fi and len(off_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
             co3, co4 = st.columns(2)
             with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
             with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
+            
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
                 if os.path.exists("campo.jpg"):
-
                     img = Image.open("campo.jpg").resize((358, 283))
-
                     if "off_coords" in st.session_state:
-
                         draw = ImageDraw.Draw(img)
-
                         x, y = st.session_state["off_coords"]["x"], st.session_state["off_coords"]["y"]
-
                         draw.ellipse([x-3, y-3, x+3, y+3], fill="red", outline="white")
-
                     val = streamlit_image_coordinates(img, key=f"campetto_off{suffix}")
-
                     if val and (st.session_state.get("off_coords") != val):
-
                         st.session_state["off_coords"] = val
                         st.rerun()
-            if st.button("💾 Salva Azione Offensiva"): esegui_salvataggio("Azione Offensiva")
+            
+            if st.button("💾 Salva Azione Offensiva"):
+                if len(off_in) in [5, 6] and len(off_fi) in [5, 6]: esegui_salvataggio("Azione Offensiva")
+                else: st.error("⚠️ Inizio e Fine devono avere 5 o 6 caratteri!")
 
+        # --- SEZIONE: PRIMA PRESSIONE ---
         with tabs[2]:
+            rp1, rp2 = st.columns(2)
+            with rp1: 
+                pp_in = st.text_input("Inizio", placeholder="mm:ss", key=f"pp_in{suffix}")
+                if pp_in and len(pp_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
+            with rp2: 
+                pp_fi = st.text_input("Fine", placeholder="mm:ss", key=f"pp_fi{suffix}")
+                if pp_fi and len(pp_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
+            
+            cp_sx, cp_cent, cp_dx = st.columns([1, 2.5, 1])
+            with cp_sx: 
+                st.radio("Tipologia", ["Pressing", "Pressione"], key=f"pp_tipo{suffix}", horizontal=True)
+            with cp_cent:
+                _, inner_cp, _ = st.columns([1, 2, 1])
+                with inner_cp: 
+                    st.radio("Modalità", ["Ultraoffensiva", "Offensiva", "Difensiva"], key=f"pp_mod{suffix}", horizontal=True)
+            with cp_dx: 
+                st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}", horizontal=True)
+            
+            if st.button("💾 Salva Prima Pressione"):
+                if len(pp_in) in [5, 6] and len(pp_fi) in [5, 6]:
+                    esegui_salvataggio("Prima Pressione")
+                else:
+                    st.error("⚠️ Errore: I campi Inizio e Fine devono contenere esattamente 5 o 6 caratteri!")
+
+        with tabs[3]:
             cd1, cd2 = st.columns(2)
             with cd1:
-                st.text_input("Inizio", placeholder="min:sec", key=f"def_in{suffix}")
+                def_in = st.text_input("Inizio", placeholder="mm:ss", key=f"def_in{suffix}")
+                if def_in and len(def_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione difensiva", "Palla inattiva"], key=f"def_tipo_azione{suffix}")
             with cd2:
-                st.text_input("Fine", placeholder="min:sec", key=f"def_fi{suffix}")
+                def_fi = st.text_input("Fine", placeholder="mm:ss", key=f"def_fi{suffix}")
+                if def_fi and len(def_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"def_canale_sviluppo{suffix}")
             cd3, cd4 = st.columns(2)
             with cd3: st.selectbox("Rifinitura", ["Seleziona", "Cross/trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "Altro"], key=f"def_rif{suffix}")
             with cd4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla riconquistata", "Altro"], key=f"def_esito{suffix}")
+            
             if st.session_state.get(f"def_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 if os.path.exists("campo.jpg"):
                     img = Image.open("campo.jpg").resize((358, 283))
@@ -248,7 +290,10 @@ if st.session_state.profilo == "Match Analyst":
                     if val_d and (st.session_state.get("def_tiro_coords") != val_d):
                         st.session_state["def_tiro_coords"] = val_d
                         st.rerun()
-            if st.button("💾 Salva Azione Difensiva"): esegui_salvataggio("Azione Difensiva")
+            
+            if st.button("💾 Salva Azione Difensiva"):
+                if len(def_in) in [5, 6] and len(def_fi) in [5, 6]: esegui_salvataggio("Azione Difensiva")
+                else: st.error("⚠️ Inizio e Fine devono avere 5 o 6 caratteri!")
 
 # =========================================================
 # NUOVA LOGICA: ANALISI INDIVIDUALE (Sostituire la precedente)
