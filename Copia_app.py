@@ -123,7 +123,7 @@ if st.session_state.profilo == "Match Analyst":
             with gc1: st.number_input("Gol casa", min_value=0, step=1, key="gh_key")
             with gc2: st.number_input("Gol ospite", min_value=0, step=1, key="ga_key")
 
-        # Funzione di salvataggio interna per Squadra
+        # --- FUNZIONE DI SALVATAGGIO AGGIORNATA ---
         def esegui_salvataggio(fase):
             s = f"_{st.session_state.reset_counter}"
             giornata = st.session_state.get('g_key')
@@ -132,6 +132,12 @@ if st.session_state.profilo == "Match Analyst":
             s_casa = st.session_state.get('h_key')
             s_ospite = st.session_state.get('a_key')
             
+            # Controllo frazione di gioco comune a tutti
+            frazione = st.session_state.get(f"frazione{s}")
+            if frazione == "- Seleziona la frazione di gioco -":
+                st.error("⚠️ Seleziona il tempo (1° o 2° tempo)!")
+                return
+
             if giornata == "Seleziona giornata" or s_casa == "Seleziona squadra":
                 st.error("⚠️ Compila i dati della partita!")
                 return
@@ -139,39 +145,39 @@ if st.session_state.profilo == "Match Analyst":
             try:
                 if fase == "Costruzione dal Basso":
                     nome_foglio = "Costruzione"
-                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
+                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Frazione", "Inizio", "Tipologia", "Modalità", "Esito finale"]
                     record = {
                         "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
                         "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
-                        "Inizio": st.session_state.get(f't_in{s}'), "Fine": st.session_state.get(f't_fi{s}'),
+                        "Frazione": frazione, "Inizio": st.session_state.get(f't_in{s}'),
                         "Tipologia": st.session_state.get(f'tipo_rad{s}'), "Modalità": st.session_state.get(f'mod_rad{s}'), "Esito finale": st.session_state.get(f'esito_rad{s}')
                     }
                 elif fase == "Azione Offensiva":
                     nome_foglio = "Offensiva"
-                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
+                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Frazione", "Inizio", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Giocatore", "Coord_X", "Coord_Y"]
                     coords = st.session_state.get('off_coords')
                     record = {
                         "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
-                        "Inizio": st.session_state.get(f'off_in{s}'), "Fine": st.session_state.get(f'off_fi{s}'), "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
+                        "Frazione": frazione, "Inizio": st.session_state.get(f'off_in{s}'), "Tipo di azione": st.session_state.get(f'off_tipo_azione{s}'),
                         "Canale": st.session_state.get(f'off_canale{s}'), "Rifinitura": st.session_state.get(f'off_rif{s}'), "Esito finale": st.session_state.get(f'off_esito{s}'),
                         "Giocatore": st.session_state.get(f'off_giocatore{s}', ""), "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
                     }
                 elif fase == "Prima Pressione":
                     nome_foglio = "Pressione"
-                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipologia", "Modalità", "Esito finale"]
+                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Frazione", "Inizio", "Tipologia", "Modalità", "Esito finale"]
                     record = {
                         "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
                         "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
-                        "Inizio": st.session_state.get(f'pp_in{s}'), "Fine": st.session_state.get(f'pp_fi{s}'),
+                        "Frazione": frazione, "Inizio": st.session_state.get(f'pp_in{s}'),
                         "Tipologia": st.session_state.get(f'pp_tipo{s}'), "Modalità": st.session_state.get(f'pp_mod{s}'), "Esito finale": st.session_state.get(f'pp_esito{s}')
                     }
                 elif fase == "Azione Difensiva":
                     nome_foglio = "Difensiva"
-                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Inizio", "Fine", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
+                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Frazione", "Inizio", "Tipo di azione", "Canale", "Rifinitura", "Esito finale", "Coord_X", "Coord_Y"]
                     coords = st.session_state.get('def_tiro_coords')
                     record = {
                         "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite, "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
-                        "Inizio": st.session_state.get(f'def_in{s}'), "Fine": st.session_state.get(f'def_fi{s}'), "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'),
+                        "Frazione": frazione, "Inizio": st.session_state.get(f'def_in{s}'), "Tipo di azione": st.session_state.get(f'def_tipo_azione{s}'),
                         "Canale": st.session_state.get(f'def_canale_sviluppo{s}'), "Rifinitura": st.session_state.get(f'def_rif{s}'), "Esito finale": st.session_state.get(f'def_esito{s}'),
                         "Coord_X": coords['x'] if coords else "", "Coord_Y": coords['y'] if coords else ""
                     }
@@ -188,14 +194,13 @@ if st.session_state.profilo == "Match Analyst":
         suffix = f"_{st.session_state.reset_counter}"
         tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "⚡ Prima Pressione", "🛡️ Azione Difensiva"])
 
+        # Opzioni per la frazione di gioco
+        opzioni_frazione = ["- Seleziona la frazione di gioco -", "1° Tempo", "2° Tempo"]
+
         with tabs[0]:
-            rc1, rc2 = st.columns(2)
-            with rc1: 
-                val_in = st.text_input("Inizio", placeholder="mm:ss", key=f"t_in{suffix}")
-                if val_in and len(val_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
-            with rc2: 
-                val_fi = st.text_input("Fine", placeholder="mm:ss", key=f"t_fi{suffix}")
-                if val_fi and len(val_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
+            st.selectbox("Frazione di gioco", opzioni_frazione, key=f"frazione{suffix}")
+            val_in = st.text_input("Inizio (Minuto Video)", placeholder="mm:ss", key=f"t_in{suffix}")
+            if val_in and len(val_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
             
             c_sx, c_cent, c_dx = st.columns([1, 2.5, 1])
             with c_sx: st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
@@ -205,22 +210,21 @@ if st.session_state.profilo == "Match Analyst":
             with c_dx: st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
             
             if st.button("💾 Salva Costruzione"):
-                if len(val_in) in [5, 6] and len(val_fi) in [5, 6]: esegui_salvataggio("Costruzione dal Basso")
-                else: st.error("⚠️ Inizio e Fine devono avere 5 o 6 caratteri!")
+                if len(val_in) in [5, 6]: esegui_salvataggio("Costruzione dal Basso")
+                else: st.error("⚠️ Inserire il minuto d'inizio (5 o 6 caratteri)!")
 
         with tabs[1]:
+            st.selectbox("Frazione di gioco", opzioni_frazione, key=f"frazione{suffix}_off", on_change=lambda: st.session_state.update({f"frazione{suffix}": st.session_state[f"frazione{suffix}_off"]}))
             co1, co2 = st.columns(2)
             with co1:
-                off_in = st.text_input("Inizio", placeholder="mm:ss", key=f"off_in{suffix}")
+                off_in = st.text_input("Inizio (Minuto Video)", placeholder="mm:ss", key=f"off_in{suffix}")
                 if off_in and len(off_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione offensiva", "Palla inattiva"], key=f"off_tipo_azione{suffix}")
             with co2:
-                off_fi = st.text_input("Fine", placeholder="mm:ss", key=f"off_fi{suffix}")
-                if off_fi and len(off_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
-            co3, co4 = st.columns(2)
-            with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
-            with co4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
+                st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
+            
+            st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla persa", "Altro"], key=f"off_esito{suffix}")
             
             if st.session_state.get(f"off_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 st.selectbox("Giocatore", lista_calciatori, key=f"off_giocatore{suffix}")
@@ -236,48 +240,37 @@ if st.session_state.profilo == "Match Analyst":
                         st.rerun()
             
             if st.button("💾 Salva Azione Offensiva"):
-                if len(off_in) in [5, 6] and len(off_fi) in [5, 6]: esegui_salvataggio("Azione Offensiva")
-                else: st.error("⚠️ Inizio e Fine devono avere 5 o 6 caratteri!")
+                if len(off_in) in [5, 6]: esegui_salvataggio("Azione Offensiva")
+                else: st.error("⚠️ Inserire il minuto d'inizio!")
 
-        # --- SEZIONE: PRIMA PRESSIONE ---
         with tabs[2]:
-            rp1, rp2 = st.columns(2)
-            with rp1: 
-                pp_in = st.text_input("Inizio", placeholder="mm:ss", key=f"pp_in{suffix}")
-                if pp_in and len(pp_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
-            with rp2: 
-                pp_fi = st.text_input("Fine", placeholder="mm:ss", key=f"pp_fi{suffix}")
-                if pp_fi and len(pp_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
+            st.selectbox("Frazione di gioco", opzioni_frazione, key=f"frazione{suffix}_pp", on_change=lambda: st.session_state.update({f"frazione{suffix}": st.session_state[f"frazione{suffix}_pp"]}))
+            pp_in = st.text_input("Inizio (Minuto Video)", placeholder="mm:ss", key=f"pp_in{suffix}")
+            if pp_in and len(pp_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
             
             cp_sx, cp_cent, cp_dx = st.columns([1, 2.5, 1])
-            with cp_sx: 
-                st.radio("Tipologia", ["Pressing", "Pressione"], key=f"pp_tipo{suffix}", horizontal=True)
+            with cp_sx: st.radio("Tipologia", ["Pressing", "Pressione"], key=f"pp_tipo{suffix}", horizontal=True)
             with cp_cent:
                 _, inner_cp, _ = st.columns([1, 2, 1])
-                with inner_cp: 
-                    st.radio("Modalità", ["Ultraoffensiva", "Offensiva", "Difensiva"], key=f"pp_mod{suffix}", horizontal=True)
-            with cp_dx: 
-                st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}", horizontal=True)
+                with inner_cp: st.radio("Modalità", ["Ultraoffensiva", "Offensiva", "Difensiva"], key=f"pp_mod{suffix}", horizontal=True)
+            with cp_dx: st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}", horizontal=True)
             
             if st.button("💾 Salva Prima Pressione"):
-                if len(pp_in) in [5, 6] and len(pp_fi) in [5, 6]:
-                    esegui_salvataggio("Prima Pressione")
-                else:
-                    st.error("⚠️ Errore: I campi Inizio e Fine devono contenere esattamente 5 o 6 caratteri!")
+                if len(pp_in) in [5, 6]: esegui_salvataggio("Prima Pressione")
+                else: st.error("⚠️ Inserire il minuto d'inizio!")
 
         with tabs[3]:
+            st.selectbox("Frazione di gioco", opzioni_frazione, key=f"frazione{suffix}_def", on_change=lambda: st.session_state.update({f"frazione{suffix}": st.session_state[f"frazione{suffix}_def"]}))
             cd1, cd2 = st.columns(2)
             with cd1:
-                def_in = st.text_input("Inizio", placeholder="mm:ss", key=f"def_in{suffix}")
+                def_in = st.text_input("Inizio (Minuto Video)", placeholder="mm:ss", key=f"def_in{suffix}")
                 if def_in and len(def_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione difensiva", "Palla inattiva"], key=f"def_tipo_azione{suffix}")
             with cd2:
-                def_fi = st.text_input("Fine", placeholder="mm:ss", key=f"def_fi{suffix}")
-                if def_fi and len(def_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"def_canale_sviluppo{suffix}")
-            cd3, cd4 = st.columns(2)
-            with cd3: st.selectbox("Rifinitura", ["Seleziona", "Cross/trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "Altro"], key=f"def_rif{suffix}")
-            with cd4: st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla riconquistata", "Altro"], key=f"def_esito{suffix}")
+                st.selectbox("Rifinitura", ["Seleziona", "Cross/trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "Altro"], key=f"def_rif{suffix}")
+            
+            st.selectbox("Esito finale", ["Seleziona", "Gol", "Tiro in porta", "Tiro fuori", "Palla riconquistata", "Altro"], key=f"def_esito{suffix}")
             
             if st.session_state.get(f"def_esito{suffix}") in ["Gol", "Tiro in porta", "Tiro fuori"]:
                 if os.path.exists("campo.jpg"):
@@ -292,8 +285,8 @@ if st.session_state.profilo == "Match Analyst":
                         st.rerun()
             
             if st.button("💾 Salva Azione Difensiva"):
-                if len(def_in) in [5, 6] and len(def_fi) in [5, 6]: esegui_salvataggio("Azione Difensiva")
-                else: st.error("⚠️ Inizio e Fine devono avere 5 o 6 caratteri!")
+                if len(def_in) in [5, 6]: esegui_salvataggio("Azione Difensiva")
+                else: st.error("⚠️ Inserire il minuto d'inizio!")
 
 # =========================================================
 # NUOVA LOGICA: ANALISI INDIVIDUALE (Sostituire la precedente)
