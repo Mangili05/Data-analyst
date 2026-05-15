@@ -241,25 +241,25 @@ if st.session_state.profilo == "Match Analyst":
                 if len(off_in) in [5, 6]: esegui_salvataggio("Azione Offensiva")
                 else: st.error("⚠️ Inserire il minuto d'inizio!")
 
-        with tabs[2]:
+        with tabs[2]: # --- TAB PRIMA PRESSIONE ORIZZONTALE ---
             st.selectbox("Frazione di gioco", opzioni_frazione, key=f"frazione{suffix}_pp", on_change=lambda: st.session_state.update({f"frazione{suffix}": st.session_state[f"frazione{suffix}_pp"]}))
             pp_in = st.text_input("Inizio (Minuto Video)", placeholder="mm:ss", key=f"pp_in{suffix}")
+            if pp_in and len(pp_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
             
-            # Layout a 4 colonne per far stare tutto bene in riga
-            c_tipo, c_costr, c_press, c_esito = st.columns([1, 1.5, 2, 1])
+            # Ho allargato un po' le proporzioni delle colonne per far stare i radio in orizzontale
+            c_tipo, c_costr, c_press, c_esito = st.columns([1.2, 1.5, 2.5, 1.2])
             
             with c_tipo: 
-                st.radio("Tipologia", ["Pressing", "Pressione"], key=f"pp_tipo{suffix}")
+                st.radio("Tipologia", ["Pressing", "Pressione"], key=f"pp_tipo{suffix}", horizontal=True)
             
             with c_costr:
-                st.radio("Tipo di Costruzione", ["Statica", "Dinamica"], key=f"pp_costruzione{suffix}")
+                st.radio("Tipo di Costruzione", ["Statica", "Dinamica"], key=f"pp_costruzione{suffix}", horizontal=True)
             
             with c_press:
-                # Il nuovo campo che hai richiesto
-                st.radio("Tipologia di pressing", ["Ultra-offensiva", "Offensiva", "Difensiva"], key=f"pp_altezza{suffix}")
+                st.radio("Tipologia di pressing", ["Ultra-offensiva", "Offensiva", "Difensiva"], key=f"pp_altezza{suffix}", horizontal=True)
             
             with c_esito: 
-                st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}")
+                st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}", horizontal=True)
             
             if st.button("💾 Salva Prima Pressione"):
                 if len(pp_in) in [5, 6]: esegui_salvataggio("Prima Pressione")
