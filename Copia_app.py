@@ -131,15 +131,10 @@ if st.session_state.profilo == "Match Analyst":
             data_str = data_val.strftime("%d/%m/%Y") if data_val else ""
             s_casa = st.session_state.get('h_key')
             s_ospite = st.session_state.get('a_key')
-            
-            # Controllo frazione di gioco comune a tutti
             frazione = st.session_state.get(f"frazione{s}")
-            if frazione == "- Seleziona la frazione di gioco -":
-                st.error("⚠️ Seleziona il tempo (1° o 2° tempo)!")
-                return
-
-            if giornata == "Seleziona giornata" or s_casa == "Seleziona squadra":
-                st.error("⚠️ Compila i dati della partita!")
+            
+            if frazione == "- Seleziona la frazione di gioco -" or giornata == "Seleziona giornata" or s_casa == "Seleziona squadra":
+                st.error("⚠️ Compila tutti i dati (Partita e Frazione)!")
                 return
 
             try:
@@ -164,12 +159,15 @@ if st.session_state.profilo == "Match Analyst":
                     }
                 elif fase == "Prima Pressione":
                     nome_foglio = "Pressione"
-                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Frazione", "Inizio", "Tipologia", "Modalità", "Esito finale"]
+                    # Aggiornata colonna "Tipo Costruzione"
+                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Frazione", "Inizio", "Tipologia", "Tipo Costruzione", "Esito finale"]
                     record = {
                         "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
                         "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
                         "Frazione": frazione, "Inizio": st.session_state.get(f'pp_in{s}'),
-                        "Tipologia": st.session_state.get(f'pp_tipo{s}'), "Modalità": st.session_state.get(f'pp_mod{s}'), "Esito finale": st.session_state.get(f'pp_esito{s}')
+                        "Tipologia": st.session_state.get(f'pp_tipo{s}'), 
+                        "Tipo Costruzione": st.session_state.get(f'pp_costruzione{s}'), # Nuova chiave
+                        "Esito finale": st.session_state.get(f'pp_esito{s}')
                     }
                 elif fase == "Azione Difensiva":
                     nome_foglio = "Difensiva"
@@ -191,10 +189,9 @@ if st.session_state.profilo == "Match Analyst":
                 st.rerun()
             except Exception as e: st.error(f"❌ Errore: {e}")
 
+        # --- SEZIONE UI TABS ---
         suffix = f"_{st.session_state.reset_counter}"
         tabs = st.tabs(["⚽ Costruzione", "⚔️ Azione Offensiva", "⚡ Prima Pressione", "🛡️ Azione Difensiva"])
-
-        # Opzioni per la frazione di gioco
         opzioni_frazione = ["- Seleziona la frazione di gioco -", "1° Tempo", "2° Tempo"]
 
         with tabs[0]:
@@ -243,17 +240,21 @@ if st.session_state.profilo == "Match Analyst":
                 if len(off_in) in [5, 6]: esegui_salvataggio("Azione Offensiva")
                 else: st.error("⚠️ Inserire il minuto d'inizio!")
 
-        with tabs[2]:
+        with tabs[2]: # --- TAB PRIMA PRESSIONE AGGIORNATO ---
             st.selectbox("Frazione di gioco", opzioni_frazione, key=f"frazione{suffix}_pp", on_change=lambda: st.session_state.update({f"frazione{suffix}": st.session_state[f"frazione{suffix}_pp"]}))
             pp_in = st.text_input("Inizio (Minuto Video)", placeholder="mm:ss", key=f"pp_in{suffix}")
             if pp_in and len(pp_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
             
             cp_sx, cp_cent, cp_dx = st.columns([1, 2.5, 1])
-            with cp_sx: st.radio("Tipologia", ["Pressing", "Pressione"], key=f"pp_tipo{suffix}", horizontal=True)
+            with cp_sx: 
+                st.radio("Tipologia", ["Pressing", "Pressione"], key=f"pp_tipo{suffix}", horizontal=True)
             with cp_cent:
                 _, inner_cp, _ = st.columns([1, 2, 1])
-                with inner_cp: st.radio("Modalità", ["Ultraoffensiva", "Offensiva", "Difensiva"], key=f"pp_mod{suffix}", horizontal=True)
-            with cp_dx: st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}", horizontal=True)
+                with inner_cp: 
+                    # Modifica qui: Label e Opzioni
+                    st.radio("Tipo di Costruzione", ["Statica", "Dinamica"], key=f"pp_costruzione{suffix}", horizontal=True)
+            with cp_dx: 
+                st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}", horizontal=True)
             
             if st.button("💾 Salva Prima Pressione"):
                 if len(pp_in) in [5, 6]: esegui_salvataggio("Prima Pressione")
