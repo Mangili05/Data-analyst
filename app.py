@@ -192,10 +192,10 @@ if st.session_state.profilo == "Match Analyst":
             rc1, rc2 = st.columns(2)
             with rc1: 
                 val_in = st.text_input("Inizio", placeholder="mm:ss", key=f"t_in{suffix}")
-                if val_in and len(val_in) != 5: st.caption(":red[Inserire 5 caratteri]")
+                if val and len(val) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
             with rc2: 
                 val_fi = st.text_input("Fine", placeholder="mm:ss", key=f"t_fi{suffix}")
-                if val_fi and len(val_fi) != 5: st.caption(":red[Inserire 5 caratteri]")
+                if val_fi and len(val_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
             
             c_sx, c_cent, c_dx = st.columns([1, 2.5, 1])
             with c_sx: st.radio("Tipologia", ["Statica", "Dinamica"], key=f"tipo_rad{suffix}", horizontal=True)
@@ -205,18 +205,18 @@ if st.session_state.profilo == "Match Analyst":
             with c_dx: st.radio("Esito finale", ["Positivo", "Negativo"], key=f"esito_rad{suffix}", horizontal=True)
             
             if st.button("💾 Salva Costruzione"):
-                if len(val_in) == 5 and len(val_fi) == 5: esegui_salvataggio("Costruzione dal Basso")
-                else: st.error("⚠️ Inizio e Fine devono avere 5 caratteri!")
+                if len(val_in) in [5, 6] and len(val_fi) in [5, 6]: esegui_salvataggio("Costruzione dal Basso")
+                else: st.error("⚠️ Inizio e Fine devono avere 5 o 6 caratteri!")
 
         with tabs[1]:
             co1, co2 = st.columns(2)
             with co1:
                 off_in = st.text_input("Inizio", placeholder="mm:ss", key=f"off_in{suffix}")
-                if off_in and len(off_in) != 5: st.caption(":red[Inserire 5 caratteri]")
+                if off_in and len(off_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione offensiva", "Palla inattiva"], key=f"off_tipo_azione{suffix}")
             with co2:
                 off_fi = st.text_input("Fine", placeholder="mm:ss", key=f"off_fi{suffix}")
-                if off_fi and len(off_fi) != 5: st.caption(":red[Inserire 5 caratteri]")
+                if off_fi and len(off_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"off_canale{suffix}")
             co3, co4 = st.columns(2)
             with co3: st.selectbox("Rifinitura", ["Seleziona", "Cross/Trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "altro"], key=f"off_rif{suffix}")
@@ -236,18 +236,18 @@ if st.session_state.profilo == "Match Analyst":
                         st.rerun()
             
             if st.button("💾 Salva Azione Offensiva"):
-                if len(off_in) == 5 and len(off_fi) == 5: esegui_salvataggio("Azione Offensiva")
-                else: st.error("⚠️ Inizio e Fine devono avere 5 caratteri!")
+                if len(off_in) in [5, 6] and len(off_fi) in [5, 6]: esegui_salvataggio("Azione Offensiva")
+                else: st.error("⚠️ Inizio e Fine devono avere 5 o 6 caratteri!")
 
         # --- SEZIONE: PRIMA PRESSIONE ---
         with tabs[2]:
             rp1, rp2 = st.columns(2)
             with rp1: 
                 pp_in = st.text_input("Inizio", placeholder="mm:ss", key=f"pp_in{suffix}")
-                if pp_in and len(pp_in) != 5: st.caption(":red[Inserire 5 caratteri (es. 05:20)]")
+                if pp_in and len(pp_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
             with rp2: 
                 pp_fi = st.text_input("Fine", placeholder="mm:ss", key=f"pp_fi{suffix}")
-                if pp_fi and len(pp_fi) != 5: st.caption(":red[Inserire 5 caratteri (es. 06:10)]")
+                if pp_fi and len(pp_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
             
             cp_sx, cp_cent, cp_dx = st.columns([1, 2.5, 1])
             with cp_sx: 
@@ -260,20 +260,20 @@ if st.session_state.profilo == "Match Analyst":
                 st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}", horizontal=True)
             
             if st.button("💾 Salva Prima Pressione"):
-                if len(pp_in) == 5 and len(pp_fi) == 5:
+                if len(pp_in) in [5, 6] and len(pp_fi) in [5, 6]:
                     esegui_salvataggio("Prima Pressione")
                 else:
-                    st.error("⚠️ Errore: I campi Inizio e Fine devono contenere esattamente 5 caratteri!")
+                    st.error("⚠️ Errore: I campi Inizio e Fine devono contenere esattamente 5 o 6 caratteri!")
 
         with tabs[3]:
             cd1, cd2 = st.columns(2)
             with cd1:
                 def_in = st.text_input("Inizio", placeholder="mm:ss", key=f"def_in{suffix}")
-                if def_in and len(def_in) != 5: st.caption(":red[Inserire 5 caratteri]")
+                if def_in and len(def_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Tipo di azione", ["Seleziona", "Azione manovrata", "Transizione difensiva", "Palla inattiva"], key=f"def_tipo_azione{suffix}")
             with cd2:
                 def_fi = st.text_input("Fine", placeholder="mm:ss", key=f"def_fi{suffix}")
-                if def_fi and len(def_fi) != 5: st.caption(":red[Inserire 5 caratteri]")
+                if def_fi and len(def_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
                 st.selectbox("Canale", ["Seleziona", "Fascia sx", "Centro", "Fascia dx"], key=f"def_canale_sviluppo{suffix}")
             cd3, cd4 = st.columns(2)
             with cd3: st.selectbox("Rifinitura", ["Seleziona", "Cross/trav.", "Pass. filtrante", "Az. individuale", "Scarico", "Palla sopra", "Altro"], key=f"def_rif{suffix}")
@@ -292,8 +292,8 @@ if st.session_state.profilo == "Match Analyst":
                         st.rerun()
             
             if st.button("💾 Salva Azione Difensiva"):
-                if len(def_in) == 5 and len(def_fi) == 5: esegui_salvataggio("Azione Difensiva")
-                else: st.error("⚠️ Inizio e Fine devono avere 5 caratteri!")
+                if len(def_in) in [5, 6] and len(def_fi) in [5, 6]: esegui_salvataggio("Azione Difensiva")
+                else: st.error("⚠️ Inizio e Fine devono avere 5 o 6 caratteri!")
 
 # =========================================================
 # NUOVA LOGICA: ANALISI INDIVIDUALE (Sostituire la precedente)
