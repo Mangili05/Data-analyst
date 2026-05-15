@@ -159,14 +159,15 @@ if st.session_state.profilo == "Match Analyst":
                     }
                 elif fase == "Prima Pressione":
                     nome_foglio = "Pressione"
-                    # Aggiornata colonna "Tipo Costruzione"
-                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Frazione", "Inizio", "Tipologia", "Tipo Costruzione", "Esito finale"]
+                    # Aggiunta la colonna "Tipologia di pressing"
+                    cols = ["Giornata", "Data", "Squadra casa", "Squadra ospite", "Gol casa", "Gol ospite", "Frazione", "Inizio", "Tipologia", "Tipo Costruzione", "Tipologia di pressing", "Esito finale"]
                     record = {
                         "Giornata": giornata, "Data": data_str, "Squadra casa": s_casa, "Squadra ospite": s_ospite,
                         "Gol casa": st.session_state.get('gh_key'), "Gol ospite": st.session_state.get('ga_key'),
                         "Frazione": frazione, "Inizio": st.session_state.get(f'pp_in{s}'),
                         "Tipologia": st.session_state.get(f'pp_tipo{s}'), 
-                        "Tipo Costruzione": st.session_state.get(f'pp_costruzione{s}'), # Nuova chiave
+                        "Tipo Costruzione": st.session_state.get(f'pp_costruzione{s}'),
+                        "Tipologia di pressing": st.session_state.get(f'pp_altezza{s}'), # Nuovo campo
                         "Esito finale": st.session_state.get(f'pp_esito{s}')
                     }
                 elif fase == "Azione Difensiva":
@@ -240,21 +241,25 @@ if st.session_state.profilo == "Match Analyst":
                 if len(off_in) in [5, 6]: esegui_salvataggio("Azione Offensiva")
                 else: st.error("⚠️ Inserire il minuto d'inizio!")
 
-        with tabs[2]: # --- TAB PRIMA PRESSIONE AGGIORNATO ---
+        with tabs[2]:
             st.selectbox("Frazione di gioco", opzioni_frazione, key=f"frazione{suffix}_pp", on_change=lambda: st.session_state.update({f"frazione{suffix}": st.session_state[f"frazione{suffix}_pp"]}))
             pp_in = st.text_input("Inizio (Minuto Video)", placeholder="mm:ss", key=f"pp_in{suffix}")
-            if pp_in and len(pp_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
             
-            cp_sx, cp_cent, cp_dx = st.columns([1, 2.5, 1])
-            with cp_sx: 
-                st.radio("Tipologia", ["Pressing", "Pressione"], key=f"pp_tipo{suffix}", horizontal=True)
-            with cp_cent:
-                _, inner_cp, _ = st.columns([1, 2, 1])
-                with inner_cp: 
-                    # Modifica qui: Label e Opzioni
-                    st.radio("Tipo di Costruzione", ["Statica", "Dinamica"], key=f"pp_costruzione{suffix}", horizontal=True)
-            with cp_dx: 
-                st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}", horizontal=True)
+            # Layout a 4 colonne per far stare tutto bene in riga
+            c_tipo, c_costr, c_press, c_esito = st.columns([1, 1.5, 2, 1])
+            
+            with c_tipo: 
+                st.radio("Tipologia", ["Pressing", "Pressione"], key=f"pp_tipo{suffix}")
+            
+            with c_costr:
+                st.radio("Tipo di Costruzione", ["Statica", "Dinamica"], key=f"pp_costruzione{suffix}")
+            
+            with c_press:
+                # Il nuovo campo che hai richiesto
+                st.radio("Tipologia di pressing", ["Ultra-offensiva", "Offensiva", "Difensiva"], key=f"pp_altezza{suffix}")
+            
+            with c_esito: 
+                st.radio("Esito finale", ["Positivo", "Negativo"], key=f"pp_esito{suffix}")
             
             if st.button("💾 Salva Prima Pressione"):
                 if len(pp_in) in [5, 6]: esegui_salvataggio("Prima Pressione")
