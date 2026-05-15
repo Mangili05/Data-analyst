@@ -192,7 +192,7 @@ if st.session_state.profilo == "Match Analyst":
             rc1, rc2 = st.columns(2)
             with rc1: 
                 val_in = st.text_input("Inizio", placeholder="mm:ss", key=f"t_in{suffix}")
-                if val and len(val) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
+                if val_in and len(val_in) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
             with rc2: 
                 val_fi = st.text_input("Fine", placeholder="mm:ss", key=f"t_fi{suffix}")
                 if val_fi and len(val_fi) not in [5, 6]: st.caption(":red[Inserire 5 o 6 caratteri]")
