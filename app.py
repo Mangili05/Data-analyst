@@ -408,7 +408,7 @@ elif st.session_state.profilo == "Staff Tecnico":
             "🛡️ Azione Difensiva"
         ]
         # Sostituisce il vecchio selectbox con pulsanti radio orizzontali e icone corrette
-        sezione_scelta = st.radio(
+        fase_selezionata = st.radio(
             "📋 Seleziona la fase di gioco da analizzare", 
             opzioni_sezione, 
             horizontal=True,
@@ -505,8 +505,8 @@ elif st.session_state.profilo == "Staff Tecnico":
         # ---------------------------------------------------------
         # SEZIONE: AZIONE OFFENSIVA
         # ---------------------------------------------------------
-        elif fase_selezionata == "🏹 Azione Offensiva":
-            st.subheader("🏹 ANALISI AZIONE OFFENSIVA")
+        elif fase_selezionata == "⚔️ Azione Offensiva":
+            st.subheader("⚔️ ANALISI AZIONE OFFENSIVA")
             if df_off.empty:
                 st.warning("Nessun dato offensivo disponibile per questa selezione.")
             else:
@@ -569,8 +569,8 @@ elif st.session_state.profilo == "Staff Tecnico":
         # ---------------------------------------------------------
         # SEZIONE: PRIMA PRESSIONE
         # ---------------------------------------------------------
-        elif fase_selezionata == "🛑 Prima Pressione":
-            st.subheader("🛑 ANALISI PRIMA PRESSIONE INIZIALE")
+        elif fase_selezionata == "⚡ Prima Pressione":
+            st.subheader("⚡ ANALISI PRIMA PRESSIONE INIZIALE")
             if df_press.empty:
                 st.warning("Nessun dato di prima pressione disponibile per questa selezione.")
             else:
