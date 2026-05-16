@@ -390,191 +390,182 @@ elif st.session_state.profilo == "Staff Tecnico":
     t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
 
     with t_squadra:
-        st.subheader("1️⃣ SEZIONE: COSTRUZIONI")
+        # Caricamento centralizzato di tutti i fogli con gestione errori unificata
         try:
             df_cost = conn.read(worksheet="Costruzione", ttl=0)
-            if df_cost.empty:
-                st.warning("Nessun dato di costruzione disponibile.")
-            else:
-                import plotly.express as px
-                
-                g_filtro = st.selectbox("Seleziona Partita (Costruzione)", ["Tutte"] + sorted(df_cost['Giornata'].unique().tolist()), key="f_giornata_cost")
-                if g_filtro != "Tutte":
-                    df_cost = df_cost[df_cost['Giornata'] == g_filtro]
+            df_off = conn.read(worksheet="Offensiva", ttl=0)
+            df_press = conn.read(worksheet="Prima Pressione", ttl=0)
+            df_dif = conn.read(worksheet="Azione Difensiva", ttl=0)
+        except Exception as e:
+            st.error(f"Errore nel caricamento dei dati dal database: {e}")
+            df_cost, df_off, df_press, df_dif = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
+        # --- FILTRO PARTITA UNIFICATO PER TUTTA LA PAGINA ---
+        # Trova tutte le giornate presenti nei vari fogli per creare un filtro unico
+        tutte_giornate = sorted(list(set(
+            df_cost['Giornata'].dropna().unique().tolist() + 
+            df_off['Giornata'].dropna().unique().tolist() + 
+            df_press['Giornata'].dropna().unique().tolist() + 
+            df_dif['Giornata'].dropna().unique().tolist()
+        )))
+        
+        g_filtro = st.selectbox("🎯 Seleziona la Partita da analizzare", ["Tutte le Gare"] + tutte_giornate, key="filtro_global_staff")
+
+        # Applicazione filtro globale
+        if g_filtro != "Tutte le Gare":
+            if not df_cost.empty: df_cost = df_cost[df_cost['Giornata'] == g_filtro]
+            if not df_off.empty: df_off = df_off[df_off['Giornata'] == g_filtro]
+            if not df_press.empty: df_press = df_press[df_press['Giornata'] == g_filtro]
+            if not df_dif.empty: df_dif = df_dif[df_dif['Giornata'] == g_filtro]
+
+        # --- SELETTORE FASE DI GIOCO (Ottimizzato per Smartphone) ---
+        fase_selezionata = st.selectbox(
+            "Visualizza Fase:", 
+            ["🏗️ Costruzione", "🏹 Azione Offensiva", "🛑 Prima Pressione", "🛡️ Azione Difensiva"]
+        )
+
+        import plotly.express as px
+        import plotly.graph_objects as go
+
+        # ---------------------------------------------------------
+        # SEZIONE: COSTRUZIONE
+        # ---------------------------------------------------------
+        if fase_selezionata == "🏗️ Costruzione":
+            st.subheader("🏗️ ANALISI FASE DI COSTRUZIONE")
+            if df_cost.empty:
+                st.warning("Nessun dato di costruzione disponibile per questa selezione.")
+            else:
                 st.markdown("#### Efficacia Generale Costruzioni")
                 fig_pie = px.pie(df_cost, names='Esito finale', color='Esito finale',
-                                    color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'}, hole=0.4)
-                fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
-                st.plotly_chart(fig_pie, use_container_width=True)
+                                 color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'}, hole=0.4)
+                fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                      font=dict(color="white"), dragmode=False)
+                st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+                
                 st.markdown("#### Efficacia per Modalità")
-                tipo_filtro = st.radio("Filtra per Tipologia:", ["Totale", "Statica", "Dinamica"], horizontal=True, key="f_tipo_cost")
+                tipo_filtro = st.radio("Filtra per Tipo Sviluppo:", ["Totale", "Statica", "Dinamica"], horizontal=True, key="f_tipo_cost")
                 df_bar_data = df_cost.copy()
                 if tipo_filtro != "Totale":
                     df_bar_data = df_bar_data[df_bar_data['Tipologia'] == tipo_filtro]
     
-                df_grouped = df_bar_data.groupby(['Modalità', 'Esito finale']).size().reset_index(name='Conteggio')
-                fig_bar = px.bar(df_grouped, x='Modalità', y='Conteggio', color='Esito finale', barmode='group',
-                                    color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
-                                    category_orders={"Modalità": ["Bassa", "Manovrata", "Diretta"]})
-                fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
-                st.plotly_chart(fig_bar, use_container_width=True)
-    
-                st.markdown("#### Confronto Ritmo: Statica vs Dinamica")
-                df_stacked = df_cost.groupby(['Tipologia', 'Esito finale']).size().reset_index(name='Conteggio')
-                fig_stacked = px.bar(df_stacked, x='Tipologia', y='Conteggio', color='Esito finale',
-                                        color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'})
-                fig_stacked.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
-                st.plotly_chart(fig_stacked, use_container_width=True)
-
-        except Exception as e:
-            st.error(f"Errore Sezione Costruzioni: {e}")
-
-        st.divider()
+                if not df_bar_data.empty:
+                    df_grouped = df_bar_data.groupby(['Modalità', 'Esito finale']).size().reset_index(name='Conteggio')
+                    fig_bar = px.bar(df_grouped, x='Modalità', y='Conteggio', color='Esito finale', barmode='group',
+                                     color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
+                                     category_orders={"Modalità": ["Bassa", "Manovrata", "Diretta"]})
+                    fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                          font=dict(color="white"), dragmode=False)
+                    st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
 
         # ---------------------------------------------------------
-        # 2️⃣ SEZIONE: AZIONI OFFENSIVE
+        # SEZIONE: AZIONE OFFENSIVA
         # ---------------------------------------------------------
-        st.subheader("2️⃣ SEZIONE: AZIONI OFFENSIVE")
-        try:
-            df_off = conn.read(worksheet="Offensiva", ttl=0)
+        elif fase_selezionata == "🏹 Azione Offensiva":
+            st.subheader("🏹 ANALISI AZIONE OFFENSIVA")
             if df_off.empty:
-                st.warning("Nessun dato offensivo disponibile.")
+                st.warning("Nessun dato offensivo disponibile per questa selezione.")
             else:
-                import plotly.graph_objects as go
-
-                # --- FILTRO GIORNATA ---
-                g_off_filtro = st.selectbox("Seleziona Partita (Offensiva)", ["Tutte"] + sorted(df_off['Giornata'].unique().tolist()), key="f_giornata_off")
-                df_off_filt = df_off.copy()
-                if g_off_filtro != "Tutte":
-                    df_off_filt = df_off_filt[df_off_filt['Giornata'] == g_off_filtro]
-
-                # --- 1. MAPPA DEI TIRI DINAMICA (VERSIONE COMPATTA) ---
                 st.markdown("#### 🏟️ Mappa dei Tiri")
-                
                 campo_visuale_height = 680 
                 fig_pitch = go.Figure()
-                
                 pitch_green = "#228B22" 
                 line_white = "#ffffff"
-
-                # NOTA: Ora il campo "reale" parte da Y=30 per eliminare il vuoto a centrocampo
                 y_inizio = 30 
 
-                # 1. Rettangolo principale (Metà campo "tagliata")
-                fig_pitch.add_shape(type="rect", x0=0, y0=y_inizio, x1=100, y1=100, 
-                                    line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
-                
-                # 2. Area Grande (Y da 83.5 a 100)
+                fig_pitch.add_shape(type="rect", x0=0, y0=y_inizio, x1=100, y1=100, line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
                 fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3), layer="below") 
-                
-                # 3. Area Piccola
                 fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3), layer="below") 
-                
-                # 4. Dischetto
                 fig_pitch.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white), layer="below") 
-                
-                # 5. Lunetta area di rigore
                 fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3), layer="below")
-                
-                # 6. Lunetta centrocampo (posizionata ora su Y = y_inizio)
-                fig_pitch.add_shape(type="path", path=f"M 37 {y_inizio} C 40 {y_inizio+8}, 60 {y_inizio+8}, 63 {y_inizio}", 
-                                    line=dict(color=line_white, width=3), layer="below")
-
-                # 7. Porta
+                fig_pitch.add_shape(type="path", path=f"M 37 {y_inizio} C 40 {y_inizio+8}, 60 {y_inizio+8}, 63 {y_inizio}", line=dict(color=line_white, width=3), layer="below")
                 fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd", layer="below")
 
                 esiti_map = {"Gol": "#FFD700", "Tiro in porta": "#00FF00", "Tiro fuori": "#FF0000"}
                 symbols = {"Gol": "circle", "Tiro in porta": "diamond", "Tiro fuori": "x"}
                 
-                # --- 2. NUOVO CICLO PER I TIRI (CALIBRATO) ---
                 for esito, color in esiti_map.items():
-                    df_e = df_off_filt[df_off_filt['Esito finale'] == esito].copy()
+                    df_e = df_off[df_off['Esito finale'] == esito].copy()
                     if not df_e.empty:
                         df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
                         df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
-                
-                        # --- CALIBRAZIONE PRECISA ---
-                        # Moltiplichiamo la X per 1.05 per "spingere" leggermente verso i lati se serve, 
-                        # o aggiustiamo il divisore. Proviamo così:
-                        df_e['Plotly_X'] = ((df_e['Coord_X'] / 358) * 100) -1
-                        
-                        # Aumentiamo fattore_y a 55 per spostarli più in basso (verso il centrocampo)
-                        # Se sono ancora troppo alti, metti 60.
+                        df_e['Plotly_X'] = ((df_e['Coord_X'] / 358) * 100) - 1
                         fattore_y = 43 
                         df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * fattore_y)
                 
                         fig_pitch.add_trace(go.Scatter(
-                            x=df_e['Plotly_X'], 
-                            y=df_e['Plotly_Y'], 
-                            mode='markers', 
-                            name=esito,
-                            marker=dict(
-                                size=18, # Leggermente più grande per visibilità
-                                color=color, 
-                                symbol=symbols[esito], 
-                                line=dict(width=2, color="white")
-                            ),
-                            text=df_e['Giocatore'], 
-                            hoverinfo='text+name'
+                            x=df_e['Plotly_X'], y=df_e['Plotly_Y'], mode='markers', name=esito,
+                            marker=dict(size=18, color=color, symbol=symbols[esito], line=dict(width=2, color="white")),
+                            text=df_e['Giocatore'], hoverinfo='text+name'
                         ))
                 
-                # --- AGGIUSTAMENTO LAYOUT ---
                 fig_pitch.update_layout(
                     xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 101]), 
                     yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[28, 103]), 
-                    yaxis_scaleanchor="x",
-                    yaxis_scaleratio=1,
-                    margin=dict(l=0, r=0, t=10, b=0),
-                    height=campo_visuale_height, 
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    showlegend=True,
-                    legend=dict(
-                        font=dict(color="white", size=14), 
-                        orientation="v",
-                        bgcolor='rgba(0,0,0,0.5)',
-                        yanchor="bottom", y=0.02,
-                        xanchor="right", x=0.98
-                    )
+                    yaxis_scaleanchor="x", yaxis_scaleratio=1, margin=dict(l=0, r=0, t=10, b=0),
+                    height=campo_visuale_height, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                    showlegend=True, dragmode=False,
+                    legend=dict(font=dict(color="white", size=14), orientation="h", bgcolor='rgba(0,0,0,0.5)', yanchor="top", y=-0.02, xanchor="center", x=0.5)
                 )
+                st.plotly_chart(fig_pitch, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+                st.markdown("#### Canali di Sviluppo Correnti")
+                df_canali = df_off.groupby('Canale').size().reset_index(name='Conteggio')
+                fig_canali = px.bar(df_canali, y='Canale', x='Conteggio', orientation='h', color_discrete_sequence=['#1f67b5'])
+                fig_canali.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"), dragmode=False)
+                st.plotly_chart(fig_canali, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+                st.markdown("#### Efficacia dei Sistemi di Rifinitura")
+                df_rif = df_off.groupby(['Rifinitura', 'Esito finale']).size().reset_index(name='Conteggio')
+                fig_rif = px.bar(df_rif, x='Rifinitura', y='Conteggio', color='Esito finale', barmode='stack',
+                                 color_discrete_map={'Gol': '#FFD700', 'Tiro in porta': '#00FF00', 'Tiro fuori': '#FF0000'})
+                fig_rif.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"), dragmode=False)
+                st.plotly_chart(fig_rif, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+        # ---------------------------------------------------------
+        # SEZIONE: PRIMA PRESSIONE
+        # ---------------------------------------------------------
+        elif fase_selezionata == "🛑 Prima Pressione":
+            st.subheader("🛑 ANALISI PRIMA PRESSIONE INIZIALE")
+            if df_press.empty:
+                st.warning("Nessun dato di prima pressione disponibile per questa selezione.")
+            else:
+                st.markdown("#### Distribuzione Altezza del Pressing")
+                fig_press_altezza = px.pie(df_press, names='Tipologia di pressing', hole=0.4,
+                                           color='Tipologia di pressing',
+                                           color_discrete_map={'Ultra-offensiva': '#FF4500', 'Offensiva': '#FF8C00', 'Difensiva': '#1E90FF'})
+                fig_press_altezza.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"), dragmode=False)
+                st.plotly_chart(fig_press_altezza, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+                st.markdown("#### Esito Pressione su Costruzione Avversaria")
+                df_p_grouped = df_press.groupby(['Tipo Costruzione', 'Esito finale']).size().reset_index(name='Conteggio')
+                fig_p_bar = px.bar(df_p_grouped, x='Tipo Costruzione', y='Conteggio', color='Esito finale', barmode='group',
+                                   color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'})
+                fig_p_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"), dragmode=False)
+                st.plotly_chart(fig_p_bar, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+        # ---------------------------------------------------------
+        # SEZIONE: AZIONE DIFENSIVA
+        # ---------------------------------------------------------
+        elif fase_selezionata == "🛡️ Azione Difensiva":
+            st.subheader("🛡️ ANALISI AZIONE DIFENSIVA E STRUTTURA")
+            if df_dif.empty:
+                st.warning("Nessun dato di azione difensiva disponibile per questa selezione.")
+            else:
+                st.markdown("#### Efficacia Totale Comportamenti Difensivi")
+                fig_dif_pie = px.pie(df_dif, names='Esito finale', color='Esito finale',
+                                     color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'}, hole=0.4)
+                fig_dif_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"), dragmode=False)
+                st.plotly_chart(fig_dif_pie, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
                 
-                st.plotly_chart(fig_pitch, use_container_width=True, config={'displayModeBar': False})
-
-                col_off1, col_off2 = st.columns(2)
-
-                with col_off1:
-                    # --- 2. CANALI DI SVILUPPO (Barre Orizzontali) ---
-                    st.markdown("#### Canali di Sviluppo")
-                    df_canali = df_off_filt.groupby('Canale').size().reset_index(name='Conteggio')
-                    fig_canali = px.bar(df_canali, y='Canale', x='Conteggio', orientation='h',
-                                        color_discrete_sequence=['#1f67b5'])
-                    fig_canali.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
-                    st.plotly_chart(fig_canali, use_container_width=True)
-
-                with col_off2:
-                    # --- 3. EFFICACIA RIFINITURA (Funnel) ---
-                    st.markdown("#### Efficacia Rifinitura")
-                    df_rif = df_off_filt.groupby(['Rifinitura', 'Esito finale']).size().reset_index(name='Conteggio')
-                    fig_rif = px.funnel(df_rif, x='Conteggio', y='Rifinitura', color='Esito finale',
-                                        color_discrete_map={'Gol': '#FFD700', 'Tiro in porta': '#00FF00', 'Tiro fuori': '#FF0000'})
-                    fig_rif.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
-                    st.plotly_chart(fig_rif, use_container_width=True)
-
-                # --- 4. CLASSIFICA MARCATORI / TIRATORI ---
-                st.markdown("#### Performance Individuale (Tiri e Gol)")
-                df_players = df_off_filt.groupby(['Giocatore', 'Esito finale']).size().reset_index(name='Tiri')
-                fig_players = px.bar(df_players, x='Giocatore', y='Tiri', color='Esito finale',
-                                     color_discrete_map={'Gol': '#FFD700', 'Tiro in porta': '#00FF00', 'Tiro fuori': '#FF0000'},
-                                     barmode='stack')
-                fig_players.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
-                st.plotly_chart(fig_players, use_container_width=True)
-
-        except Exception as e:
-            st.error(f"Errore Sezione Offensiva: {e}")
+                st.markdown("#### Analisi Tipologie Difensive per Frazione")
+                df_d_grouped = df_dif.groupby(['Frazione', 'Tipologia']).size().reset_index(name='Conteggio')
+                fig_d_bar = px.bar(df_d_grouped, x='Frazione', y='Conteggio', color='Tipologia', barmode='stack',
+                                   color_discrete_sequence=px.colors.qualitative.Pastel)
+                fig_d_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"), dragmode=False)
+                st.plotly_chart(fig_d_bar, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
 
 # ---------------------------------------------------------
-# TAB PROFILO CALCIATORE (Versione Staff Tecnico - Pulizia Automatica)
+# TAB PROFILO CALCIATORE (Invariata come richiesto)
 # ---------------------------------------------------------
     with t_individuo:
         st.markdown("### 🎯 Analisi Delle Prestazioni Individuali")
@@ -715,7 +706,6 @@ elif st.session_state.profilo == "Staff Tecnico":
                 with col_t1:
                     filtro_time = st.radio("Mostra andamento per:", ["Entrambi", "Allenamento", "Partita"], horizontal=True)
                 with col_t2:
-                    # Prevenzione crash se il dataframe è vuoto
                     if pd.isna(min_date) or pd.isna(max_date):
                         import datetime
                         min_date, max_date = datetime.date.today(), datetime.date.today()
@@ -734,12 +724,10 @@ elif st.session_state.profilo == "Staff Tecnico":
                     d_p = df_ind_clean[df_ind_clean['Giocatore'] == p].copy()
                     d_p = d_p.sort_values('Data')
                     
-                    # Logica di filtraggio del Range Selezionato
                     if isinstance(date_range, tuple) and len(date_range) == 2:
                         start_date, end_date = date_range
                         d_p = d_p[(d_p['Data'] >= start_date) & (d_p['Data'] <= end_date)]
                     elif isinstance(date_range, tuple) and len(date_range) == 1:
-                        # Se l'utente non ha ancora cliccato la seconda data
                         d_p = d_p[d_p['Data'] == date_range[0]]
                         
                     d_p['Media_Sessione'] = d_p[kpi_totali].mean(axis=1)
@@ -754,9 +742,7 @@ elif st.session_state.profilo == "Staff Tecnico":
                                                     line=dict(color=colori[i % len(colori)], width=3),
                                                     marker=dict(size=10)))
 
-                # --- 3. TIMELINE DI CRESCITA (Aggiornata con formato italiano) ---
                 if any_data_timeline:
-                    # Impostiamo il formato italiano sia per i testi sull'asse che per il mouse
                     fig_time.update_layout(
                         template="plotly_dark", 
                         yaxis_range=[0, 5.2],
@@ -764,14 +750,14 @@ elif st.session_state.profilo == "Staff Tecnico":
                         plot_bgcolor='rgba(0,0,0,0)',
                         xaxis_title="Data Osservazione", 
                         yaxis_title="Valutazione Media",
-                        hovermode="x unified", # Unifica il fumetto per vedere tutti i giocatori insieme in quella data
+                        hovermode="x unified",
                         xaxis=dict(
-                            type='date',           # Forza Plotly a trattare l'asse come date
-                            tickformat="%d-%m-%Y", # Formato etichette: 31-03-2026
-                            hoverformat="%d-%m-%Y" # Formato nel fumetto al passaggio del mouse
+                            type='date',           
+                            tickformat="%d-%m-%Y", 
+                            hoverformat="%d-%m-%Y" 
                         )
                     )
                     st.plotly_chart(fig_time, use_container_width=True, config={'displayModeBar': False})
 
         except Exception as e:
-            st.error(f"Errore nella generazione dei grafici: {e}")
+            st.error(f"Errore nella generazione dei grafici individuali: {e}")
