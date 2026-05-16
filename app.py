@@ -394,8 +394,8 @@ elif st.session_state.profilo == "Staff Tecnico":
         try:
             df_cost = conn.read(worksheet="Costruzione", ttl=0)
             df_off = conn.read(worksheet="Offensiva", ttl=0)
-            df_press = conn.read(worksheet="Prima Pressione", ttl=0)
-            df_dif = conn.read(worksheet="Azione Difensiva", ttl=0)
+            df_press = conn.read(worksheet="Pressione", ttl=0)
+            df_dif = conn.read(worksheet="Difensiva", ttl=0)
         except Exception as e:
             st.error(f"Errore nel caricamento dei dati dal database: {e}")
             df_cost, df_off, df_press, df_dif = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
