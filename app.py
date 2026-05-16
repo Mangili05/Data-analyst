@@ -644,9 +644,9 @@ elif st.session_state.profilo == "Staff Tecnico":
                 df_press_filtrato = df_press.copy()
                 if frazione_gioco == "1° Tempo":
                     # Gestisce sia se nel DB hai '1° Tempo' sia se hai solo il numero 1 o stringhe simili
-                    df_press_filtrato = df_press_filtrato[df_press_filtrato['Tempo'].astype(str).str.contains('1')]
+                    df_press_filtrato = df_press_filtrato[df_press_filtrato['Frazione'].astype(str).str.contains('1')]
                 elif frazione_gioco == "2° Tempo":
-                    df_press_filtrato = df_press_filtrato[df_press_filtrato['Tempo'].astype(str).str.contains('2')]
+                    df_press_filtrato = df_press_filtrato[df_press_filtrato['Frazione'].astype(str).str.contains('2')]
 
                 if df_press_filtrato.empty:
                     st.warning(f"Nessun dato registrato per il {frazione_gioco} con la selezione attuale.")
