@@ -390,7 +390,7 @@ elif st.session_state.profilo == "Staff Tecnico":
     t_squadra, t_individuo = st.tabs(["📈 Analisi Collettiva", "👤 Profilo Calciatore"])
 
     with t_squadra:
-        # Caricamento centralizzato di tutti i fogli con gestione errori unificata
+        # 1. CARICAMENTO DATI (Con i nomi dei fogli corretti)
         try:
             df_cost = conn.read(worksheet="Costruzione", ttl=0)
             df_off = conn.read(worksheet="Offensiva", ttl=0)
@@ -400,33 +400,78 @@ elif st.session_state.profilo == "Staff Tecnico":
             st.error(f"Errore nel caricamento dei dati dal database: {e}")
             df_cost, df_off, df_press, df_dif = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
-        # --- FILTRO PARTITA UNIFICATO PER TUTTA LA PAGINA ---
-        # Trova tutte le giornate presenti nei vari fogli per creare un filtro unico
-        tutte_giornate = sorted(list(set(
-            df_cost['Giornata'].dropna().unique().tolist() + 
-            df_off['Giornata'].dropna().unique().tolist() + 
-            df_press['Giornata'].dropna().unique().tolist() + 
-            df_dif['Giornata'].dropna().unique().tolist()
-        )))
-        
-        g_filtro = st.selectbox("🎯 Seleziona la Partita da analizzare", ["Tutte le Gare"] + tutte_giornate, key="filtro_global_staff")
-
-        # Applicazione filtro globale
-        if g_filtro != "Tutte le Gare":
-            if not df_cost.empty: df_cost = df_cost[df_cost['Giornata'] == g_filtro]
-            if not df_off.empty: df_off = df_off[df_off['Giornata'] == g_filtro]
-            if not df_press.empty: df_press = df_press[df_press['Giornata'] == g_filtro]
-            if not df_dif.empty: df_dif = df_dif[df_dif['Giornata'] == g_filtro]
-
-        # --- SELETTORE FASE DI GIOCO (Ottimizzato per Smartphone) ---
-        fase_selezionata = st.selectbox(
-            "Visualizza Fase:", 
-            ["🏗️ Costruzione", "🏹 Azione Offensiva", "🛑 Prima Pressione", "🛡️ Azione Difensiva"]
+        # --- MODIFICA 1: SELEZIONE SEZIONE INTERFACCIA MATCH ANALYST ---
+        opzioni_sezione = [
+            "⚽ Costruzione", 
+            "⚔️ Azione Offensiva", 
+            "⚡ Prima Pressione", 
+            "🛡️ Azione Difensiva"
+        ]
+        # Sostituisce il vecchio selectbox con pulsanti radio orizzontali e icone corrette
+        sezione_scelta = st.radio(
+            "📋 Seleziona la fase di gioco da analizzare", 
+            opzioni_sezione, 
+            horizontal=True,
+            key="sezione_match_analyst"
         )
 
-        import plotly.express as px
-        import plotly.graph_objects as go
 
+        # --- MODIFICA 2: SELEZIONE PARTITE FORMATTATA (Giornata X - Casa vs Ospiti) ---
+        mappa_partite = {}
+        
+        # Estraiamo in modo dinamico le info combinando i fogli caricati correttamente
+        for df in [df_cost, df_off, df_press, df_dif]:
+            colonne_necessarie = ['Giornata', 'Squadra casa', 'Squadra ospite', 'Gol casa', 'Gol ospite']
+            if not df.empty and all(col in df.columns for col in colonne_necessarie):
+                # Rimuoviamo righe dove manca la Giornata
+                df_valido = df.dropna(subset=['Giornata'])
+                
+                for _, row in df_valido.iterrows():
+                    try:
+                        # Pulizia del float (es. da 1.0 a 1)
+                        giornata_num = int(float(row['Giornata']))
+                        sq_casa = str(row['Squadra casa']).strip()
+                        sq_ospite = str(row['Squadra ospite']).strip()
+                        
+                        # Gestione sicura dei gol (evita crash se il dato è momentaneamente vuoto)
+                        g_casa = int(float(row['Gol casa'])) if pd.notna(row['Gol casa']) else 0
+                        g_ospite = int(float(row['Gol ospite'])) if pd.notna(row['Gol ospite']) else 0
+                        
+                        # Creiamo la stringa leggibile richiesta
+                        etichetta_visibile = f"Giornata {giornata_num} - {sq_casa} {g_casa}-{g_ospite} {sq_ospite}"
+                        
+                        # Mappiamo l'etichetta al VALORE ORIGINALE del foglio per non rompere i filtri successivi
+                        mappa_partite[etichetta_visibile] = row['Giornata']
+                    except:
+                        continue
+        
+        # Ordiniamo l'elenco in base al numero reale della giornata (evita che la Giornata 10 appaia prima della 2)
+        elenco_partite_formattato = sorted(
+            list(mappa_partite.keys()), 
+            key=lambda x: int(x.split("Giornata ")[1].split(" -")[0])
+        )
+        
+        # Mostriamo la selectbox con i nomi delle gare reali e formattati
+        scelta_partita = st.selectbox(
+            "🎯 Seleziona la Partita da analizzare", 
+            ["Tutte le Gare"] + elenco_partite_formattato, 
+            key="filtro_global_staff"
+        )
+
+        # Recuperiamo il valore di filtro corretto (originale) associato alla stringa selezionata
+        if scelta_partita != "Tutte le Gare":
+            g_filtro = mappa_partite[scelta_partita]
+        else:
+            g_filtro = "Tutte le Gare"
+
+        # Applicazione del filtro globale sui DataFrame
+        if g_filtro != "Tutte le Gare":
+            if not df_cost.empty and 'Giornata' in df_cost.columns: df_cost = df_cost[df_cost['Giornata'] == g_filtro]
+            if not df_off.empty and 'Giornata' in df_off.columns: df_off = df_off[df_off['Giornata'] == g_filtro]
+            if not df_press.empty and 'Giornata' in df_press.columns: df_press = df_press[df_press['Giornata'] == g_filtro]
+            if not df_dif.empty and 'Giornata' in df_dif.columns: df_dif = df_dif[df_dif['Giornata'] == g_filtro]
+
+        
         # ---------------------------------------------------------
         # SEZIONE: COSTRUZIONE
         # ---------------------------------------------------------
