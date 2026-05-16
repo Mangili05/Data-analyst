@@ -475,8 +475,8 @@ elif st.session_state.profilo == "Staff Tecnico":
         # ---------------------------------------------------------
         # SEZIONE: COSTRUZIONE
         # ---------------------------------------------------------
-        if fase_selezionata == "🏗️ Costruzione":
-            st.subheader("🏗️ ANALISI FASE DI COSTRUZIONE")
+        if fase_selezionata == "⚽ Costruzione":
+            st.subheader("⚽ ANALISI FASE DI COSTRUZIONE")
             if df_cost.empty:
                 st.warning("Nessun dato di costruzione disponibile per questa selezione.")
             else:
