@@ -481,74 +481,117 @@ elif st.session_state.profilo == "Staff Tecnico":
             if df_cost.empty:
                 st.warning("Nessun dato di costruzione disponibile per questa selezione.")
             else:
-                # --- CALCOLO METRICHE FLASH ---
-                tot_cost = len(df_cost)
-                pos_cost = len(df_cost[df_cost['Esito finale'] == 'Positivo'])
-                neg_cost = len(df_cost[df_cost['Esito finale'] == 'Negativo'])
-                percentuale_successo = int((pos_cost / tot_cost) * 100) if tot_cost > 0 else 0
-
-                # Visualizzazione KPI veloci in alto
-                col_m1, col_m2, col_m3 = st.columns(3)
-                with col_m1:
-                    st.metric("Costruzioni Totali", tot_cost)
-                with col_m2:
-                    st.metric("Efficaci (Positive) ✔️", f"{pos_cost} ({percentuale_successo}%)")
-                with col_m3:
-                    st.metric("Perse (Negative) ❌", neg_cost)
+                # --- FILTRO MACRO: FRAZIONE DI GIOCO ---
+                # Questo filtro impatta TUTTI i grafici della sezione costruzione
+                frazione_gioco = st.radio(
+                    "Seleziona la frazione di gioco:", 
+                    ["Tutta la Partita", "1° Tempo", "2° Tempo"], 
+                    horizontal=True, 
+                    key="f_tempo_costruzione"
+                )
                 
-                st.write("---")
-
-                # --- ROW 1: VISIONE GENERALE E CONTESTO (AFFIANCATI) ---
-                col_grafico1, col_grafico2 = st.columns(2)
-
-                with col_grafico1:
-                    st.markdown("#### 📊 Efficacia Generale")
-                    # Modificato per mostrare etichette con valore + percentuale direttamente sul grafico
-                    fig_pie = px.pie(df_cost, names='Esito finale', color='Esito finale',
-                                     color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'}, hole=0.4)
-                    fig_pie.update_traces(textinfo='value+percent', textfont_size=14, 
-                                          hovertemplate="<b>%{label}</b><br>Conteggio: %{value}<br>Percentuale: %{percent}")
-                    fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
-                                          font=dict(color="white"), dragmode=False,
-                                          legend=dict(orientation="h", yanchor="bottom", y=-0.1, xanchor="center", x=0.5))
-                    st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
-
-                with col_grafico2:
-                    st.markdown("#### 🔄 Statica vs Dinamica")
-                    # NUOVO GRAFICO: Confronto diretto tra palla ferma (rinvii) e palla in movimento
-                    df_tipo_grouped = df_cost.groupby(['Tipologia', 'Esito finale']).size().reset_index(name='Conteggio')
-                    fig_tipo = px.bar(df_tipo_grouped, x='Tipologia', y='Conteggio', color='Esito finale', barmode='group',
-                                      color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
-                                      category_orders={"Tipologia": ["Statica", "Dinamica"]})
-                    fig_tipo.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
-                                           font=dict(color="white"), dragmode=False,
-                                           xaxis_title=None, yaxis_title="Numero di Azioni",
-                                           legend=dict(orientation="h", yanchor="bottom", y=-0.1, xanchor="center", x=0.5))
-                    st.plotly_chart(fig_tipo, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
-
-                st.write("---")
-
-                # --- ROW 2: IL DETTAGLIO DELLE MODALITÀ (CON FILTRO) ---
-                st.markdown("#### 🎯 Dettaglio per Modalità di Sviluppo")
+                # Identificazione dinamica della colonna del tempo/frazione per evitare KeyError
+                colonna_tempo = None
+                for col in ['Frazione', 'Tempo', 'frazione', 'tempo']:
+                    if col in df_cost.columns:
+                        colonna_tempo = col
+                        break
                 
-                # Manteniamo il tuo filtro tattico per isolare i flussi se il Mister vuole approfondire
-                tipo_filtro = st.radio("Filtra il grafico sottostante per Tipo Sviluppo:", ["Totale", "Statica", "Dinamica"], horizontal=True, key="f_tipo_cost")
+                # Se non trova i nomi standard, fa un controllo più ampio
+                if not colonna_tempo:
+                    for col in df_cost.columns:
+                        if 'fraz' in col.lower() or 'temp' in col.lower():
+                            colonna_tempo = col
+                            break
                 
-                df_bar_data = df_cost.copy()
-                if tipo_filtro != "Totale":
-                    df_bar_data = df_bar_data[df_bar_data['Tipologia'] == tipo_filtro]
+                # Creiamo il dataframe filtrato in base al tempo selezionato
+                df_cost_filtrato = df_cost.copy()
+                
+                if colonna_tempo and frazione_gioco != "Tutta la Partita":
+                    if frazione_gioco == "1° Tempo":
+                        df_cost_filtrato = df_cost_filtrato[df_cost_filtrato[colonna_tempo].astype(str).str.contains('1')]
+                    elif frazione_gioco == "2° Tempo":
+                        df_cost_filtrato = df_cost_filtrato[df_cost_filtrato[colonna_tempo].astype(str).str.contains('2')]
+                elif not colonna_tempo and frazione_gioco != "Tutta la Partita":
+                    st.sidebar.error("⚠️ Colonna delle frazioni non trovata nel database Costruzione.")
 
-                if not df_bar_data.empty:
-                    df_grouped = df_bar_data.groupby(['Modalità', 'Esito finale']).size().reset_index(name='Conteggio')
-                    fig_bar = px.bar(df_grouped, x='Modalità', y='Conteggio', color='Esito finale', barmode='group',
-                                     color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
-                                     category_orders={"Modalità": ["Bassa", "Manovrata", "Diretta"]})
-                    fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
-                                          font=dict(color="white"), dragmode=False,
-                                          xaxis_title=None, yaxis_title="Numero di Azioni")
-                    st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+                if df_cost_filtrato.empty:
+                    st.warning(f"Nessun dato registrato per il {frazione_gioco} con la selezione attuale.")
                 else:
-                    st.caption(f"Nessun dato registrato per la modalità {tipo_filtro} in questa partita.")
+                    # --- CALCOLO METRICHE FLASH ---
+                    tot_cost = len(df_cost_filtrato)
+                    pos_cost = len(df_cost_filtrato[df_cost_filtrato['Esito finale'] == 'Positivo'])
+                    neg_cost = len(df_cost_filtrato[df_cost_filtrato['Esito finale'] == 'Negativo'])
+                    
+                    # Utilizzo di round() per l'arrotondamento matematico corretto
+                    percentuale_successo = round((pos_cost / tot_cost) * 100) if tot_cost > 0 else 0
+                    percentuale_perse = round((neg_cost / tot_cost) * 100) if tot_cost > 0 else 0
+
+                    # Visualizzazione KPI veloci in alto
+                    col_m1, col_m2, col_m3 = st.columns(3)
+                    with col_m1:
+                        st.metric("Costruzioni Totali", tot_cost)
+                    with col_m2:
+                        st.metric("Efficaci (Positive) ✔️", f"{pos_cost} ({percentuale_successo}%)")
+                    with col_m3:
+                        st.metric("Perse (Negative) ❌", f"{neg_cost} ({percentuale_perse}%)")
+                    
+                    st.write("---")
+
+                    # --- ROW 1: VISIONE GENERALE E CONTESTO (AFFIANCATI) ---
+                    col_grafico1, col_grafico2 = st.columns(2)
+
+                    with col_grafico1:
+                        st.markdown("#### 📊 Efficacia Generale")
+                        fig_pie = px.pie(df_cost_filtrato, names='Esito finale', color='Esito finale',
+                                         color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'}, hole=0.4)
+                        fig_pie.update_traces(textinfo='value+percent', textfont_size=14, 
+                                              hovertemplate="<b>%{label}</b><br>Conteggio: %{value}<br>Percentuale: %{percent}")
+                        fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                              font=dict(color="white"), dragmode=False,
+                                              margin=dict(l=10, r=10, t=50, b=10),
+                                              legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5))
+                        st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+                    with col_grafico2:
+                        st.markdown("#### 🔄 Statica vs Dinamica")
+                        df_tipo_grouped = df_cost_filtrato.groupby(['Tipologia', 'Esito finale']).size().reset_index(name='Conteggio')
+                        fig_tipo = px.bar(df_tipo_grouped, x='Tipologia', y='Conteggio', color='Esito finale', barmode='group',
+                                          color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
+                                          category_orders={"Tipologia": ["Statica", "Dinamica"]})
+                        fig_tipo.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                               font=dict(color="white"), dragmode=False,
+                                               xaxis_title=None, yaxis_title="Numero di Azioni",
+                                               showlegend=True, 
+                                               margin=dict(l=10, r=10, t=30, b=60),
+                                               legend=dict(orientation="h", title_text="", yanchor="bottom", y=-0.3, xanchor="center", x=0.5))
+                        st.plotly_chart(fig_tipo, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+                    st.write("---")
+
+                    # --- ROW 2: IL DETTAGLIO DELLE MODALITÀ (CON FILTRO) ---
+                    st.markdown("#### 🎯 Dettaglio per Modalità di Sviluppo")
+                    
+                    tipo_filtro = st.radio("Filtra il grafico sottostante per Tipo Sviluppo:", ["Totale", "Statica", "Dinamica"], horizontal=True, key="f_tipo_cost")
+                    
+                    df_bar_data = df_cost_filtrato.copy()
+                    if tipo_filtro != "Totale":
+                        df_bar_data = df_bar_data[df_bar_data['Tipologia'] == tipo_filtro]
+
+                    if not df_bar_data.empty:
+                        df_grouped = df_bar_data.groupby(['Modalità', 'Esito finale']).size().reset_index(name='Conteggio')
+                        fig_bar = px.bar(df_grouped, x='Modalità', y='Conteggio', color='Esito finale', barmode='group',
+                                         color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
+                                         category_orders={"Modalità": ["Bassa", "Manovrata", "Diretta"]})
+                        fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                              font=dict(color="white"), dragmode=False,
+                                              xaxis_title=None, yaxis_title="Numero di Azioni",
+                                              showlegend=True, 
+                                              margin=dict(l=10, r=10, t=30, b=60),
+                                              legend=dict(orientation="h", title_text="", yanchor="bottom", y=-0.3, xanchor="center", x=0.5))
+                        st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+                    else:
+                        st.caption(f"Nessun dato registrato per la modalità {tipo_filtro} in questa selezione.")
 
         # ---------------------------------------------------------
         # SEZIONE: AZIONE OFFENSIVA
@@ -615,26 +658,110 @@ elif st.session_state.profilo == "Staff Tecnico":
                 st.plotly_chart(fig_rif, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
 
         # ---------------------------------------------------------
-        # SEZIONE: PRIMA PRESSIONE
+        # SEZIONE: PRIMA PRESSIONE (STRUTTURATA PER IL MISTER)
         # ---------------------------------------------------------
         elif fase_selezionata == "⚡ Prima Pressione":
-            st.subheader("⚡ ANALISI PRIMA PRESSIONE INIZIALE")
+            st.subheader("⚡ ANALISI PRIMA PRESSIONE")
+            
             if df_press.empty:
                 st.warning("Nessun dato di prima pressione disponibile per questa selezione.")
             else:
-                st.markdown("#### Distribuzione Altezza del Pressing")
-                fig_press_altezza = px.pie(df_press, names='Tipologia di pressing', hole=0.4,
-                                           color='Tipologia di pressing',
-                                           color_discrete_map={'Ultra-offensiva': '#FF4500', 'Offensiva': '#FF8C00', 'Difensiva': '#1E90FF'})
-                fig_press_altezza.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"), dragmode=False)
-                st.plotly_chart(fig_press_altezza, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+                # --- FILTRO MACRO: FRAZIONE DI GIOCO ---
+                # Questo filtro impatta TUTTI i grafici della sezione prima pressione
+                frazione_gioco = st.radio(
+                    "Seleziona la frazione di gioco:", 
+                    ["Tutta la Partita", "1° Tempo", "2° Tempo"], 
+                    horizontal=True, 
+                    key="f_tempo_pressione"
+                )
+                
+                # Creiamo il dataframe filtrato in base al tempo selezionato
+                df_press_filtrato = df_press.copy()
+                if frazione_gioco == "1° Tempo":
+                    # Gestisce sia se nel DB hai '1° Tempo' sia se hai solo il numero 1 o stringhe simili
+                    df_press_filtrato = df_press_filtrato[df_press_filtrato['Frazione'].astype(str).str.contains('1')]
+                elif frazione_gioco == "2° Tempo":
+                    df_press_filtrato = df_press_filtrato[df_press_filtrato['Frazione'].astype(str).str.contains('2')]
 
-                st.markdown("#### Esito Pressione su Costruzione Avversaria")
-                df_p_grouped = df_press.groupby(['Tipo Costruzione', 'Esito finale']).size().reset_index(name='Conteggio')
-                fig_p_bar = px.bar(df_p_grouped, x='Tipo Costruzione', y='Conteggio', color='Esito finale', barmode='group',
-                                   color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'})
-                fig_p_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"), dragmode=False)
-                st.plotly_chart(fig_p_bar, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+                if df_press_filtrato.empty:
+                    st.warning(f"Nessun dato registrato per il {frazione_gioco} con la selezione attuale.")
+                else:
+                    # --- CALCOLO METRICHE FLASH ---
+                    tot_press = len(df_press_filtrato)
+                    pos_press = len(df_press_filtrato[df_press_filtrato['Esito finale'] == 'Positivo'])
+                    neg_press = len(df_press_filtrato[df_press_filtrato['Esito finale'] == 'Negativo'])
+                    
+                    # Arrotondamento matematico corretto come richiesto
+                    percentuale_successo = round((pos_press / tot_press) * 100) if tot_press > 0 else 0
+                    percentuale_perse = round((neg_press / tot_press) * 100) if tot_press > 0 else 0
+
+                    # Visualizzazione KPI veloci in alto
+                    col_m1, col_m2, col_m3 = st.columns(3)
+                    with col_m1:
+                        st.metric("Pressioni Totali", tot_press)
+                    with col_m2:
+                        st.metric("Efficaci (Positive) ✔️", f"{pos_press} ({percentuale_successo}%)")
+                    with col_m3:
+                        st.metric("Inefficaci (Negative) ❌", f"{neg_press} ({percentuale_perse}%)")
+                    
+                    st.write("---")
+
+                    # --- ROW 1: VISIONE GENERALE E CONTESTO (AFFIANCATI) ---
+                    col_grafico1, col_grafico2 = st.columns(2)
+
+                    with col_grafico1:
+                        st.markdown("#### 📊 Efficacia Generale")
+                        fig_pie = px.pie(df_press_filtrato, names='Esito finale', color='Esito finale',
+                                         color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'}, hole=0.4)
+                        fig_pie.update_traces(textinfo='value+percent', textfont_size=14, 
+                                              hovertemplate="<b>%{label}</b><br>Conteggio: %{value}<br>Percentuale: %{percent}")
+                        fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                              font=dict(color="white"), dragmode=False,
+                                              margin=dict(l=10, r=10, t=50, b=10),
+                                              legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5))
+                        st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+                    with col_grafico2:
+                        st.markdown("#### 🔄 Statica vs Dinamica")
+                        # Analisi basata sul tipo di costruzione avversaria ('Tipo Costruzione')
+                        df_tipo_grouped = df_press_filtrato.groupby(['Tipo Costruzione', 'Esito finale']).size().reset_index(name='Conteggio')
+                        fig_tipo = px.bar(df_tipo_grouped, x='Tipo Costruzione', y='Conteggio', color='Esito finale', barmode='group',
+                                          color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
+                                          category_orders={"Tipo Construction": ["Statica", "Dinamica"]})
+                        fig_tipo.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                               font=dict(color="white"), dragmode=False,
+                                               xaxis_title=None, yaxis_title="Numero di Azioni",
+                                               showlegend=True, 
+                                               margin=dict(l=10, r=10, t=30, b=60),
+                                               legend=dict(orientation="h", title_text="", yanchor="bottom", y=-0.3, xanchor="center", x=0.5))
+                        st.plotly_chart(fig_tipo, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+                    st.write("---")
+
+                    # --- ROW 2: DETTAGLIO TIPOLOGIA DI PRESSING (CON FILTRO) ---
+                    st.markdown("#### 🎯 Dettaglio per Tipologia di Pressing")
+                    
+                    # Filtro locale per isolare l'altezza del pressing in base allo sviluppo avversario
+                    tipo_cost_filtro = st.radio("Filtra il grafico sottostante per Costruzione Avversaria:", ["Totale", "Statica", "Dinamica"], horizontal=True, key="f_tipo_cost_press")
+                    
+                    df_bar_data = df_press_filtrato.copy()
+                    if tipo_cost_filtro != "Totale":
+                        df_bar_data = df_bar_data[df_bar_data['Tipo Costruzione'] == tipo_cost_filtro]
+
+                    if not df_bar_data.empty:
+                        df_grouped = df_bar_data.groupby(['Tipologia di pressing', 'Esito finale']).size().reset_index(name='Conteggio')
+                        fig_bar = px.bar(df_grouped, x='Tipologia di pressing', y='Conteggio', color='Esito finale', barmode='group',
+                                         color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
+                                         category_orders={"Tipologia di pressing": ["Ultra-offensiva", "Offensiva", "Difensiva"]})
+                        fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                              font=dict(color="white"), dragmode=False,
+                                              xaxis_title=None, yaxis_title="Numero di Pressioni",
+                                              showlegend=True, 
+                                              margin=dict(l=10, r=10, t=30, b=60),
+                                              legend=dict(orientation="h", title_text="", yanchor="bottom", y=-0.3, xanchor="center", x=0.5))
+                        st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+                    else:
+                        st.caption(f"Nessun dato registrato per la tipologia {tipo_cost_filtro} in questa selezione.")
 
         # ---------------------------------------------------------
         # SEZIONE: AZIONE DIFENSIVA
