@@ -486,9 +486,9 @@ elif st.session_state.profilo == "Staff Tecnico":
                 pos_cost = len(df_cost[df_cost['Esito finale'] == 'Positivo'])
                 neg_cost = len(df_cost[df_cost['Esito finale'] == 'Negativo'])
                 
-                # Calcolo bilanciato delle percentuali
-                percentuale_successo = int((pos_cost / tot_cost) * 100) if tot_cost > 0 else 0
-                percentuale_perse = int((neg_cost / tot_cost) * 100) if tot_cost > 0 else 0
+                # MODIFICA 1: Utilizzo di round() per l'arrotondamento matematico corretto
+                percentuale_successo = round((pos_cost / tot_cost) * 100) if tot_cost > 0 else 0
+                percentuale_perse = round((neg_cost / tot_cost) * 100) if tot_cost > 0 else 0
 
                 # Visualizzazione KPI veloci in alto
                 col_m1, col_m2, col_m3 = st.columns(3)
@@ -497,7 +497,6 @@ elif st.session_state.profilo == "Staff Tecnico":
                 with col_m2:
                     st.metric("Efficaci (Positive) ✔️", f"{pos_cost} ({percentuale_successo}%)")
                 with col_m3:
-                    # MODIFICA 1: Aggiunta la percentuale anche per le perse
                     st.metric("Perse (Negative) ❌", f"{neg_cost} ({percentuale_perse}%)")
                 
                 st.write("---")
@@ -511,7 +510,6 @@ elif st.session_state.profilo == "Staff Tecnico":
                                      color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'}, hole=0.4)
                     fig_pie.update_traces(textinfo='value+percent', textfont_size=14, 
                                           hovertemplate="<b>%{label}</b><br>Conteggio: %{value}<br>Percentuale: %{percent}")
-                    # Aumentato il margine superiore (t=50) per staccare la ciambella dal titolo su mobile
                     fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
                                           font=dict(color="white"), dragmode=False,
                                           margin=dict(l=10, r=10, t=50, b=10),
@@ -524,11 +522,13 @@ elif st.session_state.profilo == "Staff Tecnico":
                     fig_tipo = px.bar(df_tipo_grouped, x='Tipologia', y='Conteggio', color='Esito finale', barmode='group',
                                       color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
                                       category_orders={"Tipologia": ["Statica", "Dinamica"]})
-                    # MODIFICA 2: Rimossa la legenda (showlegend=False) per pulizia visiva su mobile
+                    # MODIFICA 2: Legenda riattivata e posizionata più in basso (y=-0.3) con più margine inferiore (b=60)
                     fig_tipo.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
                                            font=dict(color="white"), dragmode=False,
                                            xaxis_title=None, yaxis_title="Numero di Azioni",
-                                           showlegend=False, margin=dict(l=10, r=10, t=30, b=10))
+                                           showlegend=True, 
+                                           margin=dict(l=10, r=10, t=30, b=60),
+                                           legend=dict(orientation="h", title_text="", yanchor="bottom", y=-0.3, xanchor="center", x=0.5))
                     st.plotly_chart(fig_tipo, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
 
                 st.write("---")
@@ -547,11 +547,13 @@ elif st.session_state.profilo == "Staff Tecnico":
                     fig_bar = px.bar(df_grouped, x='Modalità', y='Conteggio', color='Esito finale', barmode='group',
                                      color_discrete_map={'Positivo': '#00FF00', 'Negativo': '#FF0000'},
                                      category_orders={"Modalità": ["Bassa", "Manovrata", "Diretta"]})
-                    # MODIFICA 3: Rimossa la legenda anche qui per coerenza tattica e spazio
+                    # MODIFICA 3: Legenda inserita anche qui, ben distanziata sotto le etichette delle modalità
                     fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
                                           font=dict(color="white"), dragmode=False,
                                           xaxis_title=None, yaxis_title="Numero di Azioni",
-                                          showlegend=False, margin=dict(l=10, r=10, t=30, b=10))
+                                          showlegend=True, 
+                                          margin=dict(l=10, r=10, t=30, b=60),
+                                          legend=dict(orientation="h", title_text="", yanchor="bottom", y=-0.3, xanchor="center", x=0.5))
                     st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
                 else:
                     st.caption(f"Nessun dato registrato per la modalità {tipo_filtro} in questa partita.")
