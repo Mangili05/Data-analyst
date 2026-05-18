@@ -722,7 +722,7 @@ elif st.session_state.profilo == "Staff Tecnico":
 
                     st.write("---")
 
-                    # --- ROW 3: MAPPA DEI TIRI (COORDINATE CORRETTE) ---
+                    # --- ROW 3: MAPPA DEI TIRI (COORDINATE CORRETTE E MILLIMETRICHE) ---
                     st.markdown("#### 🏟️ Mappa dei Tiri e Pericolosità")
                     campo_visuale_height = 680 
                     fig_pitch = go.Figure()
@@ -730,7 +730,7 @@ elif st.session_state.profilo == "Staff Tecnico":
                     line_white = "#ffffff"
                     y_inizio = 30 
 
-                    # Disegno dello sfondo del campo
+                    # Disegno dello sfondo del campo (invariato)
                     fig_pitch.add_shape(type="rect", x0=0, y0=y_inizio, x1=100, y1=100, line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
                     fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3), layer="below") 
                     fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3), layer="below") 
@@ -743,27 +743,37 @@ elif st.session_state.profilo == "Staff Tecnico":
                     symbols = {"Gol": "circle", "Tiro in porta": "diamond", "Tiro fuori": "x"}
                     
                     for esito, color in esiti_map.items():
+                        # Lavoriamo sul dataframe filtrato per il tempo corretto
                         df_e = df_off_filtrato[df_off_filtrato['Esito finale'] == esito].copy()
                         if not df_e.empty:
                             df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
                             df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
                             
-                            # CORREZIONE CALCOLO PROPORZIONALE COORDINATE
-                            # Scala X direttamente su base 100 senza offset distortivi
+                            # --- NUOVA CALIBRAZIONE MILLIMETRICA ---
+                            
+                            # Scala X (invariata, pulita): scala proporzionale 0-100m su 358 pixel
                             df_e['Plotly_X'] = (df_e['Coord_X'] / 358) * 100
                             
-                            # Scala Y sull'altezza reale della porzione visibile (100 - 30 = 70 unità)
-                            df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * 70)
+                            # Scala Y CORRETTA: scala proporzionale 0-100m su 283 pixel (per campo intero)
+                            # Questo fattore 100 (invece di 43) fa cadere il rigore esattamente sul dischetto disegnato
+                            df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * 100)
                     
                             fig_pitch.add_trace(go.Scatter(
                                 x=df_e['Plotly_X'], y=df_e['Plotly_Y'], mode='markers', name=esito,
                                 marker=dict(size=18, color=color, symbol=symbols[esito], line=dict(width=2, color="white")),
-                                text=df_e['Giocatore'] + " (" + df_e['Tipo di azione'] + ")", 
+                                # Hover con più dettagli: Giocatore, Tipo Azione, Canale, Rifinitura
+                                text=(
+                                    df_e['Giocatore'].astype(str) + "<br>" +
+                                    "Azione: " + df_e['Tipo di azione'].astype(str) + "<br>" +
+                                    "Via: " + df_e['Canale'].astype(str) + "<br>" +
+                                    "Rif: " + df_e['Rifinitura'].astype(str)
+                                ),
                                 hoverinfo='text+name'
                             ))
                     
                     fig_pitch.update_layout(
                         xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 101]), 
+                        # Range Y confermato: da 28 (visibile centrocampo) a 103 (linea di porta)
                         yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[28, 103]), 
                         yaxis_scaleanchor="x", yaxis_scaleratio=1, margin=dict(l=0, r=0, t=10, b=0),
                         height=campo_visuale_height, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
