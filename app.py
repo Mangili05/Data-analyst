@@ -964,12 +964,12 @@ elif st.session_state.profilo == "Staff Tecnico":
             
                     # --- ROW 3: GRAFICO A BARRE (STATICA VS DINAMICA) ---
                     st.markdown("#### 🔄 Statica vs Dinamica")
-                    df_sd = df_def_filtrato.groupby(['Tipo Sviluppo', 'Esito finale']).size().unstack(fill_value=0).reset_index()
+                    df_sd = df_def_filtrato.groupby(['Tipo di azione', 'Esito finale']).size().unstack(fill_value=0).reset_index()
                     
                     fig_bar_sd = go.Figure()
                     for col_esito in df_sd.columns[1:]:
                         fig_bar_sd.add_trace(go.Bar(
-                            name=col_esito, x=df_sd['Tipo Sviluppo'], y=df_sd[col_esito],
+                            name=col_esito, x=df_sd['Tipo di azione'], y=df_sd[col_esito],
                             marker_color=color_colors.get(col_esito, '#FFFFFF')
                         ))
                     fig_bar_sd.update_layout(
