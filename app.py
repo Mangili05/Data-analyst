@@ -749,15 +749,13 @@ elif st.session_state.profilo == "Staff Tecnico":
                             df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
                             df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
                             
-                            # --- CALIBRAZIONE GEOMETRICA PERFETTA ---
+                            # --- CALIBRAZIONE MATEMATICA DEFINITIVA ---
                             
-                            # Scala X (Confermata, è perfetta così)
-                            df_e['Plotly_X'] = (df_e['Coord_X'] / 358) * 100
+                            # Scala X: Con 180 sul foglio, Plotly_X diventa esattamente 50.0 (centro perfetto)
+                            df_e['Plotly_X'] = (df_e['Coord_X'] / 360) * 100
                             
-                            # Scala Y CORRETTA (Moltiplicatore calibrato a 30.6)
-                            # Riducendo il fattore, la sottrazione sottrarrà meno valore da 100,
-                            # proiettando il rigore esattamente a Y=89.3 (sul dischetto)
-                            df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * 30.6)
+                            # Scala Y: Con 75 sul foglio, Plotly_Y diventa esattamente 89.3 (centro del dischetto)
+                            df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * 40.4)
                     
                             fig_pitch.add_trace(go.Scatter(
                                 x=df_e['Plotly_X'], y=df_e['Plotly_Y'], mode='markers', name=esito,
