@@ -889,7 +889,7 @@ elif st.session_state.profilo == "Staff Tecnico":
         # ==========================================
         # FASE 4: AZIONE DIFENSIVA
         # ==========================================
-        elif fase == "Azione Difensiva":  # Adatta la stringa in base a come è scritta nel tuo selettore
+        elif fase_selezionata == "Azione Difensiva":  # Adatta la stringa in base a come è scritta nel tuo selettore
             st.markdown("### 🛡️ ANALISI FASE DI AZIONE DIFENSIVA")
             
             # Presumiamo che tu abbia creato df_def_filtrato applicando i filtri della partita e del tempo
