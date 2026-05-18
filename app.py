@@ -598,64 +598,179 @@ elif st.session_state.profilo == "Staff Tecnico":
         # ---------------------------------------------------------
         elif fase_selezionata == "⚔️ Azione Offensiva":
             st.subheader("⚔️ ANALISI AZIONE OFFENSIVA")
+            
             if df_off.empty:
                 st.warning("Nessun dato offensivo disponibile per questa selezione.")
             else:
-                st.markdown("#### 🏟️ Mappa dei Tiri")
-                campo_visuale_height = 680 
-                fig_pitch = go.Figure()
-                pitch_green = "#228B22" 
-                line_white = "#ffffff"
-                y_inizio = 30 
-
-                fig_pitch.add_shape(type="rect", x0=0, y0=y_inizio, x1=100, y1=100, line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
-                fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3), layer="below") 
-                fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3), layer="below") 
-                fig_pitch.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white), layer="below") 
-                fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3), layer="below")
-                fig_pitch.add_shape(type="path", path=f"M 37 {y_inizio} C 40 {y_inizio+8}, 60 {y_inizio+8}, 63 {y_inizio}", line=dict(color=line_white, width=3), layer="below")
-                fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd", layer="below")
-
-                esiti_map = {"Gol": "#FFD700", "Tiro in porta": "#00FF00", "Tiro fuori": "#FF0000"}
-                symbols = {"Gol": "circle", "Tiro in porta": "diamond", "Tiro fuori": "x"}
-                
-                for esito, color in esiti_map.items():
-                    df_e = df_off[df_off['Esito finale'] == esito].copy()
-                    if not df_e.empty:
-                        df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
-                        df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
-                        df_e['Plotly_X'] = ((df_e['Coord_X'] / 358) * 100) - 1
-                        fattore_y = 43 
-                        df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * fattore_y)
-                
-                        fig_pitch.add_trace(go.Scatter(
-                            x=df_e['Plotly_X'], y=df_e['Plotly_Y'], mode='markers', name=esito,
-                            marker=dict(size=18, color=color, symbol=symbols[esito], line=dict(width=2, color="white")),
-                            text=df_e['Giocatore'], hoverinfo='text+name'
-                        ))
-                
-                fig_pitch.update_layout(
-                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 101]), 
-                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[28, 103]), 
-                    yaxis_scaleanchor="x", yaxis_scaleratio=1, margin=dict(l=0, r=0, t=10, b=0),
-                    height=campo_visuale_height, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                    showlegend=True, dragmode=False,
-                    legend=dict(font=dict(color="white", size=14), orientation="h", bgcolor='rgba(0,0,0,0.5)', yanchor="top", y=-0.02, xanchor="center", x=0.5)
+                # --- FILTRO MACRO: FRAZIONE DI GIOCO ---
+                frazione_gioco = st.radio(
+                    "Seleziona la frazione di gioco:", 
+                    ["Tutta la Partita", "1° Tempo", "2° Tempo"], 
+                    horizontal=True, 
+                    key="f_tempo_offensiva"
                 )
-                st.plotly_chart(fig_pitch, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+                
+                # Controllo anti-crash colonna tempo/frazione
+                colonna_tempo = None
+                for col in ['Frazione', 'Tempo', 'frazione', 'tempo']:
+                    if col in df_off.columns:
+                        colonna_tempo = col
+                        break
+                
+                # Creiamo il dataframe filtrato
+                df_off_filtrato = df_off.copy()
+                if colonna_tempo and frazione_gioco != "Tutta la Partita":
+                    if frazione_gioco == "1° Tempo":
+                        df_off_filtrato = df_off_filtrato[df_off_filtrato[colonna_tempo].astype(str).str.contains('1')]
+                    elif frazione_gioco == "2° Tempo":
+                        df_off_filtrato = df_off_filtrato[df_off_filtrato[colonna_tempo].astype(str).str.contains('2')]
 
-                st.markdown("#### Canali di Sviluppo Correnti")
-                df_canali = df_off.groupby('Canale').size().reset_index(name='Conteggio')
-                fig_canali = px.bar(df_canali, y='Canale', x='Conteggio', orientation='h', color_discrete_sequence=['#1f67b5'])
-                fig_canali.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"), dragmode=False)
-                st.plotly_chart(fig_canali, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+                if df_off_filtrato.empty:
+                    st.warning(f"Nessun dato registrato per il {frazione_gioco} con la selezione attuale.")
+                else:
+                    # --- CALCOLO METRICHE FLASH ---
+                    tot_attacchi = len(df_off_filtrato)
+                    
+                    # Azioni concluse: Gol + Tiri in porta + Tiri fuori
+                    df_concluse = df_off_filtrato[df_off_filtrato['Esito finale'].isin(['Gol', 'Tiro in porta', 'Tiro fuori'])]
+                    num_concluse = len(df_concluse)
+                    
+                    # Gol segnati
+                    num_gol = len(df_off_filtrato[df_off_filtrato['Esito finale'] == 'Gol'])
+                    
+                    # Percentuale di pericolosità (conversioni in tiro)
+                    perc_conclusione = round((num_concluse / tot_attacchi) * 100) if tot_attacchi > 0 else 0
 
-                st.markdown("#### Efficacia dei Sistemi di Rifinitura")
-                df_rif = df_off.groupby(['Rifinitura', 'Esito finale']).size().reset_index(name='Conteggio')
-                fig_rif = px.bar(df_rif, x='Rifinitura', y='Conteggio', color='Esito finale', barmode='stack',
-                                 color_discrete_map={'Gol': '#FFD700', 'Tiro in porta': '#00FF00', 'Tiro fuori': '#FF0000'})
-                fig_rif.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"), dragmode=False)
-                st.plotly_chart(fig_rif, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+                    # Visualizzazione KPI
+                    col_m1, col_m2, col_m3 = st.columns(3)
+                    with col_m1:
+                        st.metric("Attacchi Totali", tot_attacchi)
+                    with col_m2:
+                        st.metric("Azioni Concluse (Tiri) 🎯", f"{num_concluse} ({perc_conclusione}%)")
+                    with col_m3:
+                        st.metric("Gol Segnati ⚽", num_gol)
+                    
+                    st.write("---")
+
+                    # --- ROW 1: VISIONE GENERALE ED ESITI (AFFIANCATI) ---
+                    col_grafico1, col_grafico2 = st.columns(2)
+
+                    with col_grafico1:
+                        st.markdown("#### 📊 Efficacia Finale")
+                        fig_pie = px.pie(df_off_filtrato, names='Esito finale', color='Esito finale',
+                                         color_discrete_map={
+                                             'Gol': '#FFD700', 
+                                             'Tiro in porta': '#00FF00', 
+                                             'Tiro fuori': '#FF0000',
+                                             'Palla persa': '#FF4500',
+                                             'Altro': '#808080'
+                                         }, hole=0.4)
+                        fig_pie.update_traces(textinfo='value+percent', textfont_size=14, 
+                                              hovertemplate="<b>%{label}</b><br>Conteggio: %{value}<br>Percentuale: %{percent}")
+                        fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                              font=dict(color="white"), dragmode=False,
+                                              margin=dict(l=10, r=10, t=50, b=10),
+                                              legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5))
+                        st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+                    with col_grafico2:
+                        st.markdown("#### 🔄 Sviluppo per Canale")
+                        df_canali_grouped = df_off_filtrato.groupby(['Canale', 'Esito finale']).size().reset_index(name='Conteggio')
+                        fig_canali = px.bar(df_canali_grouped, x='Canale', y='Conteggio', color='Esito finale', barmode='group',
+                                            color_discrete_map={
+                                                'Gol': '#FFD700', 'Tiro in porta': '#00FF00', 
+                                                'Tiro fuori': '#FF0000', 'Palla persa': '#FF4500', 'Altro': '#808080'
+                                            })
+                        fig_canali.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                                 font=dict(color="white"), dragmode=False,
+                                                 xaxis_title=None, yaxis_title="Numero di Azioni",
+                                                 margin=dict(l=10, r=10, t=30, b=60),
+                                                 legend=dict(orientation="h", title_text="", yanchor="bottom", y=-0.3, xanchor="center", x=0.5))
+                        st.plotly_chart(fig_canali, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+
+                    st.write("---")
+
+                    # --- ROW 2: DETTAGLIO TIPOLOGIA DI AZIONE (CON FILTRO) ---
+                    st.markdown("#### 🎯 Dettaglio per Tipo di Azione")
+                    
+                    canale_selezionato = st.radio(
+                        "Filtra il grafico sottostante per Canale di Sviluppo:", 
+                        ["Totale"] + sorted(list(df_off_filtrato['Canale'].dropna().unique())), 
+                        horizontal=True, 
+                        key="f_canale_offensiva"
+                    )
+                    
+                    df_azione_data = df_off_filtrato.copy()
+                    if canale_selezionato != "Totale":
+                        df_azione_data = df_azione_data[df_azione_data['Canale'] == canale_selezionato]
+
+                    if not df_azione_data.empty:
+                        df_az_grouped = df_azione_data.groupby(['Tipo di azione', 'Esito finale']).size().reset_index(name='Conteggio')
+                        fig_azione = px.bar(df_az_grouped, x='Tipo di azione', y='Conteggio', color='Esito finale', barmode='group',
+                                            color_discrete_map={
+                                                'Gol': '#FFD700', 'Tiro in porta': '#00FF00', 
+                                                'Tiro fuori': '#FF0000', 'Palla persa': '#FF4500', 'Altro': '#808080'
+                                            })
+                        fig_azione.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
+                                                 font=dict(color="white"), dragmode=False,
+                                                 xaxis_title=None, yaxis_title="Numero di Azioni",
+                                                 margin=dict(l=10, r=10, t=30, b=60),
+                                                 legend=dict(orientation="h", title_text="", yanchor="bottom", y=-0.3, xanchor="center", x=0.5))
+                        st.plotly_chart(fig_azione, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+                    else:
+                        st.caption(f"Nessun dato registrato per il canale {canale_selezionato} in questa selezione.")
+
+                    st.write("---")
+
+                    # --- ROW 3: MAPPA DEI TIRI (COORDINATE CORRETTE) ---
+                    st.markdown("#### 🏟️ Mappa dei Tiri e Pericolosità")
+                    campo_visuale_height = 680 
+                    fig_pitch = go.Figure()
+                    pitch_green = "#228B22" 
+                    line_white = "#ffffff"
+                    y_inizio = 30 
+
+                    # Disegno dello sfondo del campo
+                    fig_pitch.add_shape(type="rect", x0=0, y0=y_inizio, x1=100, y1=100, line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
+                    fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3), layer="below") 
+                    fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3), layer="below") 
+                    fig_pitch.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white), layer="below") 
+                    fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3), layer="below")
+                    fig_pitch.add_shape(type="path", path=f"M 37 {y_inizio} C 40 {y_inizio+8}, 60 {y_inizio+8}, 63 {y_inizio}", line=dict(color=line_white, width=3), layer="below")
+                    fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd", layer="below")
+
+                    esiti_map = {"Gol": "#FFD700", "Tiro in porta": "#00FF00", "Tiro fuori": "#FF0000"}
+                    symbols = {"Gol": "circle", "Tiro in porta": "diamond", "Tiro fuori": "x"}
+                    
+                    for esito, color in esiti_map.items():
+                        df_e = df_off_filtrato[df_off_filtrato['Esito finale'] == esito].copy()
+                        if not df_e.empty:
+                            df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
+                            df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
+                            
+                            # CORREZIONE CALCOLO PROPORZIONALE COORDINATE
+                            # Scala X direttamente su base 100 senza offset distortivi
+                            df_e['Plotly_X'] = (df_e['Coord_X'] / 358) * 100
+                            
+                            # Scala Y sull'altezza reale della porzione visibile (100 - 30 = 70 unità)
+                            df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * 70)
+                    
+                            fig_pitch.add_trace(go.Scatter(
+                                x=df_e['Plotly_X'], y=df_e['Plotly_Y'], mode='markers', name=esito,
+                                marker=dict(size=18, color=color, symbol=symbols[esito], line=dict(width=2, color="white")),
+                                text=df_e['Giocatore'] + " (" + df_e['Tipo di azione'] + ")", 
+                                hoverinfo='text+name'
+                            ))
+                    
+                    fig_pitch.update_layout(
+                        xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 101]), 
+                        yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[28, 103]), 
+                        yaxis_scaleanchor="x", yaxis_scaleratio=1, margin=dict(l=0, r=0, t=10, b=0),
+                        height=campo_visuale_height, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                        showlegend=True, dragmode=False,
+                        legend=dict(font=dict(color="white", size=14), orientation="h", bgcolor='rgba(0,0,0,0.5)', yanchor="top", y=-0.02, xanchor="center", x=0.5)
+                    )
+                    st.plotly_chart(fig_pitch, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
 
         # ---------------------------------------------------------
         # SEZIONE: PRIMA PRESSIONE (STRUTTURATA PER IL MISTER)
