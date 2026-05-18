@@ -892,152 +892,172 @@ elif st.session_state.profilo == "Staff Tecnico":
         elif fase_selezionata == "🛡️ Azione Difensiva":  
             st.markdown("### 🛡️ ANALISI FASE DI AZIONE DIFENSIVA")
             
-            # Presumiamo che tu abbia creato df_def_filtrato applicando i filtri della partita e del tempo
-            # Esempio: df_def_filtrato = df_partita[df_partita['Fase di gioco'] == 'Azione Difensiva']
-            
-            if df_def_filtrato.empty:
-                st.warning("Nessun dato registrato per le Azioni Difensive in questa partita/tempo.")
+            # --- 1. DEFINIZIONE DEL DATAFRAME DI BASE ---
+            # Verifichiamo quale variabile usi nel tuo progetto per i dati difensivi
+            if 'df_def' in locals() or 'df_def' in globals():
+                df_base_def = df_def.copy()
+            elif 'df_partita' in locals() or 'df_partita' in globals():
+                # Se usi il df generale filtrato per la fase difensiva
+                df_base_def = df_partita[df_partita['Fase di gioco'] == 'Azione Difensiva'].copy()
             else:
-                # --- ROW 1: KPI CARDS ---
-                def_totati = len(df_def_filtrato)
-                def_efficaci = len(df_def_filtrato[df_def_filtrato['Esito finale'] == 'Positivo']) # o 'Gol'/'Tiro fuori' a seconda di come mappi l'esito difensivo
-                # Se usi gli stessi esiti dell'offensiva (es. Gol, Tiro in porta, Tiro fuori), puoi adattare i conteggi:
-                # Per ora manteniamo la logica standard dei tuoi KPI visibili negli screen:
-                def_positive = len(df_def_filtrato[df_def_filtrato['Esito finale'].isin(['Tiro fuori', 'Positivo'])]) 
-                def_negative = def_totati - def_positive
-                perc_efficacia = round((def_positive / def_totati) * 100) if def_totati > 0 else 0
-        
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Azioni Difensive Totali", def_totati)
-                with col2:
-                    st.metric("Efficaci (Positive) ✔️", f"{def_positive} ({perc_efficacia}%)")
-                with col3:
-                    st.metric("Subite (Negative) ❌", def_negative)
-        
-                st.write("---")
-        
-                # --- ROW 2: GRAFICO A CIAMBELLA (EFFICACIA GENERALE) ---
-                st.markdown("#### 📊 Efficacia Generale")
-                df_eff = df_def_filtrato['Esito finale'].value_counts().reset_index()
-                df_eff.columns = ['Esito', 'Conteggio']
-                
-                # Mappa colori coerente (Verde positivo, Rosso negativo)
-                # Se usi gli esiti dei tiri, puoi associare Gol al rosso e Tiro Fuori al verde
-                color_colors = {'Positivo': '#00FF00', 'Negativo': '#FF0000', 'Tiro fuori': '#00FF00', 'Gol': '#FF0000', 'Tiro in porta': '#FFA500'}
-                colors_pie = [color_colors.get(x, '#FFFFFF') for x in df_eff['Esito']]
-        
-                fig_pie = go.Figure(data=[go.Pie(
-                    labels=df_eff['Esito'], values=df_eff['Conteggio'], hole=.4,
-                    marker=dict(colors=colors_pie, line=dict(color='#1e293b', width=2))
-                )])
-                fig_pie.update_layout(
-                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color="white"), showlegend=True, height=350,
-                    margin=dict(l=20, r=20, t=20, b=20)
+                # Fallback di sicurezza se la variabile ha un altro nome (es. df)
+                df_base_def = df.copy() if 'df' in locals() else pd.DataFrame()
+
+            if df_base_def.empty:
+                st.warning("Nessun dato di azione difensiva disponibile per questa selezione.")
+            else:
+                # --- 2. FILTRO MACRO: FRAZIONE DI GIOCO (Coerente con Prima Pressione) ---
+                frazione_gioco_def = st.radio(
+                    "Seleziona la frazione di gioco:", 
+                    ["Tutta la Partita", "1° Tempo", "2° Tempo"], 
+                    horizontal=True, 
+                    key="f_tempo_difensiva"
                 )
-                st.plotly_chart(fig_pie, use_container_width=True)
-        
-                st.write("---")
-        
-                # --- ROW 3: GRAFICO A BARRE (STATICA VS DINAMICA) ---
-                st.markdown("#### 🔄 Statica vs Dinamica")
-                # Raggruppamento per Tipo Sviluppo (Statica/Dinamica) ed Esito
-                df_sd = df_def_filtrato.groupby(['Tipo Sviluppo', 'Esito finale']).size().unstack(fill_value=0).reset_index()
                 
-                fig_bar_sd = go.Figure()
-                # Assicurati che le colonne esistano prima di tracciarle
-                for col_esito in df_sd.columns[1:]:
-                    fig_bar_sd.add_trace(go.Bar(
-                        name=col_esito, x=df_sd['Tipo Sviluppo'], y=df_sd[col_esito],
-                        marker_color=color_colors.get(col_esito, '#FFFFFF')
-                    ))
-                fig_bar_sd.update_layout(
-                    barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color="white"), xaxis=dict(title="Modalità"), yaxis=dict(title="Numero di Azioni"),
-                    height=350, margin=dict(l=20, r=20, t=20, b=20)
-                )
-                st.plotly_chart(fig_bar_sd, use_container_width=True)
-        
-                st.write("---")
-        
-                # --- ROW 4: DETTAGLIO MODALITÀ DI SVILUPPO (CON FILTRO RADIO) ---
-                st.markdown("#### 🎯 Dettaglio per Modalità di Sviluppo")
-                scelta_sviluppo = st.radio("Filtra il grafico sottostante per Tipo Sviluppo:", ["Totale", "Statica", "Dinamica"], horizontal=True, key="radio_def")
-                
-                df_sviluppo = df_def_filtrato.copy()
-                if scelta_sviluppo != "Totale":
-                    df_sviluppo = df_sviluppo[df_sviluppo['Tipo Sviluppo'] == scelta_sviluppo]
+                # Creazione del dataframe filtrato richiesto per far funzionare i grafici successivi
+                df_def_filtrato = df_base_def.copy()
+                if frazione_gioco_def == "1° Tempo":
+                    df_def_filtrato = df_def_filtrato[df_def_filtrato['Frazione'].astype(str).str.contains('1')]
+                elif frazione_gioco_def == "2° Tempo":
+                    df_def_filtrato = df_def_filtrato[df_def_filtrato['Frazione'].astype(str).str.contains('2')]
+
+                # Controllo finale sul DataFrame filtrato prima di mostrare i KPI
+                if df_def_filtrato.empty:
+                    st.warning(f"Nessun dato registrato per il {frazione_gioco_def} con la selezione attuale.")
+                else:
+                    # --- ROW 1: KPI CARDS ---
+                    def_totati = len(df_def_filtrato)
+                    def_positive = len(df_def_filtrato[df_def_filtrato['Esito finale'].isin(['Tiro fuori', 'Positivo'])]) 
+                    def_negative = def_totati - def_positive
+                    perc_efficacia = round((def_positive / def_totati) * 100) if def_totati > 0 else 0
+            
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Azioni Difensive Totali", def_totati)
+                    with col2:
+                        st.metric("Efficaci (Positive) ✔️", f"{def_positive} ({perc_efficacia}%)")
+                    with col3:
+                        st.metric("Subite (Negative) ❌", def_negative)
+            
+                    st.write("---")
+            
+                    # --- ROW 2: GRAFICO A CIAMBELLA (EFFICACIA GENERALE) ---
+                    st.markdown("#### 📊 Efficacia Generale")
+                    df_eff = df_def_filtrato['Esito finale'].value_counts().reset_index()
+                    df_eff.columns = ['Esito', 'Conteggio']
                     
-                df_mod = df_sviluppo.groupby(['Modalità Sviluppo', 'Esito finale']).size().unstack(fill_value=0).reset_index()
-                
-                fig_bar_mod = go.Figure()
-                for col_esito in df_mod.columns[1:]:
-                    fig_bar_mod.add_trace(go.Bar(
-                        name=col_esito, x=df_mod['Modalità Sviluppo'], y=df_mod[col_esito],
-                        marker_color=color_colors.get(col_esito, '#FFFFFF')
-                    ))
-                fig_bar_mod.update_layout(
-                    barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color="white"), xaxis=dict(title="Sviluppo"), yaxis=dict(title="Numero di Azioni"),
-                    height=400, margin=dict(l=20, r=20, t=20, b=20)
-                )
-                st.plotly_chart(fig_bar_mod, use_container_width=True)
-        
-                st.write("---")
-        
-                # --- ROW 5: MAPPA DEGLI EVENTI DIFENSIVI (CALIBRAZIONE PRECISA) ---
-                st.markdown("#### 🏟️ Mappa dei Tiri e Misure Difensive Subite")
-                campo_visuale_height = 680 
-                fig_pitch = go.Figure()
-                pitch_green = "#228B22" 
-                line_white = "#ffffff"
-                y_inizio = 30 
-        
-                # Tracciamento del semiquadro del campo Plotly
-                fig_pitch.add_shape(type="rect", x0=0, y0=y_inizio, x1=100, y1=100, line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
-                fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3), layer="below") 
-                fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3), layer="below") 
-                fig_pitch.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white), layer="below") 
-                fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3), layer="below")
-                fig_pitch.add_shape(type="path", path=f"M 37 {y_inizio} C 40 {y_inizio+8}, 60 {y_inizio+8}, 63 {y_inizio}", line=dict(color=line_white, width=3), layer="below")
-                fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd", layer="below")
-        
-                # Dizionario esiti e simboli (puoi cambiare le chiavi se registri esiti puramente difensivi come 'Intercetto')
-                esiti_map = {"Gol": "#FFD700", "Tiro in porta": "#00FF00", "Tiro fuori": "#FF0000", "Positivo": "#00FF00", "Negativo": "#FF0000"}
-                symbols = {"Gol": "circle", "Tiro in porta": "diamond", "Tiro fuori": "x", "Positivo": "circle", "Negativo": "x"}
-                
-                for esito, color in esiti_map.items():
-                    df_e = df_def_filtrato[df_def_filtrato['Esito finale'] == esito].copy()
-                    if not df_e.empty:
-                        df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
-                        df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
-                        
-                        # --- CALIBRAZIONE MATEMATICA DEFINITIVA (360x283 -> Plotly) ---
-                        df_e['Plotly_X'] = (df_e['Coord_X'] / 360) * 100
-                        df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * 40.4)
-                
-                        fig_pitch.add_trace(go.Scatter(
-                            x=df_e['Plotly_X'], y=df_e['Plotly_Y'], mode='markers', name=esito,
-                            marker=dict(size=18, color=color, symbol=symbols.get(esito, "circle"), line=dict(width=2, color="white")),
-                            text=(
-                                df_e['Giocatore'].astype(str) + "<br>" +
-                                "Azione: " + df_e['Tipo di azione'].astype(str) + "<br>" +
-                                "Via: " + df_e['Canale'].astype(str) + "<br>" +
-                                "Rif: " + df_e['Rifinitura'].astype(str)
-                            ),
-                            hoverinfo='text+name'
+                    color_colors = {'Positivo': '#00FF00', 'Negativo': '#FF0000', 'Tiro fuori': '#00FF00', 'Gol': '#FF0000', 'Tiro in porta': '#FFA500'}
+                    colors_pie = [color_colors.get(x, '#FFFFFF') for x in df_eff['Esito']]
+            
+                    fig_pie = go.Figure(data=[go.Pie(
+                        labels=df_eff['Esito'], values=df_eff['Conteggio'], hole=.4,
+                        marker=dict(colors=colors_pie, line=dict(color='#1e293b', width=2))
+                    )])
+                    fig_pie.update_layout(
+                        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                        font=dict(color="white"), showlegend=True, height=350,
+                        margin=dict(l=20, r=20, t=20, b=20)
+                    )
+                    st.plotly_chart(fig_pie, use_container_width=True)
+            
+                    st.write("---")
+            
+                    # --- ROW 3: GRAFICO A BARRE (STATICA VS DINAMICA) ---
+                    st.markdown("#### 🔄 Statica vs Dinamica")
+                    df_sd = df_def_filtrato.groupby(['Tipo Sviluppo', 'Esito finale']).size().unstack(fill_value=0).reset_index()
+                    
+                    fig_bar_sd = go.Figure()
+                    for col_esito in df_sd.columns[1:]:
+                        fig_bar_sd.add_trace(go.Bar(
+                            name=col_esito, x=df_sd['Tipo Sviluppo'], y=df_sd[col_esito],
+                            marker_color=color_colors.get(col_esito, '#FFFFFF')
                         ))
-                
-                fig_pitch.update_layout(
-                    xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 101]), 
-                    yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[28, 103]), 
-                    yaxis_scaleanchor="x", yaxis_scaleratio=1, margin=dict(l=0, r=0, t=10, b=0),
-                    height=campo_visuale_height, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                    showlegend=True, dragmode=False,
-                    legend=dict(font=dict(color="white", size=14), orientation="h", bgcolor='rgba(0,0,0,0.5)', yanchor="top", y=-0.02, xanchor="center", x=0.5)
-                )
-                st.plotly_chart(fig_pitch, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+                    fig_bar_sd.update_layout(
+                        barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                        font=dict(color="white"), xaxis=dict(title="Modalità"), yaxis=dict(title="Numero di Azioni"),
+                        height=350, margin=dict(l=20, r=20, t=20, b=20)
+                    )
+                    st.plotly_chart(fig_bar_sd, use_container_width=True)
+            
+                    st.write("---")
+            
+                    # --- ROW 4: DETTAGLIO MODALITÀ DI SVILUPPO (CON FILTRO RADIO) ---
+                    st.markdown("#### 🎯 Dettaglio per Modalità di Sviluppo")
+                    scelta_sviluppo = st.radio("Filtra il grafico sottostante per Tipo Sviluppo:", ["Totale", "Statica", "Dinamica"], horizontal=True, key="radio_def")
+                    
+                    df_sviluppo = df_def_filtrato.copy()
+                    if scelta_sviluppo != "Totale":
+                        df_sviluppo = df_sviluppo[df_sviluppo['Tipo Sviluppo'] == scelta_sviluppo]
+                        
+                    if not df_sviluppo.empty and 'Modalità Sviluppo' in df_sviluppo.columns:
+                        df_mod = df_sviluppo.groupby(['Modalità Sviluppo', 'Esito finale']).size().unstack(fill_value=0).reset_index()
+                        
+                        fig_bar_mod = go.Figure()
+                        for col_esito in df_mod.columns[1:]:
+                            fig_bar_mod.add_trace(go.Bar(
+                                name=col_esito, x=df_mod['Modalità Sviluppo'], y=df_mod[col_esito],
+                                marker_color=color_colors.get(col_esito, '#FFFFFF')
+                            ))
+                        fig_bar_mod.update_layout(
+                            barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                            font=dict(color="white"), xaxis=dict(title="Sviluppo"), yaxis=dict(title="Numero di Azioni"),
+                            height=400, margin=dict(l=20, r=20, t=20, b=20)
+                        )
+                        st.plotly_chart(fig_bar_mod, use_container_width=True)
+                    else:
+                        st.caption("Nessun dato disponibile per la modalità di sviluppo selezionata.")
+            
+                    st.write("---")
+            
+                    # --- ROW 5: MAPPA DEGLI EVENTI DIFENSIVI (CALIBRAZIONE PRECISA) ---
+                    st.markdown("#### 🏟️ Mappa dei Tiri e Misure Difensive Subite")
+                    campo_visuale_height = 680 
+                    fig_pitch = go.Figure()
+                    pitch_green = "#228B22" 
+                    line_white = "#ffffff"
+                    y_inizio = 30 
+            
+                    fig_pitch.add_shape(type="rect", x0=0, y0=y_inizio, x1=100, y1=100, line=dict(color=line_white, width=3), fillcolor=pitch_green, layer="below")
+                    fig_pitch.add_shape(type="rect", x0=20, y0=83.5, x1=80, y1=100, line=dict(color=line_white, width=3), layer="below") 
+                    fig_pitch.add_shape(type="rect", x0=35, y0=94.5, x1=65, y1=100, line=dict(color=line_white, width=3), layer="below") 
+                    fig_pitch.add_shape(type="circle", x0=49.2, y0=88.5, x1=50.8, y1=90.1, fillcolor=line_white, line=dict(color=line_white), layer="below") 
+                    fig_pitch.add_shape(type="path", path="M 35 83.5 C 40 78, 60 78, 65 83.5", line=dict(color=line_white, width=3), layer="below")
+                    fig_pitch.add_shape(type="path", path=f"M 37 {y_inizio} C 40 {y_inizio+8}, 60 {y_inizio+8}, 63 {y_inizio}", line=dict(color=line_white, width=3), layer="below")
+                    fig_pitch.add_shape(type="rect", x0=42, y0=100, x1=58, y1=102, line=dict(color="#333333", width=4), fillcolor="#dddddd", layer="below")
+            
+                    esiti_map = {"Gol": "#FFD700", "Tiro in porta": "#00FF00", "Tiro fuori": "#FF0000", "Positivo": "#00FF00", "Negativo": "#FF0000"}
+                    symbols = {"Gol": "circle", "Tiro in porta": "diamond", "Tiro fuori": "x", "Positivo": "circle", "Negativo": "x"}
+                    
+                    for esito, color in esiti_map.items():
+                        df_e = df_def_filtrato[df_def_filtrato['Esito finale'] == esito].copy()
+                        if not df_e.empty:
+                            df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
+                            df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
+                            
+                            df_e['Plotly_X'] = (df_e['Coord_X'] / 360) * 100
+                            df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * 40.4)
+                    
+                            fig_pitch.add_trace(go.Scatter(
+                                x=df_e['Plotly_X'], y=df_e['Plotly_Y'], mode='markers', name=esito,
+                                marker=dict(size=18, color=color, symbol=symbols.get(esito, "circle"), line=dict(width=2, color="white")),
+                                text=(
+                                    df_e['Giocatore'].astype(str) + "<br>" +
+                                    "Azione: " + df_e['Tipo di azione'].astype(str) + "<br>" +
+                                    "Via: " + df_e['Canale'].astype(str) + "<br>" +
+                                    "Rif: " + df_e['Rifinitura'].astype(str)
+                                ),
+                                hoverinfo='text+name'
+                            ))
+                    
+                    fig_pitch.update_layout(
+                        xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-1, 101]), 
+                        yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[28, 103]), 
+                        yaxis_scaleanchor="x", yaxis_scaleratio=1, margin=dict(l=0, r=0, t=10, b=0),
+                        height=campo_visuale_height, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                        showlegend=True, dragmode=False,
+                        legend=dict(font=dict(color="white", size=14), orientation="h", bgcolor='rgba(0,0,0,0.5)', yanchor="top", y=-0.02, xanchor="center", x=0.5)
+                    )
+                    st.plotly_chart(fig_pitch, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
 
 # ---------------------------------------------------------
 # TAB PROFILO CALCIATORE (Invariata come richiesto)
