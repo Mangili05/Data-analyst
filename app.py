@@ -749,19 +749,19 @@ elif st.session_state.profilo == "Staff Tecnico":
                             df_e['Coord_X'] = pd.to_numeric(df_e['Coord_X'], errors='coerce')
                             df_e['Coord_Y'] = pd.to_numeric(df_e['Coord_Y'], errors='coerce')
                             
-                            # --- NUOVA CALIBRAZIONE MILLIMETRICA ---
+                            # --- CALIBRAZIONE GEOMETRICA PERFETTA ---
                             
-                            # Scala X (invariata, pulita): scala proporzionale 0-100m su 358 pixel
+                            # Scala X (Confermata, è perfetta così)
                             df_e['Plotly_X'] = (df_e['Coord_X'] / 358) * 100
                             
-                            # Scala Y CORRETTA: scala proporzionale 0-100m su 283 pixel (per campo intero)
-                            # Questo fattore 100 (invece di 43) fa cadere il rigore esattamente sul dischetto disegnato
-                            df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * 100)
+                            # Scala Y CORRETTA (Moltiplicatore calibrato a 30.6)
+                            # Riducendo il fattore, la sottrazione sottrarrà meno valore da 100,
+                            # proiettando il rigore esattamente a Y=89.3 (sul dischetto)
+                            df_e['Plotly_Y'] = 100 - ((df_e['Coord_Y'] / 283) * 30.6)
                     
                             fig_pitch.add_trace(go.Scatter(
                                 x=df_e['Plotly_X'], y=df_e['Plotly_Y'], mode='markers', name=esito,
                                 marker=dict(size=18, color=color, symbol=symbols[esito], line=dict(width=2, color="white")),
-                                # Hover con più dettagli: Giocatore, Tipo Azione, Canale, Rifinitura
                                 text=(
                                     df_e['Giocatore'].astype(str) + "<br>" +
                                     "Azione: " + df_e['Tipo di azione'].astype(str) + "<br>" +
