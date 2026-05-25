@@ -921,30 +921,32 @@ elif st.session_state.profilo == "Staff Tecnico":
                 if df_dif_filtrato.empty:
                     st.warning(f"Nessun dato registrato per il {frazione_gioco} con la selezione attuale.")
                 else:
-                    # --- CALCOLO METRICHE FLASH (AZIONI DIFENSIVE) ---
-                    tot_difensive = len(df_dif_filtrato)
+                    # --- CALCOLO METRICHE FLASH (CORRETTO) ---
+                    tot_difese = len(df_dif_filtrato)
                     
-                    # Conteggio Positive ed Errate (adatta le stringhe 'Positive'/'Errate' se differiscono nel tuo DF)
-                    num_positive = len(df_dif_filtrato[df_dif_filtrato['Esito finale'].isin(['Positiva', 'Intercettato', 'Recuperato', 'Fallo subito'])]) 
-                    num_errate = len(df_dif_filtrato[df_dif_filtrato['Esito finale'].isin(['Errata', 'Subito', 'Perso'])])
+                    # Eventi subiti: Gol + Tiri in porta + Tiri fuori
+                    df_subiti = df_dif_filtrato[df_dif_filtrato['Esito finale'].isin(['Gol', 'Tiro in porta', 'Tiro fuori'])]
+                    num_subiti = len(df_subiti)
                     
-                    # Se il tuo DF usa esattamente le diciture "Positive" e "Errate", puoi usare:
-                    # num_positive = len(df_dif_filtrato[df_dif_filtrato['Esito finale'].str.lower().str.contains('positiv', na=False)])
-                    # num_errate = len(df_dif_filtrato[df_dif_filtrato['Esito finale'].str.lower().str.contains('errat', na=False)])
+                    # Gol subiti
+                    num_gol_subiti = len(df_dif_filtrato[df_dif_filtrato['Esito finale'] == 'Gol'])
                     
-                    perc_positive = round((num_positive / tot_difensive) * 100) if tot_difensive > 0 else 0
-                    perc_errate = round((num_errate / tot_difensive) * 100) if tot_difensive > 0 else 0
+                    # Percentuale di eventi subiti su totale difese
+                    perc_subiti = round((num_subiti / tot_difese) * 100) if tot_difese > 0 else 0
 
                     # Visualizzazione KPI
                     col_m1, col_m2, col_m3 = st.columns(3)
                     with col_m1:
-                        st.metric("Azioni Difensive Totali", tot_difensive)
+                        st.metric("Difese Totali", tot_difese)
                     with col_m2:
-                        st.metric("Azioni Positive ✅", f"{num_positive} ({perc_positive}%)")
+                        st.metric("Eventi Subiti (Tiri e Gol) 🎯", f"{num_subiti} ({perc_subiti}%)")
                     with col_m3:
-                        st.metric("Azioni Errate ❌", f"{num_errate} ({perc_errate}%)")
+                        st.metric("Gol Subiti ⚽", num_gol_subiti)
                     
                     st.write("---")
+
+                    # --- ROW 1: VISIONE GENERALE ED ESITI (AFFIANCATI) ---
+                    # ... (Il resto del codice con i grafici a torta, a barre e la mappa dei tiri rimane lo stesso di prima)
 
                     # --- ROW 1: VISIONE GENERALE ED ESITI (AFFIANCATI) ---
                     col_grafico1, col_grafico2 = st.columns(2)
