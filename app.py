@@ -1072,7 +1072,7 @@ elif st.session_state.profilo == "Staff Tecnico":
                     st.plotly_chart(fig_pitch, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
 
 # ---------------------------------------------------------
-# TAB PROFILO CALCIATORE (Invariata come richiesto)
+# TAB PROFILO CALCIATORE (Ottimizzata anti-crash)
 # ---------------------------------------------------------
     with t_individuo:
         st.markdown("### 🎯 Analisi Delle Prestazioni Individuali")
@@ -1085,6 +1085,10 @@ elif st.session_state.profilo == "Staff Tecnico":
             kpi_all = ['Intensità', 'Attenzione', 'Atteggiamento']
             kpi_gara = ['Eff. scelte', 'Leadership', 'Resil. errore']
             kpi_totali = kpi_all + kpi_gara
+            
+            # --- FIX ANTI-CRASH: Forziamo il tipo stringa e gestiamo i valori nulli ---
+            df_ind_clean['Contesto'] = df_ind_clean['Contesto'].fillna("").astype(str)
+            df_ind_clean['Giocatore'] = df_ind_clean['Giocatore'].fillna("").astype(str)
             
             df_ind_clean['Data'] = pd.to_datetime(df_ind_clean['Data'], dayfirst=True).dt.date
             for col in kpi_totali:
@@ -1197,7 +1201,7 @@ elif st.session_state.profilo == "Staff Tecnico":
                                      color_discrete_map={"Allenamento": "#00CC96", "Partita": "#636EFA"},
                                      range_y=[0, 5], template="plotly_dark", text_auto='.1f')
                     fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
-                                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+                                          legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
                     st.plotly_chart(fig_bar, use_container_width=True, config={'staticPlot': True})
 
                 st.divider()
